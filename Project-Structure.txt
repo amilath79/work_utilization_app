@@ -1,0 +1,24 @@
+# Project Structure
+# work_utilization_app/
+# ├── app.py                    # Main Streamlit application entry point
+# ├── config.py                 # Configuration and settings
+# ├── requirements.txt          # Package dependencies
+# ├── README.md                 # Project documentation
+# ├── .gitignore                # Git ignore file
+# ├── tests/                    # Unit and integration tests
+# │   └── test_predict.py       # Tests for prediction functionality
+# ├── models/                   # Directory for saved models
+# │   └── .gitkeep              # Placeholder file
+# ├── data/                     # Data directory (for sample or cached data)
+# │   └── .gitkeep              # Placeholder file
+# ├── utils/                    # Utility functions and helpers
+# │   ├── __init__.py           # Makes utils a package
+# │   ├── data_loader.py        # Data loading functions
+# │   ├── feature_engineering.py# Feature engineering functions
+# │   ├── prediction.py         # Prediction functions
+# │   └── visualization.py      # Visualization functions
+# └── pages/                    # Separate pages for the Streamlit app
+#     ├── __init__.py           # Makes pages a package
+#     ├── data_overview.py      # Data overview page
+#     ├── predictions.py        # Predictions page 
+#     └── model_analysis.py     # Model analysis page
