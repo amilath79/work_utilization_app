@@ -40,7 +40,9 @@ def engineer_features(df):
         data['DayOfMonth'] = data['Date'].dt.day
         data['DayOfWeek_feat'] = data['Date'].dt.dayofweek  # 0=Monday, 6=Sunday
         data['Quarter'] = data['Date'].dt.quarter
-        data['IsWeekend_feat'] = data['DayOfWeek_feat'].apply(lambda x: 1 if x >= 5 else 0)
+        
+        # For this company: only Saturday (5) is a weekend, Sunday (6) is a working day
+        data['IsWeekend_feat'] = data['DayOfWeek_feat'].apply(lambda x: 1 if x == 5 else 0)
         
         # Add week of year
         data['WeekOfYear'] = data['Date'].dt.isocalendar().week
@@ -105,7 +107,8 @@ def create_lag_features(data, group_col='WorkType', target_col='NoOfMan', lag_da
         # Add the engineered features we need
         daily_data['DayOfWeek_feat'] = daily_data['Date'].dt.dayofweek
         daily_data['Month_feat'] = daily_data['Date'].dt.month
-        daily_data['IsWeekend_feat'] = daily_data['DayOfWeek_feat'].apply(lambda x: 1 if x >= 5 else 0)
+        # For this company: only Saturday (5) is a weekend, Sunday (6) is a working day
+        daily_data['IsWeekend_feat'] = daily_data['DayOfWeek_feat'].apply(lambda x: 1 if x == 5 else 0)
         daily_data['Year_feat'] = daily_data['Date'].dt.year
         daily_data['Quarter'] = daily_data['Date'].dt.quarter
         daily_data['DayOfMonth'] = daily_data['Date'].dt.day

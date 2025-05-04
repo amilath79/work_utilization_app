@@ -19,6 +19,7 @@ from utils.feature_engineering import engineer_features, create_lag_features
 from utils.prediction import predict_next_day, predict_multiple_days, evaluate_predictions
 from utils.visualization import plot_predictions
 from utils.data_loader import export_predictions, load_models, load_data
+from utils.holiday_utils import is_swedish_holiday, is_non_working_day
 from config import MODELS_DIR, DATA_DIR
 
 # Configure page
@@ -183,6 +184,12 @@ def main():
                 min_value=latest_date,
                 help="Select the date for which you want to predict workforce requirements"
             )
+            
+            # Check if selected date is a Swedish holiday
+            is_holiday, holiday_name = is_swedish_holiday(pred_date)
+            if is_holiday:
+                st.warning(f"⚠️ {pred_date.strftime('%A, %B %d, %Y')} is a Swedish holiday: {holiday_name}")
+                st.info("No work is carried out on Swedish holidays. Predictions will be set to 0.")
         
         with col2:
             selected_work_types = st.multiselect(
@@ -205,27 +212,35 @@ def main():
                     # Convert date to datetime
                     pred_datetime = pd.to_datetime(pred_date)
                     
-                    # Calculate how many days to predict (from latest date in data to selected date)
-                    days_diff = (pred_datetime - st.session_state.df['Date'].max()).days
+                    # Check again if it's a Swedish holiday (redundant but good for safety)
+                    is_holiday, holiday_name = is_swedish_holiday(pred_datetime)
                     
-                    if days_diff <= 1:
-                        # For next day prediction, use the direct prediction
-                        next_date, predictions = predict_next_day(
-                            st.session_state.ts_data, 
-                            filtered_models,
-                            date=st.session_state.df['Date'].max(),
-                            use_neural_network=use_neural  # Pass the neural network option
-                        )
-                    else:
-                        # For further dates, predict multiple days and take the last one
-                        multi_day_predictions = predict_multiple_days(
-                            st.session_state.ts_data,
-                            filtered_models,
-                            num_days=days_diff,
-                            use_neural_network=use_neural  # Pass the neural network option
-                        )
+                    if is_holiday:
+                        # For holidays, set all predictions to 0
                         next_date = pred_datetime
-                        predictions = multi_day_predictions[next_date]
+                        predictions = {wt: 0 for wt in selected_work_types}
+                    else:
+                        # Calculate how many days to predict (from latest date in data to selected date)
+                        days_diff = (pred_datetime - st.session_state.df['Date'].max()).days
+                        
+                        if days_diff <= 1:
+                            # For next day prediction, use the direct prediction
+                            next_date, predictions = predict_next_day(
+                                st.session_state.ts_data, 
+                                filtered_models,
+                                date=st.session_state.df['Date'].max(),
+                                use_neural_network=use_neural  # Pass the neural network option
+                            )
+                        else:
+                            # For further dates, predict multiple days and take the last one
+                            multi_day_predictions, holiday_info = predict_multiple_days(
+                                st.session_state.ts_data,
+                                filtered_models,
+                                num_days=days_diff,
+                                use_neural_network=use_neural  # Pass the neural network option
+                            )
+                            next_date = pred_datetime
+                            predictions = multi_day_predictions[next_date]
                     
                     # Store in session state
                     st.session_state.last_prediction = {next_date: predictions}
@@ -234,6 +249,11 @@ def main():
                     # Display results
                     model_type_text = "Neural Network" if use_neural else "Random Forest"
                     st.subheader(f"Predictions for {next_date.strftime('%A, %B %d, %Y')} using {model_type_text}")
+                    
+                    # If it's a holiday, show a warning
+                    if is_holiday:
+                        st.warning(f"⚠️ {next_date.strftime('%A, %B %d, %Y')} is a Swedish holiday: {holiday_name}")
+                        st.info("No work is carried out on Swedish holidays. All predictions have been set to 0.")
                     
                     # Create a dataframe for display
                     results_df = pd.DataFrame({
@@ -256,6 +276,7 @@ def main():
                             )
                         }
                     )
+                    
                     
                     # Plot predictions
                     st.subheader("Prediction Visualization")
@@ -344,7 +365,7 @@ def main():
                     filtered_models = {wt: st.session_state.models[wt] for wt in selected_work_types if wt in st.session_state.models}
                     
                     # Predict multiple days
-                    multi_day_predictions = predict_multiple_days(
+                    multi_day_predictions, holiday_info = predict_multiple_days(
                         st.session_state.ts_data,
                         filtered_models,
                         num_days=num_days,
@@ -358,16 +379,27 @@ def main():
                     model_type_text = "Neural Network" if use_neural else "Random Forest"
                     st.subheader(f"Predictions from {pred_start_date.strftime('%B %d, %Y')} to {pred_end_date.strftime('%B %d, %Y')} using {model_type_text}")
                     
+                    # If there are holidays in the prediction period, show a warning
+                    if holiday_info:
+                        st.warning("⚠️ Swedish holidays detected during the prediction period:")
+                        for holiday_date, name in holiday_info.items():
+                            st.info(f"• {holiday_date.strftime('%A, %B %d, %Y')}: {name} (No work carried out)")
+                    
                     # Create a dataframe for display
                     results_records = []
                     for date, predictions in multi_day_predictions.items():
+                        is_hol = date in holiday_info
+                        holiday_name = holiday_info.get(date, "")
+                        
                         for work_type, value in predictions.items():
                             if work_type in selected_work_types:
                                 results_records.append({
                                     'Date': date,
                                     'Work Type': work_type,
-                                    'Predicted Workers': round(value,0),
-                                    'Day of Week': date.strftime('%A')
+                                    'Predicted Workers': round(value, 0),
+                                    'Day of Week': date.strftime('%A'),
+                                    'Is Holiday': "Yes" if is_hol else "No",
+                                    'Holiday Name': holiday_name if is_hol else ""
                                 })
                     
                     results_df = pd.DataFrame(results_records)
@@ -382,6 +414,14 @@ def main():
                                 'Predicted Workers',
                                 format="%.2f",
                                 help="Predicted number of workers required"
+                            ),
+                            'Is Holiday': st.column_config.TextColumn(
+                                'Is Holiday',
+                                help="Whether this date is a Swedish holiday"
+                            ),
+                            'Holiday Name': st.column_config.TextColumn(
+                                'Holiday Name',
+                                help="Name of the holiday, if applicable"
                             )
                         }
                     )
@@ -392,6 +432,41 @@ def main():
                     fig = plot_predictions(multi_day_predictions, work_types=selected_work_types)
                     if fig:
                         st.plotly_chart(fig, use_container_width=True)
+
+                    # Add pivot table for resource planning
+                    st.subheader("Resource Planning View")
+
+                    # Create a simpler pivot table
+                    pivot = pd.pivot_table(
+                        results_df,
+                        values='Predicted Workers',
+                        index='Date',
+                        columns='Work Type',
+                        fill_value=0
+                    )
+
+                    # Add day of week for better context
+                    pivot['Day'] = [d.strftime('%a') for d in pivot.index]  # %a gives abbreviated day name
+
+                    # Move Day column to first position
+                    cols = pivot.columns.tolist()
+                    cols.insert(0, cols.pop(cols.index('Day')))
+                    pivot = pivot[cols]
+
+                    # Display the pivot table
+                    st.dataframe(pivot, use_container_width=True)
+
+                    # Download option for pivot table
+                    pivot_buffer = io.BytesIO()
+                    pivot.to_excel(pivot_buffer)
+                    pivot_buffer.seek(0)
+
+                    st.download_button(
+                        label="Download Resource Plan (Excel)",
+                        data=pivot_buffer,
+                        file_name=f"resource_plan_{pred_start_date.strftime('%Y%m%d')}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
                     
                     # Download option
                     st.download_button(
@@ -467,7 +542,7 @@ def main():
                 ]
                 
                 # Generate predictions for the backtest period
-                backtest_predictions = predict_multiple_days(
+                backtest_predictions, holiday_info = predict_multiple_days(
                     backtest_data,
                     filtered_models,
                     num_days=backtest_days,
@@ -479,6 +554,9 @@ def main():
                 metrics_by_worktype = {}
                 
                 for date, predictions in backtest_predictions.items():
+                    is_holiday = date in holiday_info
+                    holiday_name = holiday_info.get(date, "")
+                    
                     for work_type, pred_value in predictions.items():
                         if work_type in backtest_work_types:
                             # Get actual value
@@ -494,7 +572,9 @@ def main():
                                 'Work Type': work_type,
                                 'Predicted': pred_value,
                                 'Actual': actual_value,
-                                'Difference': actual_value - pred_value if actual_value is not None else None
+                                'Difference': actual_value - pred_value if actual_value is not None else None,
+                                'Is Holiday': "Yes" if is_holiday else "No",
+                                'Holiday Name': holiday_name if is_holiday else ""
                             })
                 
                 results_df = pd.DataFrame(results_records)
@@ -512,6 +592,10 @@ def main():
                 
                 # Display results
                 st.subheader(f"Backtesting Results using {backtest_model_type}")
+                
+                # If holidays were detected in backtesting period, show info
+                if holiday_info:
+                    st.info("📅 The backtesting period includes Swedish holidays where no work is carried out. Predictions for these days are set to 0.")
                 
                 # Display metrics
                 st.write("Model Performance Metrics:")
@@ -576,6 +660,23 @@ def main():
                             marker=dict(size=8)
                         ))
                         
+                        # Mark holidays in the visualization
+                        holiday_results = wt_results[wt_results['Is Holiday'] == "Yes"]
+                        if not holiday_results.empty:
+                            fig.add_trace(go.Scatter(
+                                x=holiday_results['Date'],
+                                y=holiday_results['Predicted'],
+                                mode='markers',
+                                name='Holidays',
+                                marker=dict(
+                                    color='#ff9800',
+                                    size=12,
+                                    symbol='star'
+                                ),
+                                hovertemplate='%{x}<br>Holiday: %{text}<extra></extra>',
+                                text=holiday_results['Holiday Name']
+                            ))
+                        
                         # Update layout
                         fig.update_layout(
                             title=f'Actual vs Predicted Workers for {selected_wt}',
@@ -595,7 +696,11 @@ def main():
                         # Display prediction error distribution
                         st.subheader("Prediction Error Distribution")
                         
-                        wt_results['Error (%)'] = (wt_results['Difference'] / wt_results['Actual']) * 100
+                        # Calculate percentage error, handling divide by zero
+                        wt_results['Error (%)'] = wt_results.apply(
+                            lambda row: (row['Difference'] / max(0.001, row['Actual'])) * 100 if row['Difference'] is not None else None, 
+                            axis=1
+                        )
                         
                         # Create histogram of errors
                         error_fig = px.histogram(

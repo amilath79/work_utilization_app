@@ -9,6 +9,8 @@ import os
 import traceback
 from datetime import datetime, timedelta
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+# Update the import statement
+from utils.holiday_utils import is_non_working_day
 
 # Import the torch_utils module for neural network support
 try:
@@ -19,6 +21,9 @@ except ImportError:
 
 # Import from configuration
 from config import MODELS_DIR
+
+# Import holiday utils
+from utils.holiday_utils import is_swedish_holiday
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -100,6 +105,17 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
         
         logger.info(f"Predicting NoOfMan for {next_date.strftime('%Y-%m-%d')}")
         
+       # Check if the prediction date is a non-working day (holiday or Saturday)
+        is_nonworking, reason = is_non_working_day(next_date)
+
+        if is_nonworking:
+            logger.info(f"Date {next_date.strftime('%Y-%m-%d')} is a non-working day: {reason}")
+            logger.info("No work is carried out on this day. Setting all predictions to 0.")
+    
+            # Return zero predictions for all work types
+            zero_predictions = {work_type: 0 for work_type in models.keys()}
+            return next_date, zero_predictions
+
         # Load neural network models if requested
         nn_models, nn_scalers, nn_metrics = {}, {}, {}
         if use_neural_network:
@@ -234,6 +250,7 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
         logger.error(traceback.format_exc())
         raise Exception(f"Failed to predict next day: {str(e)}")
 
+# Modify the predict_multiple_days function to check for non-working days
 def predict_multiple_days(df, models, num_days=7, use_neural_network=False):
     """
     Predict NoOfMan for multiple days for each WorkType
@@ -241,8 +258,9 @@ def predict_multiple_days(df, models, num_days=7, use_neural_network=False):
     try:
         logger.info(f"Predicting for the next {num_days} days")
         
-        # Initialize results dictionary
+        # Initialize results dictionary and holiday info dictionary
         multi_day_predictions = {}
+        nonworking_info = {}
         
         # Create a working copy of the dataframe that we'll extend with predictions
         current_df = df.copy()
@@ -253,6 +271,48 @@ def predict_multiple_days(df, models, num_days=7, use_neural_network=False):
         # Predict for each day
         for i in range(num_days):
             prediction_date = latest_date + timedelta(days=i+1)  # +1 to start with the next day
+            
+            # Check if the date is a non-working day
+            is_nonworking, reason = is_non_working_day(prediction_date)
+            
+            if is_nonworking:
+                logger.info(f"Date {prediction_date.strftime('%Y-%m-%d')} is a non-working day: {reason}")
+                logger.info("No work is carried out on this day. Setting all predictions to 0.")
+                
+                # Create zero predictions for all work types
+                zero_predictions = {work_type: 0 for work_type in models.keys()}
+                
+                # Store predictions and non-working day info
+                multi_day_predictions[prediction_date] = zero_predictions
+                nonworking_info[prediction_date] = reason
+                
+                # Add the zero predictions to the dataframe for the next iteration
+                new_rows = []
+                for work_type in models.keys():
+                    new_row = {
+                        'Date': prediction_date,
+                        'WorkType': work_type,
+                        'NoOfMan': 0,
+                        
+                        # Add the date features
+                        'DayOfWeek_feat': prediction_date.dayofweek,
+                        'Month_feat': prediction_date.month,
+                        'IsWeekend_feat': 1 if prediction_date.dayofweek == 5 else 0,  # Only Saturday is a weekend
+                        'Year_feat': prediction_date.year,
+                        'Quarter': (prediction_date.month - 1) // 3 + 1,
+                        'DayOfMonth': prediction_date.day,
+                        'WeekOfYear': prediction_date.isocalendar()[1]
+                    }
+                    
+                    # Add necessary lag features for the next iteration
+                    new_rows.append(new_row)
+                
+                # Append new rows to the dataframe
+                if new_rows:
+                    current_df = pd.concat([current_df, pd.DataFrame(new_rows)], ignore_index=True)
+                continue
+            
+            # Not a non-working day, proceed with normal prediction
             next_date, predictions = predict_next_day(
                 current_df, 
                 models, 
@@ -270,10 +330,10 @@ def predict_multiple_days(df, models, num_days=7, use_neural_network=False):
                     'WorkType': work_type,
                     'NoOfMan': pred_value,
                     
-                    # Add the date features
+                    # Add the date features - Update the IsWeekend_feat to only count Saturday
                     'DayOfWeek_feat': next_date.dayofweek,
                     'Month_feat': next_date.month,
-                    'IsWeekend_feat': 1 if next_date.dayofweek >= 5 else 0,
+                    'IsWeekend_feat': 1 if next_date.dayofweek == 5 else 0,  # Only Saturday is a weekend
                     'Year_feat': next_date.year,
                     'Quarter': (next_date.month - 1) // 3 + 1,
                     'DayOfMonth': next_date.day,
@@ -288,7 +348,7 @@ def predict_multiple_days(df, models, num_days=7, use_neural_network=False):
                 current_df = pd.concat([current_df, pd.DataFrame(new_rows)], ignore_index=True)
         
         logger.info(f"Predictions completed for {num_days} days")
-        return multi_day_predictions
+        return multi_day_predictions, nonworking_info
     
     except Exception as e:
         logger.error(f"Error predicting multiple days: {str(e)}")

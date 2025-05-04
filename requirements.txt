@@ -23,3 +23,6 @@ tqdm>=4.65.0
 # Add to requirements.txt
 torch
 pyodbc
+
+# Holiday detection
+holidays>=0.27.0
