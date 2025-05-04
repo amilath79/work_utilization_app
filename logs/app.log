@@ -8482,3 +8482,1733 @@ delete_url: "/_stcore/upload_file/b25a2dc9-5ed0-4ff8-b283-e82c08022d4c/2d90f905-
 2025-05-04 12:22:48,422 - utils.prediction - INFO - RandomForest predicted 3.14 workers for WorkType 215 Picking Online
 2025-05-04 12:22:48,442 - utils.prediction - INFO - RandomForest predicted 0.24 workers for WorkType 217 Returns
 2025-05-04 12:22:48,447 - utils.prediction - INFO - Predictions completed for 10 days
+2025-05-04 13:01:31,309 - __main__ - INFO - Loading data from uploaded file: work_utilization_melted1.xlsx
+2025-05-04 13:01:31,316 - utils.data_loader - INFO - Loading data from UploadedFile(file_id='04b86ea4-2952-4978-897f-0911e262f2c6', name='work_utilization_melted1.xlsx', type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', size=1438356, _file_urls=file_id: "04b86ea4-2952-4978-897f-0911e262f2c6"
+upload_url: "/_stcore/upload_file/ef8dbf9d-a0ec-4418-9214-78ab8a31eda3/04b86ea4-2952-4978-897f-0911e262f2c6"
+delete_url: "/_stcore/upload_file/ef8dbf9d-a0ec-4418-9214-78ab8a31eda3/04b86ea4-2952-4978-897f-0911e262f2c6"
+)
+2025-05-04 13:01:33,675 - utils.data_loader - INFO - Data loaded successfully. Shape: (32131, 9)
+2025-05-04 13:01:33,698 - utils.feature_engineering - INFO - Engineering features
+2025-05-04 13:01:33,755 - utils.feature_engineering - INFO - Feature engineering completed. Added 9 new features.
+2025-05-04 13:01:33,787 - utils.feature_engineering - INFO - Creating lag features for NoOfMan grouped by WorkType
+2025-05-04 13:01:33,988 - utils.feature_engineering - INFO - Lag features created. Dropped 4015 rows with NaN values.
+2025-05-04 13:01:33,988 - utils.feature_engineering - INFO - Final shape: (28116, 37)
+2025-05-04 13:01:35,921 - utils.data_loader - INFO - Models loaded successfully. Number of models: 11
+2025-05-04 13:01:35,923 - __main__ - INFO - Models loaded successfully
+2025-05-04 13:02:00,687 - utils.prediction - INFO - Predicting for the next 7 days
+2025-05-04 13:02:00,713 - utils.prediction - INFO - Date 2025-01-01 is a non-working day: Swedish Holiday: New Year's Day
+2025-05-04 13:02:00,714 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:02:00,735 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-02
+2025-05-04 13:02:00,783 - utils.prediction - INFO - RandomForest predicted 0.89 workers for WorkType 203 Goods receive D
+2025-05-04 13:02:00,809 - utils.prediction - INFO - RandomForest predicted 13.49 workers for WorkType 206 Replenishment
+2025-05-04 13:02:00,834 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:02:00,858 - utils.prediction - INFO - RandomForest predicted 10.14 workers for WorkType 209 Sortation
+2025-05-04 13:02:00,888 - utils.prediction - INFO - RandomForest predicted 4.24 workers for WorkType 210 Pick Sortation
+2025-05-04 13:02:00,913 - utils.prediction - INFO - RandomForest predicted 3.19 workers for WorkType 211 Misc
+2025-05-04 13:02:00,937 - utils.prediction - INFO - RandomForest predicted 1.53 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:02:00,963 - utils.prediction - INFO - RandomForest predicted 2.91 workers for WorkType 214 Large orders
+2025-05-04 13:02:00,985 - utils.prediction - INFO - RandomForest predicted 4.05 workers for WorkType 215 Picking Online
+2025-05-04 13:02:01,015 - utils.prediction - INFO - RandomForest predicted 0.27 workers for WorkType 217 Returns
+2025-05-04 13:02:01,031 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-03
+2025-05-04 13:02:01,065 - utils.prediction - INFO - RandomForest predicted 1.74 workers for WorkType 203 Goods receive D
+2025-05-04 13:02:01,086 - utils.prediction - INFO - RandomForest predicted 11.85 workers for WorkType 206 Replenishment
+2025-05-04 13:02:01,109 - utils.prediction - INFO - RandomForest predicted 2.12 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:02:01,134 - utils.prediction - INFO - RandomForest predicted 10.71 workers for WorkType 209 Sortation
+2025-05-04 13:02:01,156 - utils.prediction - INFO - RandomForest predicted 6.46 workers for WorkType 210 Pick Sortation
+2025-05-04 13:02:01,181 - utils.prediction - INFO - RandomForest predicted 3.69 workers for WorkType 211 Misc
+2025-05-04 13:02:01,207 - utils.prediction - INFO - RandomForest predicted 1.77 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:02:01,235 - utils.prediction - INFO - RandomForest predicted 3.95 workers for WorkType 214 Large orders
+2025-05-04 13:02:01,259 - utils.prediction - INFO - RandomForest predicted 4.82 workers for WorkType 215 Picking Online
+2025-05-04 13:02:01,285 - utils.prediction - INFO - RandomForest predicted 0.23 workers for WorkType 217 Returns
+2025-05-04 13:02:01,300 - utils.prediction - INFO - Date 2025-01-04 is a non-working day: Saturday (Weekend)
+2025-05-04 13:02:01,300 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:02:01,315 - utils.prediction - INFO - Date 2025-01-05 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:02:01,316 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:02:01,329 - utils.prediction - INFO - Date 2025-01-06 is a non-working day: Swedish Holiday: Epiphany
+2025-05-04 13:02:01,330 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:02:01,343 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-07
+2025-05-04 13:02:01,384 - utils.prediction - INFO - RandomForest predicted 1.02 workers for WorkType 203 Goods receive D
+2025-05-04 13:02:01,407 - utils.prediction - INFO - RandomForest predicted 11.50 workers for WorkType 206 Replenishment
+2025-05-04 13:02:01,433 - utils.prediction - INFO - RandomForest predicted 1.05 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:02:01,455 - utils.prediction - INFO - RandomForest predicted 4.87 workers for WorkType 209 Sortation
+2025-05-04 13:02:01,482 - utils.prediction - INFO - RandomForest predicted 4.16 workers for WorkType 210 Pick Sortation
+2025-05-04 13:02:01,505 - utils.prediction - INFO - RandomForest predicted 3.32 workers for WorkType 211 Misc
+2025-05-04 13:02:01,531 - utils.prediction - INFO - RandomForest predicted 0.81 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:02:01,555 - utils.prediction - INFO - RandomForest predicted 1.44 workers for WorkType 214 Large orders
+2025-05-04 13:02:01,581 - utils.prediction - INFO - RandomForest predicted 2.21 workers for WorkType 215 Picking Online
+2025-05-04 13:02:01,603 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 13:02:01,609 - utils.prediction - INFO - Predictions completed for 7 days
+2025-05-04 13:03:55,825 - utils.prediction - INFO - Predicting for the next 30 days
+2025-05-04 13:03:55,855 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-02
+2025-05-04 13:03:55,897 - utils.prediction - INFO - RandomForest predicted 5.30 workers for WorkType 203 Goods receive D
+2025-05-04 13:03:55,913 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-03
+2025-05-04 13:03:55,954 - utils.prediction - INFO - RandomForest predicted 5.07 workers for WorkType 203 Goods receive D
+2025-05-04 13:03:55,984 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-04
+2025-05-04 13:03:56,063 - utils.prediction - INFO - RandomForest predicted 5.51 workers for WorkType 203 Goods receive D
+2025-05-04 13:03:56,080 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-05
+2025-05-04 13:03:56,121 - utils.prediction - INFO - RandomForest predicted 5.55 workers for WorkType 203 Goods receive D
+2025-05-04 13:03:56,138 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-06
+2025-05-04 13:03:56,178 - utils.prediction - INFO - RandomForest predicted 5.03 workers for WorkType 203 Goods receive D
+2025-05-04 13:03:56,196 - utils.prediction - INFO - Date 2024-12-07 is a non-working day: Saturday (Weekend)
+2025-05-04 13:03:56,196 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:03:56,215 - utils.prediction - INFO - Date 2024-12-08 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:03:56,215 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:03:56,229 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-09
+2025-05-04 13:03:56,262 - utils.prediction - INFO - RandomForest predicted 4.91 workers for WorkType 203 Goods receive D
+2025-05-04 13:03:56,285 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-10
+2025-05-04 13:03:56,327 - utils.prediction - INFO - RandomForest predicted 5.12 workers for WorkType 203 Goods receive D
+2025-05-04 13:03:56,345 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-11
+2025-05-04 13:03:56,403 - utils.prediction - INFO - RandomForest predicted 5.09 workers for WorkType 203 Goods receive D
+2025-05-04 13:03:56,426 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-12
+2025-05-04 13:03:56,472 - utils.prediction - INFO - RandomForest predicted 5.02 workers for WorkType 203 Goods receive D
+2025-05-04 13:03:56,492 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-13
+2025-05-04 13:03:56,537 - utils.prediction - INFO - RandomForest predicted 4.86 workers for WorkType 203 Goods receive D
+2025-05-04 13:03:56,556 - utils.prediction - INFO - Date 2024-12-14 is a non-working day: Saturday (Weekend)
+2025-05-04 13:03:56,556 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:03:56,571 - utils.prediction - INFO - Date 2024-12-15 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:03:56,571 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:03:56,588 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-16
+2025-05-04 13:03:56,628 - utils.prediction - INFO - RandomForest predicted 4.60 workers for WorkType 203 Goods receive D
+2025-05-04 13:03:56,646 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-17
+2025-05-04 13:03:56,692 - utils.prediction - INFO - RandomForest predicted 4.79 workers for WorkType 203 Goods receive D
+2025-05-04 13:03:56,712 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-18
+2025-05-04 13:03:56,762 - utils.prediction - INFO - RandomForest predicted 4.84 workers for WorkType 203 Goods receive D
+2025-05-04 13:03:56,788 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-19
+2025-05-04 13:03:56,828 - utils.prediction - INFO - RandomForest predicted 4.83 workers for WorkType 203 Goods receive D
+2025-05-04 13:03:56,849 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-20
+2025-05-04 13:03:56,891 - utils.prediction - INFO - RandomForest predicted 4.77 workers for WorkType 203 Goods receive D
+2025-05-04 13:03:56,909 - utils.prediction - INFO - Date 2024-12-21 is a non-working day: Saturday (Weekend)
+2025-05-04 13:03:56,910 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:03:56,928 - utils.prediction - INFO - Date 2024-12-22 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:03:56,928 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:03:56,946 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-23
+2025-05-04 13:03:56,980 - utils.prediction - INFO - RandomForest predicted 4.51 workers for WorkType 203 Goods receive D
+2025-05-04 13:03:56,995 - utils.prediction - INFO - Date 2024-12-24 is a non-working day: Swedish Holiday: Christmas Eve
+2025-05-04 13:03:56,996 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:03:57,012 - utils.prediction - INFO - Date 2024-12-25 is a non-working day: Swedish Holiday: Christmas Day
+2025-05-04 13:03:57,012 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:03:57,028 - utils.prediction - INFO - Date 2024-12-26 is a non-working day: Swedish Holiday: Second Day of Christmas
+2025-05-04 13:03:57,028 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:03:57,044 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-27
+2025-05-04 13:03:57,083 - utils.prediction - INFO - RandomForest predicted 2.72 workers for WorkType 203 Goods receive D
+2025-05-04 13:03:57,098 - utils.prediction - INFO - Date 2024-12-28 is a non-working day: Saturday (Weekend)
+2025-05-04 13:03:57,099 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:03:57,113 - utils.prediction - INFO - Date 2024-12-29 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:03:57,113 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:03:57,129 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-30
+2025-05-04 13:03:57,169 - utils.prediction - INFO - RandomForest predicted 3.62 workers for WorkType 203 Goods receive D
+2025-05-04 13:03:57,185 - utils.prediction - INFO - Date 2024-12-31 is a non-working day: Swedish Holiday: New Year's Eve
+2025-05-04 13:03:57,185 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:03:57,191 - utils.prediction - INFO - Predictions completed for 30 days
+2025-05-04 13:05:48,750 - utils.prediction - INFO - Predicting for the next 7 days
+2025-05-04 13:05:48,780 - utils.prediction - INFO - Date 2025-01-01 is a non-working day: Swedish Holiday: New Year's Day
+2025-05-04 13:05:48,780 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:05:48,804 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-02
+2025-05-04 13:05:48,865 - utils.prediction - INFO - RandomForest predicted 0.89 workers for WorkType 203 Goods receive D
+2025-05-04 13:05:48,914 - utils.prediction - INFO - RandomForest predicted 13.49 workers for WorkType 206 Replenishment
+2025-05-04 13:05:48,961 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:05:48,999 - utils.prediction - INFO - RandomForest predicted 10.14 workers for WorkType 209 Sortation
+2025-05-04 13:05:49,024 - utils.prediction - INFO - RandomForest predicted 4.24 workers for WorkType 210 Pick Sortation
+2025-05-04 13:05:49,048 - utils.prediction - INFO - RandomForest predicted 3.19 workers for WorkType 211 Misc
+2025-05-04 13:05:49,079 - utils.prediction - INFO - RandomForest predicted 1.53 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:05:49,109 - utils.prediction - INFO - RandomForest predicted 2.91 workers for WorkType 214 Large orders
+2025-05-04 13:05:49,140 - utils.prediction - INFO - RandomForest predicted 4.05 workers for WorkType 215 Picking Online
+2025-05-04 13:05:49,166 - utils.prediction - INFO - RandomForest predicted 0.27 workers for WorkType 217 Returns
+2025-05-04 13:05:49,185 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-03
+2025-05-04 13:05:49,223 - utils.prediction - INFO - RandomForest predicted 1.74 workers for WorkType 203 Goods receive D
+2025-05-04 13:05:49,246 - utils.prediction - INFO - RandomForest predicted 11.85 workers for WorkType 206 Replenishment
+2025-05-04 13:05:49,280 - utils.prediction - INFO - RandomForest predicted 2.12 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:05:49,310 - utils.prediction - INFO - RandomForest predicted 10.71 workers for WorkType 209 Sortation
+2025-05-04 13:05:49,340 - utils.prediction - INFO - RandomForest predicted 6.46 workers for WorkType 210 Pick Sortation
+2025-05-04 13:05:49,370 - utils.prediction - INFO - RandomForest predicted 3.69 workers for WorkType 211 Misc
+2025-05-04 13:05:49,400 - utils.prediction - INFO - RandomForest predicted 1.77 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:05:49,428 - utils.prediction - INFO - RandomForest predicted 3.95 workers for WorkType 214 Large orders
+2025-05-04 13:05:49,454 - utils.prediction - INFO - RandomForest predicted 4.82 workers for WorkType 215 Picking Online
+2025-05-04 13:05:49,478 - utils.prediction - INFO - RandomForest predicted 0.23 workers for WorkType 217 Returns
+2025-05-04 13:05:49,492 - utils.prediction - INFO - Date 2025-01-04 is a non-working day: Saturday (Weekend)
+2025-05-04 13:05:49,492 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:05:49,507 - utils.prediction - INFO - Date 2025-01-05 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:05:49,507 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:05:49,522 - utils.prediction - INFO - Date 2025-01-06 is a non-working day: Swedish Holiday: Epiphany
+2025-05-04 13:05:49,522 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:05:49,536 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-07
+2025-05-04 13:05:49,571 - utils.prediction - INFO - RandomForest predicted 1.02 workers for WorkType 203 Goods receive D
+2025-05-04 13:05:49,599 - utils.prediction - INFO - RandomForest predicted 11.50 workers for WorkType 206 Replenishment
+2025-05-04 13:05:49,626 - utils.prediction - INFO - RandomForest predicted 1.05 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:05:49,652 - utils.prediction - INFO - RandomForest predicted 4.87 workers for WorkType 209 Sortation
+2025-05-04 13:05:49,676 - utils.prediction - INFO - RandomForest predicted 4.16 workers for WorkType 210 Pick Sortation
+2025-05-04 13:05:49,699 - utils.prediction - INFO - RandomForest predicted 3.32 workers for WorkType 211 Misc
+2025-05-04 13:05:49,725 - utils.prediction - INFO - RandomForest predicted 0.81 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:05:49,752 - utils.prediction - INFO - RandomForest predicted 1.44 workers for WorkType 214 Large orders
+2025-05-04 13:05:49,782 - utils.prediction - INFO - RandomForest predicted 2.21 workers for WorkType 215 Picking Online
+2025-05-04 13:05:49,813 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 13:05:49,824 - utils.prediction - INFO - Predictions completed for 7 days
+2025-05-04 13:06:55,637 - utils.data_loader - INFO - Loading data from C:\forlogssystems\work_utilization_app\data\sample_work_utilization.xlsx
+2025-05-04 13:07:00,385 - utils.data_loader - INFO - Data loaded successfully. Shape: (73025, 9)
+2025-05-04 13:07:00,623 - utils.feature_engineering - INFO - Engineering features
+2025-05-04 13:07:00,714 - utils.feature_engineering - INFO - Feature engineering completed. Added 9 new features.
+2025-05-04 13:07:00,760 - utils.feature_engineering - INFO - Creating lag features for NoOfMan grouped by WorkType
+2025-05-04 13:07:01,245 - utils.feature_engineering - INFO - Lag features created. Dropped 9125 rows with NaN values.
+2025-05-04 13:07:01,245 - utils.feature_engineering - INFO - Final shape: (63900, 37)
+2025-05-04 13:07:03,516 - utils.prediction - INFO - Predicting for the next 7 days
+2025-05-04 13:07:03,560 - utils.prediction - INFO - Date 2025-01-01 is a non-working day: Swedish Holiday: New Year's Day
+2025-05-04 13:07:03,561 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:07:03,586 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-02
+2025-05-04 13:07:03,640 - utils.prediction - INFO - RandomForest predicted 0.89 workers for WorkType 203 Goods receive D
+2025-05-04 13:07:03,672 - utils.prediction - INFO - RandomForest predicted 13.49 workers for WorkType 206 Replenishment
+2025-05-04 13:07:03,701 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:07:03,736 - utils.prediction - INFO - RandomForest predicted 10.14 workers for WorkType 209 Sortation
+2025-05-04 13:07:03,763 - utils.prediction - INFO - RandomForest predicted 4.24 workers for WorkType 210 Pick Sortation
+2025-05-04 13:07:03,788 - utils.prediction - INFO - RandomForest predicted 3.19 workers for WorkType 211 Misc
+2025-05-04 13:07:03,817 - utils.prediction - INFO - RandomForest predicted 1.53 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:07:03,848 - utils.prediction - INFO - RandomForest predicted 2.91 workers for WorkType 214 Large orders
+2025-05-04 13:07:03,881 - utils.prediction - INFO - RandomForest predicted 4.05 workers for WorkType 215 Picking Online
+2025-05-04 13:07:03,910 - utils.prediction - INFO - RandomForest predicted 0.27 workers for WorkType 217 Returns
+2025-05-04 13:07:03,937 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-03
+2025-05-04 13:07:03,972 - utils.prediction - INFO - RandomForest predicted 1.74 workers for WorkType 203 Goods receive D
+2025-05-04 13:07:03,997 - utils.prediction - INFO - RandomForest predicted 11.85 workers for WorkType 206 Replenishment
+2025-05-04 13:07:04,021 - utils.prediction - INFO - RandomForest predicted 2.12 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:07:04,063 - utils.prediction - INFO - RandomForest predicted 10.71 workers for WorkType 209 Sortation
+2025-05-04 13:07:04,103 - utils.prediction - INFO - RandomForest predicted 6.46 workers for WorkType 210 Pick Sortation
+2025-05-04 13:07:04,135 - utils.prediction - INFO - RandomForest predicted 3.69 workers for WorkType 211 Misc
+2025-05-04 13:07:04,167 - utils.prediction - INFO - RandomForest predicted 1.77 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:07:04,194 - utils.prediction - INFO - RandomForest predicted 3.95 workers for WorkType 214 Large orders
+2025-05-04 13:07:04,222 - utils.prediction - INFO - RandomForest predicted 4.82 workers for WorkType 215 Picking Online
+2025-05-04 13:07:04,250 - utils.prediction - INFO - RandomForest predicted 0.23 workers for WorkType 217 Returns
+2025-05-04 13:07:04,272 - utils.prediction - INFO - Date 2025-01-04 is a non-working day: Saturday (Weekend)
+2025-05-04 13:07:04,272 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:07:04,299 - utils.prediction - INFO - Date 2025-01-05 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:07:04,299 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:07:04,326 - utils.prediction - INFO - Date 2025-01-06 is a non-working day: Swedish Holiday: Epiphany
+2025-05-04 13:07:04,326 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:07:04,357 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-07
+2025-05-04 13:07:04,402 - utils.prediction - INFO - RandomForest predicted 1.02 workers for WorkType 203 Goods receive D
+2025-05-04 13:07:04,432 - utils.prediction - INFO - RandomForest predicted 11.50 workers for WorkType 206 Replenishment
+2025-05-04 13:07:04,458 - utils.prediction - INFO - RandomForest predicted 1.05 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:07:04,485 - utils.prediction - INFO - RandomForest predicted 4.87 workers for WorkType 209 Sortation
+2025-05-04 13:07:04,513 - utils.prediction - INFO - RandomForest predicted 4.16 workers for WorkType 210 Pick Sortation
+2025-05-04 13:07:04,539 - utils.prediction - INFO - RandomForest predicted 3.32 workers for WorkType 211 Misc
+2025-05-04 13:07:04,570 - utils.prediction - INFO - RandomForest predicted 0.81 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:07:04,602 - utils.prediction - INFO - RandomForest predicted 1.44 workers for WorkType 214 Large orders
+2025-05-04 13:07:04,635 - utils.prediction - INFO - RandomForest predicted 2.21 workers for WorkType 215 Picking Online
+2025-05-04 13:07:04,661 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 13:07:04,673 - utils.prediction - INFO - Predictions completed for 7 days
+2025-05-04 13:07:44,579 - utils.prediction - INFO - Predicting for the next 7 days
+2025-05-04 13:07:44,673 - utils.prediction - INFO - Date 2025-01-01 is a non-working day: Swedish Holiday: New Year's Day
+2025-05-04 13:07:44,685 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:07:44,739 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-02
+2025-05-04 13:07:44,779 - utils.prediction - INFO - RandomForest predicted 0.89 workers for WorkType 203 Goods receive D
+2025-05-04 13:07:44,816 - utils.prediction - INFO - RandomForest predicted 13.49 workers for WorkType 206 Replenishment
+2025-05-04 13:07:44,926 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:07:44,979 - utils.prediction - INFO - RandomForest predicted 10.14 workers for WorkType 209 Sortation
+2025-05-04 13:07:45,023 - utils.prediction - INFO - RandomForest predicted 4.24 workers for WorkType 210 Pick Sortation
+2025-05-04 13:07:45,077 - utils.prediction - INFO - RandomForest predicted 3.19 workers for WorkType 211 Misc
+2025-05-04 13:07:45,144 - utils.prediction - INFO - RandomForest predicted 1.53 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:07:45,182 - utils.prediction - INFO - RandomForest predicted 2.91 workers for WorkType 214 Large orders
+2025-05-04 13:07:45,241 - utils.prediction - INFO - RandomForest predicted 4.05 workers for WorkType 215 Picking Online
+2025-05-04 13:07:45,276 - utils.prediction - INFO - RandomForest predicted 0.27 workers for WorkType 217 Returns
+2025-05-04 13:07:45,301 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-03
+2025-05-04 13:07:45,344 - utils.prediction - INFO - RandomForest predicted 1.74 workers for WorkType 203 Goods receive D
+2025-05-04 13:07:45,396 - utils.prediction - INFO - RandomForest predicted 11.85 workers for WorkType 206 Replenishment
+2025-05-04 13:07:45,432 - utils.prediction - INFO - RandomForest predicted 2.12 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:07:45,461 - utils.prediction - INFO - RandomForest predicted 10.71 workers for WorkType 209 Sortation
+2025-05-04 13:07:45,494 - utils.prediction - INFO - RandomForest predicted 6.46 workers for WorkType 210 Pick Sortation
+2025-05-04 13:07:45,530 - utils.prediction - INFO - RandomForest predicted 3.69 workers for WorkType 211 Misc
+2025-05-04 13:07:45,565 - utils.prediction - INFO - RandomForest predicted 1.77 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:07:45,593 - utils.prediction - INFO - RandomForest predicted 3.95 workers for WorkType 214 Large orders
+2025-05-04 13:07:45,625 - utils.prediction - INFO - RandomForest predicted 4.82 workers for WorkType 215 Picking Online
+2025-05-04 13:07:45,656 - utils.prediction - INFO - RandomForest predicted 0.23 workers for WorkType 217 Returns
+2025-05-04 13:07:45,679 - utils.prediction - INFO - Date 2025-01-04 is a non-working day: Saturday (Weekend)
+2025-05-04 13:07:45,680 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:07:45,705 - utils.prediction - INFO - Date 2025-01-05 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:07:45,705 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:07:45,734 - utils.prediction - INFO - Date 2025-01-06 is a non-working day: Swedish Holiday: Epiphany
+2025-05-04 13:07:45,734 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:07:45,759 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-07
+2025-05-04 13:07:45,792 - utils.prediction - INFO - RandomForest predicted 1.02 workers for WorkType 203 Goods receive D
+2025-05-04 13:07:45,817 - utils.prediction - INFO - RandomForest predicted 11.50 workers for WorkType 206 Replenishment
+2025-05-04 13:07:45,847 - utils.prediction - INFO - RandomForest predicted 1.05 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:07:45,881 - utils.prediction - INFO - RandomForest predicted 4.87 workers for WorkType 209 Sortation
+2025-05-04 13:07:45,914 - utils.prediction - INFO - RandomForest predicted 4.16 workers for WorkType 210 Pick Sortation
+2025-05-04 13:07:45,943 - utils.prediction - INFO - RandomForest predicted 3.32 workers for WorkType 211 Misc
+2025-05-04 13:07:45,970 - utils.prediction - INFO - RandomForest predicted 0.81 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:07:46,008 - utils.prediction - INFO - RandomForest predicted 1.44 workers for WorkType 214 Large orders
+2025-05-04 13:07:46,035 - utils.prediction - INFO - RandomForest predicted 2.21 workers for WorkType 215 Picking Online
+2025-05-04 13:07:46,063 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 13:07:46,079 - utils.prediction - INFO - Predictions completed for 7 days
+2025-05-04 13:08:09,315 - utils.prediction - INFO - Predicting for the next 7 days
+2025-05-04 13:08:09,365 - utils.prediction - INFO - Date 2025-01-01 is a non-working day: Swedish Holiday: New Year's Day
+2025-05-04 13:08:09,366 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:08:09,398 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-02
+2025-05-04 13:08:09,445 - utils.prediction - INFO - RandomForest predicted 0.89 workers for WorkType 203 Goods receive D
+2025-05-04 13:08:09,480 - utils.prediction - INFO - RandomForest predicted 13.49 workers for WorkType 206 Replenishment
+2025-05-04 13:08:09,512 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:08:09,542 - utils.prediction - INFO - RandomForest predicted 10.14 workers for WorkType 209 Sortation
+2025-05-04 13:08:09,572 - utils.prediction - INFO - RandomForest predicted 4.24 workers for WorkType 210 Pick Sortation
+2025-05-04 13:08:09,597 - utils.prediction - INFO - RandomForest predicted 3.19 workers for WorkType 211 Misc
+2025-05-04 13:08:09,622 - utils.prediction - INFO - RandomForest predicted 1.53 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:08:09,648 - utils.prediction - INFO - RandomForest predicted 2.91 workers for WorkType 214 Large orders
+2025-05-04 13:08:09,680 - utils.prediction - INFO - RandomForest predicted 4.05 workers for WorkType 215 Picking Online
+2025-05-04 13:08:09,711 - utils.prediction - INFO - RandomForest predicted 0.27 workers for WorkType 217 Returns
+2025-05-04 13:08:09,738 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-03
+2025-05-04 13:08:09,780 - utils.prediction - INFO - RandomForest predicted 1.74 workers for WorkType 203 Goods receive D
+2025-05-04 13:08:09,809 - utils.prediction - INFO - RandomForest predicted 11.85 workers for WorkType 206 Replenishment
+2025-05-04 13:08:09,843 - utils.prediction - INFO - RandomForest predicted 2.12 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:08:09,893 - utils.prediction - INFO - RandomForest predicted 10.71 workers for WorkType 209 Sortation
+2025-05-04 13:08:09,928 - utils.prediction - INFO - RandomForest predicted 6.46 workers for WorkType 210 Pick Sortation
+2025-05-04 13:08:09,963 - utils.prediction - INFO - RandomForest predicted 3.69 workers for WorkType 211 Misc
+2025-05-04 13:08:09,998 - utils.prediction - INFO - RandomForest predicted 1.77 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:08:10,036 - utils.prediction - INFO - RandomForest predicted 3.95 workers for WorkType 214 Large orders
+2025-05-04 13:08:10,071 - utils.prediction - INFO - RandomForest predicted 4.82 workers for WorkType 215 Picking Online
+2025-05-04 13:08:10,097 - utils.prediction - INFO - RandomForest predicted 0.23 workers for WorkType 217 Returns
+2025-05-04 13:08:10,120 - utils.prediction - INFO - Date 2025-01-04 is a non-working day: Saturday (Weekend)
+2025-05-04 13:08:10,120 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:08:10,142 - utils.prediction - INFO - Date 2025-01-05 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:08:10,143 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:08:10,165 - utils.prediction - INFO - Date 2025-01-06 is a non-working day: Swedish Holiday: Epiphany
+2025-05-04 13:08:10,165 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:08:10,189 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-07
+2025-05-04 13:08:10,222 - utils.prediction - INFO - RandomForest predicted 1.02 workers for WorkType 203 Goods receive D
+2025-05-04 13:08:10,246 - utils.prediction - INFO - RandomForest predicted 11.50 workers for WorkType 206 Replenishment
+2025-05-04 13:08:10,275 - utils.prediction - INFO - RandomForest predicted 1.05 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:08:10,303 - utils.prediction - INFO - RandomForest predicted 4.87 workers for WorkType 209 Sortation
+2025-05-04 13:08:10,328 - utils.prediction - INFO - RandomForest predicted 4.16 workers for WorkType 210 Pick Sortation
+2025-05-04 13:08:10,357 - utils.prediction - INFO - RandomForest predicted 3.32 workers for WorkType 211 Misc
+2025-05-04 13:08:10,383 - utils.prediction - INFO - RandomForest predicted 0.81 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:08:10,411 - utils.prediction - INFO - RandomForest predicted 1.44 workers for WorkType 214 Large orders
+2025-05-04 13:08:10,438 - utils.prediction - INFO - RandomForest predicted 2.21 workers for WorkType 215 Picking Online
+2025-05-04 13:08:10,463 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 13:08:10,478 - utils.prediction - INFO - Predictions completed for 7 days
+2025-05-04 13:08:29,813 - utils.prediction - INFO - Predicting for the next 7 days
+2025-05-04 13:08:29,891 - utils.prediction - INFO - Date 2025-01-01 is a non-working day: Swedish Holiday: New Year's Day
+2025-05-04 13:08:29,891 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:08:29,932 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-02
+2025-05-04 13:08:29,978 - utils.prediction - INFO - RandomForest predicted 0.89 workers for WorkType 203 Goods receive D
+2025-05-04 13:08:30,018 - utils.prediction - INFO - RandomForest predicted 13.49 workers for WorkType 206 Replenishment
+2025-05-04 13:08:30,056 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:08:30,092 - utils.prediction - INFO - RandomForest predicted 10.14 workers for WorkType 209 Sortation
+2025-05-04 13:08:30,121 - utils.prediction - INFO - RandomForest predicted 4.24 workers for WorkType 210 Pick Sortation
+2025-05-04 13:08:30,146 - utils.prediction - INFO - RandomForest predicted 3.19 workers for WorkType 211 Misc
+2025-05-04 13:08:30,190 - utils.prediction - INFO - RandomForest predicted 1.53 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:08:30,254 - utils.prediction - INFO - RandomForest predicted 2.91 workers for WorkType 214 Large orders
+2025-05-04 13:08:30,313 - utils.prediction - INFO - RandomForest predicted 4.05 workers for WorkType 215 Picking Online
+2025-05-04 13:08:30,362 - utils.prediction - INFO - RandomForest predicted 0.27 workers for WorkType 217 Returns
+2025-05-04 13:08:30,392 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-03
+2025-05-04 13:08:30,456 - utils.prediction - INFO - RandomForest predicted 1.74 workers for WorkType 203 Goods receive D
+2025-05-04 13:08:30,518 - utils.prediction - INFO - RandomForest predicted 11.85 workers for WorkType 206 Replenishment
+2025-05-04 13:08:30,572 - utils.prediction - INFO - RandomForest predicted 2.12 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:08:30,621 - utils.prediction - INFO - RandomForest predicted 10.71 workers for WorkType 209 Sortation
+2025-05-04 13:08:30,665 - utils.prediction - INFO - RandomForest predicted 6.46 workers for WorkType 210 Pick Sortation
+2025-05-04 13:08:30,705 - utils.prediction - INFO - RandomForest predicted 3.69 workers for WorkType 211 Misc
+2025-05-04 13:08:30,745 - utils.prediction - INFO - RandomForest predicted 1.77 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:08:30,787 - utils.prediction - INFO - RandomForest predicted 3.95 workers for WorkType 214 Large orders
+2025-05-04 13:08:30,826 - utils.prediction - INFO - RandomForest predicted 4.82 workers for WorkType 215 Picking Online
+2025-05-04 13:08:30,872 - utils.prediction - INFO - RandomForest predicted 0.23 workers for WorkType 217 Returns
+2025-05-04 13:08:30,895 - utils.prediction - INFO - Date 2025-01-04 is a non-working day: Saturday (Weekend)
+2025-05-04 13:08:30,896 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:08:30,923 - utils.prediction - INFO - Date 2025-01-05 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:08:30,923 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:08:30,954 - utils.prediction - INFO - Date 2025-01-06 is a non-working day: Swedish Holiday: Epiphany
+2025-05-04 13:08:30,954 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:08:30,992 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-07
+2025-05-04 13:08:31,047 - utils.prediction - INFO - RandomForest predicted 1.02 workers for WorkType 203 Goods receive D
+2025-05-04 13:08:31,078 - utils.prediction - INFO - RandomForest predicted 11.50 workers for WorkType 206 Replenishment
+2025-05-04 13:08:31,107 - utils.prediction - INFO - RandomForest predicted 1.05 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:08:31,137 - utils.prediction - INFO - RandomForest predicted 4.87 workers for WorkType 209 Sortation
+2025-05-04 13:08:31,171 - utils.prediction - INFO - RandomForest predicted 4.16 workers for WorkType 210 Pick Sortation
+2025-05-04 13:08:31,205 - utils.prediction - INFO - RandomForest predicted 3.32 workers for WorkType 211 Misc
+2025-05-04 13:08:31,239 - utils.prediction - INFO - RandomForest predicted 0.81 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:08:31,273 - utils.prediction - INFO - RandomForest predicted 1.44 workers for WorkType 214 Large orders
+2025-05-04 13:08:31,304 - utils.prediction - INFO - RandomForest predicted 2.21 workers for WorkType 215 Picking Online
+2025-05-04 13:08:31,334 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 13:08:31,351 - utils.prediction - INFO - Predictions completed for 7 days
+2025-05-04 13:09:07,812 - utils.prediction - INFO - Predicting for the next 30 days
+2025-05-04 13:09:07,851 - utils.prediction - INFO - Date 2025-01-01 is a non-working day: Swedish Holiday: New Year's Day
+2025-05-04 13:09:07,851 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:09:07,885 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-02
+2025-05-04 13:09:07,932 - utils.prediction - INFO - RandomForest predicted 0.89 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:07,958 - utils.prediction - INFO - RandomForest predicted 13.49 workers for WorkType 206 Replenishment
+2025-05-04 13:09:07,987 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:08,019 - utils.prediction - INFO - RandomForest predicted 10.14 workers for WorkType 209 Sortation
+2025-05-04 13:09:08,049 - utils.prediction - INFO - RandomForest predicted 4.24 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:08,075 - utils.prediction - INFO - RandomForest predicted 3.19 workers for WorkType 211 Misc
+2025-05-04 13:09:08,102 - utils.prediction - INFO - RandomForest predicted 1.53 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:08,132 - utils.prediction - INFO - RandomForest predicted 2.91 workers for WorkType 214 Large orders
+2025-05-04 13:09:08,158 - utils.prediction - INFO - RandomForest predicted 4.05 workers for WorkType 215 Picking Online
+2025-05-04 13:09:08,185 - utils.prediction - INFO - RandomForest predicted 0.27 workers for WorkType 217 Returns
+2025-05-04 13:09:08,205 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-03
+2025-05-04 13:09:08,241 - utils.prediction - INFO - RandomForest predicted 1.74 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:08,268 - utils.prediction - INFO - RandomForest predicted 11.85 workers for WorkType 206 Replenishment
+2025-05-04 13:09:08,298 - utils.prediction - INFO - RandomForest predicted 2.12 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:08,325 - utils.prediction - INFO - RandomForest predicted 10.71 workers for WorkType 209 Sortation
+2025-05-04 13:09:08,357 - utils.prediction - INFO - RandomForest predicted 6.46 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:08,386 - utils.prediction - INFO - RandomForest predicted 3.69 workers for WorkType 211 Misc
+2025-05-04 13:09:08,416 - utils.prediction - INFO - RandomForest predicted 1.77 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:08,442 - utils.prediction - INFO - RandomForest predicted 3.95 workers for WorkType 214 Large orders
+2025-05-04 13:09:08,471 - utils.prediction - INFO - RandomForest predicted 4.82 workers for WorkType 215 Picking Online
+2025-05-04 13:09:08,500 - utils.prediction - INFO - RandomForest predicted 0.23 workers for WorkType 217 Returns
+2025-05-04 13:09:08,521 - utils.prediction - INFO - Date 2025-01-04 is a non-working day: Saturday (Weekend)
+2025-05-04 13:09:08,521 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:09:08,542 - utils.prediction - INFO - Date 2025-01-05 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:09:08,543 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:09:08,566 - utils.prediction - INFO - Date 2025-01-06 is a non-working day: Swedish Holiday: Epiphany
+2025-05-04 13:09:08,566 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:09:08,585 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-07
+2025-05-04 13:09:08,617 - utils.prediction - INFO - RandomForest predicted 1.02 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:08,643 - utils.prediction - INFO - RandomForest predicted 11.50 workers for WorkType 206 Replenishment
+2025-05-04 13:09:08,670 - utils.prediction - INFO - RandomForest predicted 1.05 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:08,698 - utils.prediction - INFO - RandomForest predicted 4.87 workers for WorkType 209 Sortation
+2025-05-04 13:09:08,723 - utils.prediction - INFO - RandomForest predicted 4.16 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:08,750 - utils.prediction - INFO - RandomForest predicted 3.32 workers for WorkType 211 Misc
+2025-05-04 13:09:08,776 - utils.prediction - INFO - RandomForest predicted 0.81 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:08,802 - utils.prediction - INFO - RandomForest predicted 1.44 workers for WorkType 214 Large orders
+2025-05-04 13:09:08,831 - utils.prediction - INFO - RandomForest predicted 2.21 workers for WorkType 215 Picking Online
+2025-05-04 13:09:08,863 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 13:09:08,885 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-08
+2025-05-04 13:09:08,918 - utils.prediction - INFO - RandomForest predicted 0.74 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:08,944 - utils.prediction - INFO - RandomForest predicted 3.60 workers for WorkType 206 Replenishment
+2025-05-04 13:09:08,971 - utils.prediction - INFO - RandomForest predicted 1.38 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:08,999 - utils.prediction - INFO - RandomForest predicted 5.76 workers for WorkType 209 Sortation
+2025-05-04 13:09:09,024 - utils.prediction - INFO - RandomForest predicted 2.76 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:09,053 - utils.prediction - INFO - RandomForest predicted 3.49 workers for WorkType 211 Misc
+2025-05-04 13:09:09,082 - utils.prediction - INFO - RandomForest predicted 0.87 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:09,106 - utils.prediction - INFO - RandomForest predicted 2.49 workers for WorkType 214 Large orders
+2025-05-04 13:09:09,135 - utils.prediction - INFO - RandomForest predicted 2.55 workers for WorkType 215 Picking Online
+2025-05-04 13:09:09,165 - utils.prediction - INFO - RandomForest predicted 0.01 workers for WorkType 217 Returns
+2025-05-04 13:09:09,183 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-09
+2025-05-04 13:09:09,218 - utils.prediction - INFO - RandomForest predicted 0.75 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:09,242 - utils.prediction - INFO - RandomForest predicted 16.25 workers for WorkType 206 Replenishment
+2025-05-04 13:09:09,271 - utils.prediction - INFO - RandomForest predicted 1.38 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:09,300 - utils.prediction - INFO - RandomForest predicted 8.52 workers for WorkType 209 Sortation
+2025-05-04 13:09:09,325 - utils.prediction - INFO - RandomForest predicted 2.61 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:09,353 - utils.prediction - INFO - RandomForest predicted 3.63 workers for WorkType 211 Misc
+2025-05-04 13:09:09,382 - utils.prediction - INFO - RandomForest predicted 1.20 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:09,407 - utils.prediction - INFO - RandomForest predicted 2.88 workers for WorkType 214 Large orders
+2025-05-04 13:09:09,435 - utils.prediction - INFO - RandomForest predicted 3.61 workers for WorkType 215 Picking Online
+2025-05-04 13:09:09,461 - utils.prediction - INFO - RandomForest predicted 0.09 workers for WorkType 217 Returns
+2025-05-04 13:09:09,482 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-10
+2025-05-04 13:09:09,516 - utils.prediction - INFO - RandomForest predicted 1.16 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:09,540 - utils.prediction - INFO - RandomForest predicted 8.09 workers for WorkType 206 Replenishment
+2025-05-04 13:09:09,568 - utils.prediction - INFO - RandomForest predicted 1.19 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:09,596 - utils.prediction - INFO - RandomForest predicted 7.13 workers for WorkType 209 Sortation
+2025-05-04 13:09:09,620 - utils.prediction - INFO - RandomForest predicted 2.79 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:09,649 - utils.prediction - INFO - RandomForest predicted 3.63 workers for WorkType 211 Misc
+2025-05-04 13:09:09,674 - utils.prediction - INFO - RandomForest predicted 1.00 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:09,703 - utils.prediction - INFO - RandomForest predicted 2.66 workers for WorkType 214 Large orders
+2025-05-04 13:09:09,730 - utils.prediction - INFO - RandomForest predicted 3.14 workers for WorkType 215 Picking Online
+2025-05-04 13:09:09,756 - utils.prediction - INFO - RandomForest predicted 0.24 workers for WorkType 217 Returns
+2025-05-04 13:09:09,775 - utils.prediction - INFO - Date 2025-01-11 is a non-working day: Saturday (Weekend)
+2025-05-04 13:09:09,776 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:09:09,798 - utils.prediction - INFO - Date 2025-01-12 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:09:09,798 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:09:09,817 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-13
+2025-05-04 13:09:09,852 - utils.prediction - INFO - RandomForest predicted 0.59 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:09,883 - utils.prediction - INFO - RandomForest predicted 8.32 workers for WorkType 206 Replenishment
+2025-05-04 13:09:09,909 - utils.prediction - INFO - RandomForest predicted 0.91 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:09,935 - utils.prediction - INFO - RandomForest predicted 4.02 workers for WorkType 209 Sortation
+2025-05-04 13:09:09,961 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:09,987 - utils.prediction - INFO - RandomForest predicted 3.56 workers for WorkType 211 Misc
+2025-05-04 13:09:10,017 - utils.prediction - INFO - RandomForest predicted 0.82 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:10,043 - utils.prediction - INFO - RandomForest predicted 1.91 workers for WorkType 214 Large orders
+2025-05-04 13:09:10,069 - utils.prediction - INFO - RandomForest predicted 2.48 workers for WorkType 215 Picking Online
+2025-05-04 13:09:10,096 - utils.prediction - INFO - RandomForest predicted 0.10 workers for WorkType 217 Returns
+2025-05-04 13:09:10,116 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-14
+2025-05-04 13:09:10,149 - utils.prediction - INFO - RandomForest predicted 1.62 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:10,174 - utils.prediction - INFO - RandomForest predicted 12.71 workers for WorkType 206 Replenishment
+2025-05-04 13:09:10,201 - utils.prediction - INFO - RandomForest predicted 1.14 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:10,226 - utils.prediction - INFO - RandomForest predicted 5.59 workers for WorkType 209 Sortation
+2025-05-04 13:09:10,253 - utils.prediction - INFO - RandomForest predicted 2.92 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:10,292 - utils.prediction - INFO - RandomForest predicted 3.74 workers for WorkType 211 Misc
+2025-05-04 13:09:10,355 - utils.prediction - INFO - RandomForest predicted 0.99 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:10,381 - utils.prediction - INFO - RandomForest predicted 2.15 workers for WorkType 214 Large orders
+2025-05-04 13:09:10,406 - utils.prediction - INFO - RandomForest predicted 2.93 workers for WorkType 215 Picking Online
+2025-05-04 13:09:10,434 - utils.prediction - INFO - RandomForest predicted 0.06 workers for WorkType 217 Returns
+2025-05-04 13:09:10,453 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-15
+2025-05-04 13:09:10,486 - utils.prediction - INFO - RandomForest predicted 0.87 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:10,512 - utils.prediction - INFO - RandomForest predicted 15.70 workers for WorkType 206 Replenishment
+2025-05-04 13:09:10,537 - utils.prediction - INFO - RandomForest predicted 1.25 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:10,565 - utils.prediction - INFO - RandomForest predicted 7.22 workers for WorkType 209 Sortation
+2025-05-04 13:09:10,591 - utils.prediction - INFO - RandomForest predicted 2.71 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:10,619 - utils.prediction - INFO - RandomForest predicted 4.26 workers for WorkType 211 Misc
+2025-05-04 13:09:10,645 - utils.prediction - INFO - RandomForest predicted 1.10 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:10,671 - utils.prediction - INFO - RandomForest predicted 2.26 workers for WorkType 214 Large orders
+2025-05-04 13:09:10,699 - utils.prediction - INFO - RandomForest predicted 3.22 workers for WorkType 215 Picking Online
+2025-05-04 13:09:10,724 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 13:09:10,744 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-16
+2025-05-04 13:09:10,778 - utils.prediction - INFO - RandomForest predicted 0.75 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:10,803 - utils.prediction - INFO - RandomForest predicted 12.81 workers for WorkType 206 Replenishment
+2025-05-04 13:09:10,832 - utils.prediction - INFO - RandomForest predicted 1.19 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:10,860 - utils.prediction - INFO - RandomForest predicted 7.73 workers for WorkType 209 Sortation
+2025-05-04 13:09:10,888 - utils.prediction - INFO - RandomForest predicted 2.40 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:10,918 - utils.prediction - INFO - RandomForest predicted 3.76 workers for WorkType 211 Misc
+2025-05-04 13:09:10,942 - utils.prediction - INFO - RandomForest predicted 1.13 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:10,968 - utils.prediction - INFO - RandomForest predicted 2.43 workers for WorkType 214 Large orders
+2025-05-04 13:09:10,995 - utils.prediction - INFO - RandomForest predicted 3.21 workers for WorkType 215 Picking Online
+2025-05-04 13:09:11,020 - utils.prediction - INFO - RandomForest predicted 0.05 workers for WorkType 217 Returns
+2025-05-04 13:09:11,040 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-17
+2025-05-04 13:09:11,075 - utils.prediction - INFO - RandomForest predicted 0.76 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:11,101 - utils.prediction - INFO - RandomForest predicted 10.20 workers for WorkType 206 Replenishment
+2025-05-04 13:09:11,128 - utils.prediction - INFO - RandomForest predicted 0.99 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:11,155 - utils.prediction - INFO - RandomForest predicted 6.45 workers for WorkType 209 Sortation
+2025-05-04 13:09:11,184 - utils.prediction - INFO - RandomForest predicted 2.15 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:11,208 - utils.prediction - INFO - RandomForest predicted 3.37 workers for WorkType 211 Misc
+2025-05-04 13:09:11,235 - utils.prediction - INFO - RandomForest predicted 0.92 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:11,262 - utils.prediction - INFO - RandomForest predicted 2.18 workers for WorkType 214 Large orders
+2025-05-04 13:09:11,289 - utils.prediction - INFO - RandomForest predicted 2.90 workers for WorkType 215 Picking Online
+2025-05-04 13:09:11,316 - utils.prediction - INFO - RandomForest predicted 0.16 workers for WorkType 217 Returns
+2025-05-04 13:09:11,335 - utils.prediction - INFO - Date 2025-01-18 is a non-working day: Saturday (Weekend)
+2025-05-04 13:09:11,335 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:09:11,355 - utils.prediction - INFO - Date 2025-01-19 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:09:11,355 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:09:11,375 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-20
+2025-05-04 13:09:11,412 - utils.prediction - INFO - RandomForest predicted 0.62 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:11,438 - utils.prediction - INFO - RandomForest predicted 9.92 workers for WorkType 206 Replenishment
+2025-05-04 13:09:11,467 - utils.prediction - INFO - RandomForest predicted 0.98 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:11,494 - utils.prediction - INFO - RandomForest predicted 6.00 workers for WorkType 209 Sortation
+2025-05-04 13:09:11,520 - utils.prediction - INFO - RandomForest predicted 1.71 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:11,548 - utils.prediction - INFO - RandomForest predicted 3.75 workers for WorkType 211 Misc
+2025-05-04 13:09:11,574 - utils.prediction - INFO - RandomForest predicted 0.87 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:11,601 - utils.prediction - INFO - RandomForest predicted 1.84 workers for WorkType 214 Large orders
+2025-05-04 13:09:11,631 - utils.prediction - INFO - RandomForest predicted 3.18 workers for WorkType 215 Picking Online
+2025-05-04 13:09:11,656 - utils.prediction - INFO - RandomForest predicted 0.05 workers for WorkType 217 Returns
+2025-05-04 13:09:11,676 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-21
+2025-05-04 13:09:11,711 - utils.prediction - INFO - RandomForest predicted 1.24 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:11,737 - utils.prediction - INFO - RandomForest predicted 15.04 workers for WorkType 206 Replenishment
+2025-05-04 13:09:11,765 - utils.prediction - INFO - RandomForest predicted 1.00 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:11,790 - utils.prediction - INFO - RandomForest predicted 6.51 workers for WorkType 209 Sortation
+2025-05-04 13:09:11,817 - utils.prediction - INFO - RandomForest predicted 2.97 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:11,843 - utils.prediction - INFO - RandomForest predicted 3.78 workers for WorkType 211 Misc
+2025-05-04 13:09:11,869 - utils.prediction - INFO - RandomForest predicted 1.01 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:11,898 - utils.prediction - INFO - RandomForest predicted 2.08 workers for WorkType 214 Large orders
+2025-05-04 13:09:11,922 - utils.prediction - INFO - RandomForest predicted 4.07 workers for WorkType 215 Picking Online
+2025-05-04 13:09:11,950 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 13:09:11,969 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-22
+2025-05-04 13:09:12,005 - utils.prediction - INFO - RandomForest predicted 1.15 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:12,039 - utils.prediction - INFO - RandomForest predicted 14.50 workers for WorkType 206 Replenishment
+2025-05-04 13:09:12,070 - utils.prediction - INFO - RandomForest predicted 1.15 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:12,102 - utils.prediction - INFO - RandomForest predicted 7.77 workers for WorkType 209 Sortation
+2025-05-04 13:09:12,133 - utils.prediction - INFO - RandomForest predicted 2.86 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:12,167 - utils.prediction - INFO - RandomForest predicted 4.29 workers for WorkType 211 Misc
+2025-05-04 13:09:12,201 - utils.prediction - INFO - RandomForest predicted 1.09 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:12,233 - utils.prediction - INFO - RandomForest predicted 1.76 workers for WorkType 214 Large orders
+2025-05-04 13:09:12,268 - utils.prediction - INFO - RandomForest predicted 3.45 workers for WorkType 215 Picking Online
+2025-05-04 13:09:12,304 - utils.prediction - INFO - RandomForest predicted 0.06 workers for WorkType 217 Returns
+2025-05-04 13:09:12,325 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-23
+2025-05-04 13:09:12,369 - utils.prediction - INFO - RandomForest predicted 0.72 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:12,404 - utils.prediction - INFO - RandomForest predicted 13.66 workers for WorkType 206 Replenishment
+2025-05-04 13:09:12,435 - utils.prediction - INFO - RandomForest predicted 1.08 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:12,462 - utils.prediction - INFO - RandomForest predicted 6.72 workers for WorkType 209 Sortation
+2025-05-04 13:09:12,489 - utils.prediction - INFO - RandomForest predicted 2.45 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:12,518 - utils.prediction - INFO - RandomForest predicted 4.01 workers for WorkType 211 Misc
+2025-05-04 13:09:12,551 - utils.prediction - INFO - RandomForest predicted 1.16 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:12,584 - utils.prediction - INFO - RandomForest predicted 1.70 workers for WorkType 214 Large orders
+2025-05-04 13:09:12,612 - utils.prediction - INFO - RandomForest predicted 3.36 workers for WorkType 215 Picking Online
+2025-05-04 13:09:12,640 - utils.prediction - INFO - RandomForest predicted 0.08 workers for WorkType 217 Returns
+2025-05-04 13:09:12,659 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-24
+2025-05-04 13:09:12,693 - utils.prediction - INFO - RandomForest predicted 0.71 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:12,719 - utils.prediction - INFO - RandomForest predicted 10.19 workers for WorkType 206 Replenishment
+2025-05-04 13:09:12,747 - utils.prediction - INFO - RandomForest predicted 0.96 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:12,771 - utils.prediction - INFO - RandomForest predicted 6.48 workers for WorkType 209 Sortation
+2025-05-04 13:09:12,801 - utils.prediction - INFO - RandomForest predicted 1.99 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:12,826 - utils.prediction - INFO - RandomForest predicted 3.78 workers for WorkType 211 Misc
+2025-05-04 13:09:12,853 - utils.prediction - INFO - RandomForest predicted 0.83 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:12,883 - utils.prediction - INFO - RandomForest predicted 1.48 workers for WorkType 214 Large orders
+2025-05-04 13:09:12,909 - utils.prediction - INFO - RandomForest predicted 3.26 workers for WorkType 215 Picking Online
+2025-05-04 13:09:12,935 - utils.prediction - INFO - RandomForest predicted 0.09 workers for WorkType 217 Returns
+2025-05-04 13:09:12,955 - utils.prediction - INFO - Date 2025-01-25 is a non-working day: Saturday (Weekend)
+2025-05-04 13:09:12,955 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:09:12,975 - utils.prediction - INFO - Date 2025-01-26 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:09:12,975 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:09:12,996 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-27
+2025-05-04 13:09:13,031 - utils.prediction - INFO - RandomForest predicted 0.59 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:13,056 - utils.prediction - INFO - RandomForest predicted 10.67 workers for WorkType 206 Replenishment
+2025-05-04 13:09:13,085 - utils.prediction - INFO - RandomForest predicted 0.86 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:13,113 - utils.prediction - INFO - RandomForest predicted 6.73 workers for WorkType 209 Sortation
+2025-05-04 13:09:13,138 - utils.prediction - INFO - RandomForest predicted 1.74 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:13,167 - utils.prediction - INFO - RandomForest predicted 3.88 workers for WorkType 211 Misc
+2025-05-04 13:09:13,192 - utils.prediction - INFO - RandomForest predicted 0.94 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:13,217 - utils.prediction - INFO - RandomForest predicted 1.63 workers for WorkType 214 Large orders
+2025-05-04 13:09:13,245 - utils.prediction - INFO - RandomForest predicted 3.47 workers for WorkType 215 Picking Online
+2025-05-04 13:09:13,271 - utils.prediction - INFO - RandomForest predicted 0.03 workers for WorkType 217 Returns
+2025-05-04 13:09:13,290 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-28
+2025-05-04 13:09:13,324 - utils.prediction - INFO - RandomForest predicted 0.74 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:13,352 - utils.prediction - INFO - RandomForest predicted 13.59 workers for WorkType 206 Replenishment
+2025-05-04 13:09:13,379 - utils.prediction - INFO - RandomForest predicted 0.86 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:13,406 - utils.prediction - INFO - RandomForest predicted 7.05 workers for WorkType 209 Sortation
+2025-05-04 13:09:13,434 - utils.prediction - INFO - RandomForest predicted 3.07 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:13,459 - utils.prediction - INFO - RandomForest predicted 3.93 workers for WorkType 211 Misc
+2025-05-04 13:09:13,484 - utils.prediction - INFO - RandomForest predicted 0.99 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:13,512 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 214 Large orders
+2025-05-04 13:09:13,537 - utils.prediction - INFO - RandomForest predicted 4.52 workers for WorkType 215 Picking Online
+2025-05-04 13:09:13,564 - utils.prediction - INFO - RandomForest predicted 0.05 workers for WorkType 217 Returns
+2025-05-04 13:09:13,583 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-29
+2025-05-04 13:09:13,617 - utils.prediction - INFO - RandomForest predicted 0.89 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:13,642 - utils.prediction - INFO - RandomForest predicted 14.44 workers for WorkType 206 Replenishment
+2025-05-04 13:09:13,669 - utils.prediction - INFO - RandomForest predicted 0.85 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:13,696 - utils.prediction - INFO - RandomForest predicted 7.92 workers for WorkType 209 Sortation
+2025-05-04 13:09:13,721 - utils.prediction - INFO - RandomForest predicted 2.73 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:13,750 - utils.prediction - INFO - RandomForest predicted 4.45 workers for WorkType 211 Misc
+2025-05-04 13:09:13,775 - utils.prediction - INFO - RandomForest predicted 1.10 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:13,800 - utils.prediction - INFO - RandomForest predicted 1.54 workers for WorkType 214 Large orders
+2025-05-04 13:09:13,825 - utils.prediction - INFO - RandomForest predicted 3.71 workers for WorkType 215 Picking Online
+2025-05-04 13:09:13,854 - utils.prediction - INFO - RandomForest predicted 0.06 workers for WorkType 217 Returns
+2025-05-04 13:09:13,875 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-30
+2025-05-04 13:09:13,961 - utils.prediction - INFO - RandomForest predicted 0.85 workers for WorkType 203 Goods receive D
+2025-05-04 13:09:13,984 - utils.prediction - INFO - RandomForest predicted 13.86 workers for WorkType 206 Replenishment
+2025-05-04 13:09:14,008 - utils.prediction - INFO - RandomForest predicted 0.86 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:09:14,035 - utils.prediction - INFO - RandomForest predicted 6.41 workers for WorkType 209 Sortation
+2025-05-04 13:09:14,062 - utils.prediction - INFO - RandomForest predicted 2.44 workers for WorkType 210 Pick Sortation
+2025-05-04 13:09:14,087 - utils.prediction - INFO - RandomForest predicted 4.14 workers for WorkType 211 Misc
+2025-05-04 13:09:14,115 - utils.prediction - INFO - RandomForest predicted 1.16 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:09:14,139 - utils.prediction - INFO - RandomForest predicted 1.24 workers for WorkType 214 Large orders
+2025-05-04 13:09:14,167 - utils.prediction - INFO - RandomForest predicted 3.41 workers for WorkType 215 Picking Online
+2025-05-04 13:09:14,196 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 13:09:14,206 - utils.prediction - INFO - Predictions completed for 30 days
+2025-05-04 13:15:07,251 - utils.prediction - INFO - Predicting for the next 7 days
+2025-05-04 13:15:07,279 - utils.prediction - INFO - Date 2025-01-01 is a non-working day: Swedish Holiday: New Year's Day
+2025-05-04 13:15:07,279 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:15:07,306 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-02
+2025-05-04 13:15:07,354 - utils.prediction - INFO - RandomForest predicted 0.89 workers for WorkType 203 Goods receive D
+2025-05-04 13:15:07,387 - utils.prediction - INFO - RandomForest predicted 13.49 workers for WorkType 206 Replenishment
+2025-05-04 13:15:07,414 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:15:07,441 - utils.prediction - INFO - RandomForest predicted 10.14 workers for WorkType 209 Sortation
+2025-05-04 13:15:07,471 - utils.prediction - INFO - RandomForest predicted 4.24 workers for WorkType 210 Pick Sortation
+2025-05-04 13:15:07,497 - utils.prediction - INFO - RandomForest predicted 3.19 workers for WorkType 211 Misc
+2025-05-04 13:15:07,522 - utils.prediction - INFO - RandomForest predicted 1.53 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:15:07,545 - utils.prediction - INFO - RandomForest predicted 2.91 workers for WorkType 214 Large orders
+2025-05-04 13:15:07,570 - utils.prediction - INFO - RandomForest predicted 4.05 workers for WorkType 215 Picking Online
+2025-05-04 13:15:07,592 - utils.prediction - INFO - RandomForest predicted 0.27 workers for WorkType 217 Returns
+2025-05-04 13:15:07,607 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-03
+2025-05-04 13:15:07,638 - utils.prediction - INFO - RandomForest predicted 1.74 workers for WorkType 203 Goods receive D
+2025-05-04 13:15:07,662 - utils.prediction - INFO - RandomForest predicted 11.85 workers for WorkType 206 Replenishment
+2025-05-04 13:15:07,686 - utils.prediction - INFO - RandomForest predicted 2.12 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:15:07,708 - utils.prediction - INFO - RandomForest predicted 10.71 workers for WorkType 209 Sortation
+2025-05-04 13:15:07,731 - utils.prediction - INFO - RandomForest predicted 6.46 workers for WorkType 210 Pick Sortation
+2025-05-04 13:15:07,755 - utils.prediction - INFO - RandomForest predicted 3.69 workers for WorkType 211 Misc
+2025-05-04 13:15:07,786 - utils.prediction - INFO - RandomForest predicted 1.77 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:15:07,811 - utils.prediction - INFO - RandomForest predicted 3.95 workers for WorkType 214 Large orders
+2025-05-04 13:15:07,841 - utils.prediction - INFO - RandomForest predicted 4.82 workers for WorkType 215 Picking Online
+2025-05-04 13:15:07,866 - utils.prediction - INFO - RandomForest predicted 0.23 workers for WorkType 217 Returns
+2025-05-04 13:15:07,882 - utils.prediction - INFO - Date 2025-01-04 is a non-working day: Saturday (Weekend)
+2025-05-04 13:15:07,882 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:15:07,896 - utils.prediction - INFO - Date 2025-01-05 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:15:07,896 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:15:07,911 - utils.prediction - INFO - Date 2025-01-06 is a non-working day: Swedish Holiday: Epiphany
+2025-05-04 13:15:07,911 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:15:07,926 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-07
+2025-05-04 13:15:07,957 - utils.prediction - INFO - RandomForest predicted 1.02 workers for WorkType 203 Goods receive D
+2025-05-04 13:15:07,980 - utils.prediction - INFO - RandomForest predicted 11.50 workers for WorkType 206 Replenishment
+2025-05-04 13:15:08,005 - utils.prediction - INFO - RandomForest predicted 1.05 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:15:08,029 - utils.prediction - INFO - RandomForest predicted 4.87 workers for WorkType 209 Sortation
+2025-05-04 13:15:08,055 - utils.prediction - INFO - RandomForest predicted 4.16 workers for WorkType 210 Pick Sortation
+2025-05-04 13:15:08,079 - utils.prediction - INFO - RandomForest predicted 3.32 workers for WorkType 211 Misc
+2025-05-04 13:15:08,106 - utils.prediction - INFO - RandomForest predicted 0.81 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:15:08,129 - utils.prediction - INFO - RandomForest predicted 1.44 workers for WorkType 214 Large orders
+2025-05-04 13:15:08,155 - utils.prediction - INFO - RandomForest predicted 2.21 workers for WorkType 215 Picking Online
+2025-05-04 13:15:08,178 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 13:15:08,183 - utils.prediction - INFO - Predictions completed for 7 days
+2025-05-04 13:19:55,594 - utils.prediction - INFO - Predicting for the next 7 days
+2025-05-04 13:19:55,619 - utils.prediction - INFO - Date 2025-01-01 is a non-working day: Swedish Holiday: New Year's Day
+2025-05-04 13:19:55,619 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:19:55,640 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-02
+2025-05-04 13:19:55,691 - utils.prediction - INFO - RandomForest predicted 0.89 workers for WorkType 203 Goods receive D
+2025-05-04 13:19:55,722 - utils.prediction - INFO - RandomForest predicted 13.49 workers for WorkType 206 Replenishment
+2025-05-04 13:19:55,751 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:19:55,776 - utils.prediction - INFO - RandomForest predicted 10.14 workers for WorkType 209 Sortation
+2025-05-04 13:19:55,803 - utils.prediction - INFO - RandomForest predicted 4.24 workers for WorkType 210 Pick Sortation
+2025-05-04 13:19:55,829 - utils.prediction - INFO - RandomForest predicted 3.19 workers for WorkType 211 Misc
+2025-05-04 13:19:55,859 - utils.prediction - INFO - RandomForest predicted 1.53 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:19:55,885 - utils.prediction - INFO - RandomForest predicted 2.91 workers for WorkType 214 Large orders
+2025-05-04 13:19:55,907 - utils.prediction - INFO - RandomForest predicted 4.05 workers for WorkType 215 Picking Online
+2025-05-04 13:19:55,930 - utils.prediction - INFO - RandomForest predicted 0.27 workers for WorkType 217 Returns
+2025-05-04 13:19:55,944 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-03
+2025-05-04 13:19:55,978 - utils.prediction - INFO - RandomForest predicted 1.74 workers for WorkType 203 Goods receive D
+2025-05-04 13:19:56,005 - utils.prediction - INFO - RandomForest predicted 11.85 workers for WorkType 206 Replenishment
+2025-05-04 13:19:56,029 - utils.prediction - INFO - RandomForest predicted 2.12 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:19:56,054 - utils.prediction - INFO - RandomForest predicted 10.71 workers for WorkType 209 Sortation
+2025-05-04 13:19:56,077 - utils.prediction - INFO - RandomForest predicted 6.46 workers for WorkType 210 Pick Sortation
+2025-05-04 13:19:56,104 - utils.prediction - INFO - RandomForest predicted 3.69 workers for WorkType 211 Misc
+2025-05-04 13:19:56,133 - utils.prediction - INFO - RandomForest predicted 1.77 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:19:56,163 - utils.prediction - INFO - RandomForest predicted 3.95 workers for WorkType 214 Large orders
+2025-05-04 13:19:56,190 - utils.prediction - INFO - RandomForest predicted 4.82 workers for WorkType 215 Picking Online
+2025-05-04 13:19:56,214 - utils.prediction - INFO - RandomForest predicted 0.23 workers for WorkType 217 Returns
+2025-05-04 13:19:56,229 - utils.prediction - INFO - Date 2025-01-04 is a non-working day: Saturday (Weekend)
+2025-05-04 13:19:56,229 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:19:56,245 - utils.prediction - INFO - Date 2025-01-05 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:19:56,246 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:19:56,261 - utils.prediction - INFO - Date 2025-01-06 is a non-working day: Swedish Holiday: Epiphany
+2025-05-04 13:19:56,261 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:19:56,278 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-07
+2025-05-04 13:19:56,322 - utils.prediction - INFO - RandomForest predicted 1.02 workers for WorkType 203 Goods receive D
+2025-05-04 13:19:56,347 - utils.prediction - INFO - RandomForest predicted 11.50 workers for WorkType 206 Replenishment
+2025-05-04 13:19:56,373 - utils.prediction - INFO - RandomForest predicted 1.05 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:19:56,401 - utils.prediction - INFO - RandomForest predicted 4.87 workers for WorkType 209 Sortation
+2025-05-04 13:19:56,426 - utils.prediction - INFO - RandomForest predicted 4.16 workers for WorkType 210 Pick Sortation
+2025-05-04 13:19:56,454 - utils.prediction - INFO - RandomForest predicted 3.32 workers for WorkType 211 Misc
+2025-05-04 13:19:56,480 - utils.prediction - INFO - RandomForest predicted 0.81 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:19:56,506 - utils.prediction - INFO - RandomForest predicted 1.44 workers for WorkType 214 Large orders
+2025-05-04 13:19:56,530 - utils.prediction - INFO - RandomForest predicted 2.21 workers for WorkType 215 Picking Online
+2025-05-04 13:19:56,556 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 13:19:56,561 - utils.prediction - INFO - Predictions completed for 7 days
+2025-05-04 13:20:14,434 - utils.prediction - INFO - Predicting for the next 19 days
+2025-05-04 13:20:14,455 - utils.prediction - INFO - Date 2025-01-01 is a non-working day: Swedish Holiday: New Year's Day
+2025-05-04 13:20:14,455 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:20:14,477 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-02
+2025-05-04 13:20:14,530 - utils.prediction - INFO - RandomForest predicted 0.89 workers for WorkType 203 Goods receive D
+2025-05-04 13:20:14,564 - utils.prediction - INFO - RandomForest predicted 13.49 workers for WorkType 206 Replenishment
+2025-05-04 13:20:14,589 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:20:14,615 - utils.prediction - INFO - RandomForest predicted 10.14 workers for WorkType 209 Sortation
+2025-05-04 13:20:14,641 - utils.prediction - INFO - RandomForest predicted 4.24 workers for WorkType 210 Pick Sortation
+2025-05-04 13:20:14,669 - utils.prediction - INFO - RandomForest predicted 3.19 workers for WorkType 211 Misc
+2025-05-04 13:20:14,694 - utils.prediction - INFO - RandomForest predicted 1.53 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:20:14,721 - utils.prediction - INFO - RandomForest predicted 2.91 workers for WorkType 214 Large orders
+2025-05-04 13:20:14,743 - utils.prediction - INFO - RandomForest predicted 4.05 workers for WorkType 215 Picking Online
+2025-05-04 13:20:14,768 - utils.prediction - INFO - RandomForest predicted 0.27 workers for WorkType 217 Returns
+2025-05-04 13:20:14,780 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-03
+2025-05-04 13:20:14,811 - utils.prediction - INFO - RandomForest predicted 1.74 workers for WorkType 203 Goods receive D
+2025-05-04 13:20:14,836 - utils.prediction - INFO - RandomForest predicted 11.85 workers for WorkType 206 Replenishment
+2025-05-04 13:20:14,860 - utils.prediction - INFO - RandomForest predicted 2.12 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:20:14,889 - utils.prediction - INFO - RandomForest predicted 10.71 workers for WorkType 209 Sortation
+2025-05-04 13:20:14,911 - utils.prediction - INFO - RandomForest predicted 6.46 workers for WorkType 210 Pick Sortation
+2025-05-04 13:20:14,938 - utils.prediction - INFO - RandomForest predicted 3.69 workers for WorkType 211 Misc
+2025-05-04 13:20:14,971 - utils.prediction - INFO - RandomForest predicted 1.77 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:20:14,995 - utils.prediction - INFO - RandomForest predicted 3.95 workers for WorkType 214 Large orders
+2025-05-04 13:20:15,019 - utils.prediction - INFO - RandomForest predicted 4.82 workers for WorkType 215 Picking Online
+2025-05-04 13:20:15,047 - utils.prediction - INFO - RandomForest predicted 0.23 workers for WorkType 217 Returns
+2025-05-04 13:20:15,061 - utils.prediction - INFO - Date 2025-01-04 is a non-working day: Saturday (Weekend)
+2025-05-04 13:20:15,061 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:20:15,077 - utils.prediction - INFO - Date 2025-01-05 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:20:15,077 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:20:15,093 - utils.prediction - INFO - Date 2025-01-06 is a non-working day: Swedish Holiday: Epiphany
+2025-05-04 13:20:15,093 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:20:15,108 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-07
+2025-05-04 13:20:15,139 - utils.prediction - INFO - RandomForest predicted 1.02 workers for WorkType 203 Goods receive D
+2025-05-04 13:20:15,164 - utils.prediction - INFO - RandomForest predicted 11.50 workers for WorkType 206 Replenishment
+2025-05-04 13:20:15,188 - utils.prediction - INFO - RandomForest predicted 1.05 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:20:15,211 - utils.prediction - INFO - RandomForest predicted 4.87 workers for WorkType 209 Sortation
+2025-05-04 13:20:15,236 - utils.prediction - INFO - RandomForest predicted 4.16 workers for WorkType 210 Pick Sortation
+2025-05-04 13:20:15,260 - utils.prediction - INFO - RandomForest predicted 3.32 workers for WorkType 211 Misc
+2025-05-04 13:20:15,292 - utils.prediction - INFO - RandomForest predicted 0.81 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:20:15,324 - utils.prediction - INFO - RandomForest predicted 1.44 workers for WorkType 214 Large orders
+2025-05-04 13:20:15,356 - utils.prediction - INFO - RandomForest predicted 2.21 workers for WorkType 215 Picking Online
+2025-05-04 13:20:15,386 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 13:20:15,405 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-08
+2025-05-04 13:20:15,443 - utils.prediction - INFO - RandomForest predicted 0.74 workers for WorkType 203 Goods receive D
+2025-05-04 13:20:15,483 - utils.prediction - INFO - RandomForest predicted 3.60 workers for WorkType 206 Replenishment
+2025-05-04 13:20:15,518 - utils.prediction - INFO - RandomForest predicted 1.38 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:20:15,546 - utils.prediction - INFO - RandomForest predicted 5.76 workers for WorkType 209 Sortation
+2025-05-04 13:20:15,576 - utils.prediction - INFO - RandomForest predicted 2.76 workers for WorkType 210 Pick Sortation
+2025-05-04 13:20:15,611 - utils.prediction - INFO - RandomForest predicted 3.49 workers for WorkType 211 Misc
+2025-05-04 13:20:15,647 - utils.prediction - INFO - RandomForest predicted 0.87 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:20:15,683 - utils.prediction - INFO - RandomForest predicted 2.49 workers for WorkType 214 Large orders
+2025-05-04 13:20:15,707 - utils.prediction - INFO - RandomForest predicted 2.55 workers for WorkType 215 Picking Online
+2025-05-04 13:20:15,734 - utils.prediction - INFO - RandomForest predicted 0.01 workers for WorkType 217 Returns
+2025-05-04 13:20:15,748 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-09
+2025-05-04 13:20:15,785 - utils.prediction - INFO - RandomForest predicted 0.75 workers for WorkType 203 Goods receive D
+2025-05-04 13:20:15,809 - utils.prediction - INFO - RandomForest predicted 16.25 workers for WorkType 206 Replenishment
+2025-05-04 13:20:15,836 - utils.prediction - INFO - RandomForest predicted 1.38 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:20:15,861 - utils.prediction - INFO - RandomForest predicted 8.52 workers for WorkType 209 Sortation
+2025-05-04 13:20:15,888 - utils.prediction - INFO - RandomForest predicted 2.61 workers for WorkType 210 Pick Sortation
+2025-05-04 13:20:15,912 - utils.prediction - INFO - RandomForest predicted 3.63 workers for WorkType 211 Misc
+2025-05-04 13:20:15,938 - utils.prediction - INFO - RandomForest predicted 1.20 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:20:15,964 - utils.prediction - INFO - RandomForest predicted 2.88 workers for WorkType 214 Large orders
+2025-05-04 13:20:15,988 - utils.prediction - INFO - RandomForest predicted 3.61 workers for WorkType 215 Picking Online
+2025-05-04 13:20:16,011 - utils.prediction - INFO - RandomForest predicted 0.09 workers for WorkType 217 Returns
+2025-05-04 13:20:16,025 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-10
+2025-05-04 13:20:16,059 - utils.prediction - INFO - RandomForest predicted 1.16 workers for WorkType 203 Goods receive D
+2025-05-04 13:20:16,086 - utils.prediction - INFO - RandomForest predicted 8.09 workers for WorkType 206 Replenishment
+2025-05-04 13:20:16,109 - utils.prediction - INFO - RandomForest predicted 1.19 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:20:16,135 - utils.prediction - INFO - RandomForest predicted 7.13 workers for WorkType 209 Sortation
+2025-05-04 13:20:16,158 - utils.prediction - INFO - RandomForest predicted 2.79 workers for WorkType 210 Pick Sortation
+2025-05-04 13:20:16,184 - utils.prediction - INFO - RandomForest predicted 3.63 workers for WorkType 211 Misc
+2025-05-04 13:20:16,207 - utils.prediction - INFO - RandomForest predicted 1.00 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:20:16,234 - utils.prediction - INFO - RandomForest predicted 2.66 workers for WorkType 214 Large orders
+2025-05-04 13:20:16,258 - utils.prediction - INFO - RandomForest predicted 3.14 workers for WorkType 215 Picking Online
+2025-05-04 13:20:16,284 - utils.prediction - INFO - RandomForest predicted 0.24 workers for WorkType 217 Returns
+2025-05-04 13:20:16,296 - utils.prediction - INFO - Date 2025-01-11 is a non-working day: Saturday (Weekend)
+2025-05-04 13:20:16,296 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:20:16,310 - utils.prediction - INFO - Date 2025-01-12 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:20:16,310 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:20:16,325 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-13
+2025-05-04 13:20:16,357 - utils.prediction - INFO - RandomForest predicted 0.59 workers for WorkType 203 Goods receive D
+2025-05-04 13:20:16,382 - utils.prediction - INFO - RandomForest predicted 8.32 workers for WorkType 206 Replenishment
+2025-05-04 13:20:16,405 - utils.prediction - INFO - RandomForest predicted 0.91 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:20:16,432 - utils.prediction - INFO - RandomForest predicted 4.02 workers for WorkType 209 Sortation
+2025-05-04 13:20:16,457 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 210 Pick Sortation
+2025-05-04 13:20:16,483 - utils.prediction - INFO - RandomForest predicted 3.56 workers for WorkType 211 Misc
+2025-05-04 13:20:16,506 - utils.prediction - INFO - RandomForest predicted 0.82 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:20:16,530 - utils.prediction - INFO - RandomForest predicted 1.91 workers for WorkType 214 Large orders
+2025-05-04 13:20:16,553 - utils.prediction - INFO - RandomForest predicted 2.48 workers for WorkType 215 Picking Online
+2025-05-04 13:20:16,576 - utils.prediction - INFO - RandomForest predicted 0.10 workers for WorkType 217 Returns
+2025-05-04 13:20:16,592 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-14
+2025-05-04 13:20:16,624 - utils.prediction - INFO - RandomForest predicted 1.62 workers for WorkType 203 Goods receive D
+2025-05-04 13:20:16,651 - utils.prediction - INFO - RandomForest predicted 12.71 workers for WorkType 206 Replenishment
+2025-05-04 13:20:16,674 - utils.prediction - INFO - RandomForest predicted 1.14 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:20:16,699 - utils.prediction - INFO - RandomForest predicted 5.59 workers for WorkType 209 Sortation
+2025-05-04 13:20:16,725 - utils.prediction - INFO - RandomForest predicted 2.92 workers for WorkType 210 Pick Sortation
+2025-05-04 13:20:16,750 - utils.prediction - INFO - RandomForest predicted 3.74 workers for WorkType 211 Misc
+2025-05-04 13:20:16,773 - utils.prediction - INFO - RandomForest predicted 0.99 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:20:16,799 - utils.prediction - INFO - RandomForest predicted 2.15 workers for WorkType 214 Large orders
+2025-05-04 13:20:16,823 - utils.prediction - INFO - RandomForest predicted 2.93 workers for WorkType 215 Picking Online
+2025-05-04 13:20:16,852 - utils.prediction - INFO - RandomForest predicted 0.06 workers for WorkType 217 Returns
+2025-05-04 13:20:16,865 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-15
+2025-05-04 13:20:16,930 - utils.prediction - INFO - RandomForest predicted 0.87 workers for WorkType 203 Goods receive D
+2025-05-04 13:20:16,961 - utils.prediction - INFO - RandomForest predicted 15.70 workers for WorkType 206 Replenishment
+2025-05-04 13:20:16,987 - utils.prediction - INFO - RandomForest predicted 1.25 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:20:17,012 - utils.prediction - INFO - RandomForest predicted 7.22 workers for WorkType 209 Sortation
+2025-05-04 13:20:17,036 - utils.prediction - INFO - RandomForest predicted 2.71 workers for WorkType 210 Pick Sortation
+2025-05-04 13:20:17,061 - utils.prediction - INFO - RandomForest predicted 4.26 workers for WorkType 211 Misc
+2025-05-04 13:20:17,086 - utils.prediction - INFO - RandomForest predicted 1.10 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:20:17,111 - utils.prediction - INFO - RandomForest predicted 2.26 workers for WorkType 214 Large orders
+2025-05-04 13:20:17,137 - utils.prediction - INFO - RandomForest predicted 3.22 workers for WorkType 215 Picking Online
+2025-05-04 13:20:17,160 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 13:20:17,176 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-16
+2025-05-04 13:20:17,209 - utils.prediction - INFO - RandomForest predicted 0.75 workers for WorkType 203 Goods receive D
+2025-05-04 13:20:17,238 - utils.prediction - INFO - RandomForest predicted 12.81 workers for WorkType 206 Replenishment
+2025-05-04 13:20:17,263 - utils.prediction - INFO - RandomForest predicted 1.19 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:20:17,287 - utils.prediction - INFO - RandomForest predicted 7.73 workers for WorkType 209 Sortation
+2025-05-04 13:20:17,311 - utils.prediction - INFO - RandomForest predicted 2.40 workers for WorkType 210 Pick Sortation
+2025-05-04 13:20:17,337 - utils.prediction - INFO - RandomForest predicted 3.76 workers for WorkType 211 Misc
+2025-05-04 13:20:17,360 - utils.prediction - INFO - RandomForest predicted 1.13 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:20:17,385 - utils.prediction - INFO - RandomForest predicted 2.43 workers for WorkType 214 Large orders
+2025-05-04 13:20:17,409 - utils.prediction - INFO - RandomForest predicted 3.21 workers for WorkType 215 Picking Online
+2025-05-04 13:20:17,436 - utils.prediction - INFO - RandomForest predicted 0.05 workers for WorkType 217 Returns
+2025-05-04 13:20:17,451 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-17
+2025-05-04 13:20:17,481 - utils.prediction - INFO - RandomForest predicted 0.76 workers for WorkType 203 Goods receive D
+2025-05-04 13:20:17,504 - utils.prediction - INFO - RandomForest predicted 10.20 workers for WorkType 206 Replenishment
+2025-05-04 13:20:17,527 - utils.prediction - INFO - RandomForest predicted 0.99 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:20:17,553 - utils.prediction - INFO - RandomForest predicted 6.45 workers for WorkType 209 Sortation
+2025-05-04 13:20:17,576 - utils.prediction - INFO - RandomForest predicted 2.15 workers for WorkType 210 Pick Sortation
+2025-05-04 13:20:17,600 - utils.prediction - INFO - RandomForest predicted 3.37 workers for WorkType 211 Misc
+2025-05-04 13:20:17,623 - utils.prediction - INFO - RandomForest predicted 0.92 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:20:17,651 - utils.prediction - INFO - RandomForest predicted 2.18 workers for WorkType 214 Large orders
+2025-05-04 13:20:17,674 - utils.prediction - INFO - RandomForest predicted 2.90 workers for WorkType 215 Picking Online
+2025-05-04 13:20:17,701 - utils.prediction - INFO - RandomForest predicted 0.16 workers for WorkType 217 Returns
+2025-05-04 13:20:17,715 - utils.prediction - INFO - Date 2025-01-18 is a non-working day: Saturday (Weekend)
+2025-05-04 13:20:17,715 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:20:17,727 - utils.prediction - INFO - Date 2025-01-19 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:20:17,728 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:20:17,736 - utils.prediction - INFO - Predictions completed for 19 days
+2025-05-04 13:21:08,112 - utils.prediction - INFO - Predicting for the next 30 days
+2025-05-04 13:21:08,139 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-02
+2025-05-04 13:21:08,196 - utils.prediction - INFO - RandomForest predicted 5.30 workers for WorkType 203 Goods receive D
+2025-05-04 13:21:08,213 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-03
+2025-05-04 13:21:08,276 - utils.prediction - INFO - RandomForest predicted 5.07 workers for WorkType 203 Goods receive D
+2025-05-04 13:21:08,293 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-04
+2025-05-04 13:21:08,334 - utils.prediction - INFO - RandomForest predicted 5.51 workers for WorkType 203 Goods receive D
+2025-05-04 13:21:08,353 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-05
+2025-05-04 13:21:08,400 - utils.prediction - INFO - RandomForest predicted 5.55 workers for WorkType 203 Goods receive D
+2025-05-04 13:21:08,416 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-06
+2025-05-04 13:21:08,466 - utils.prediction - INFO - RandomForest predicted 5.03 workers for WorkType 203 Goods receive D
+2025-05-04 13:21:08,488 - utils.prediction - INFO - Date 2024-12-07 is a non-working day: Saturday (Weekend)
+2025-05-04 13:21:08,489 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:08,505 - utils.prediction - INFO - Date 2024-12-08 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:21:08,505 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:08,523 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-09
+2025-05-04 13:21:08,561 - utils.prediction - INFO - RandomForest predicted 4.91 workers for WorkType 203 Goods receive D
+2025-05-04 13:21:08,580 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-10
+2025-05-04 13:21:08,627 - utils.prediction - INFO - RandomForest predicted 5.12 workers for WorkType 203 Goods receive D
+2025-05-04 13:21:08,645 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-11
+2025-05-04 13:21:08,684 - utils.prediction - INFO - RandomForest predicted 5.09 workers for WorkType 203 Goods receive D
+2025-05-04 13:21:08,702 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-12
+2025-05-04 13:21:08,738 - utils.prediction - INFO - RandomForest predicted 5.02 workers for WorkType 203 Goods receive D
+2025-05-04 13:21:08,754 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-13
+2025-05-04 13:21:08,794 - utils.prediction - INFO - RandomForest predicted 4.86 workers for WorkType 203 Goods receive D
+2025-05-04 13:21:08,810 - utils.prediction - INFO - Date 2024-12-14 is a non-working day: Saturday (Weekend)
+2025-05-04 13:21:08,811 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:08,823 - utils.prediction - INFO - Date 2024-12-15 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:21:08,824 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:08,840 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-16
+2025-05-04 13:21:08,880 - utils.prediction - INFO - RandomForest predicted 4.60 workers for WorkType 203 Goods receive D
+2025-05-04 13:21:08,897 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-17
+2025-05-04 13:21:08,940 - utils.prediction - INFO - RandomForest predicted 4.79 workers for WorkType 203 Goods receive D
+2025-05-04 13:21:08,961 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-18
+2025-05-04 13:21:09,000 - utils.prediction - INFO - RandomForest predicted 4.84 workers for WorkType 203 Goods receive D
+2025-05-04 13:21:09,015 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-19
+2025-05-04 13:21:09,051 - utils.prediction - INFO - RandomForest predicted 4.83 workers for WorkType 203 Goods receive D
+2025-05-04 13:21:09,068 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-20
+2025-05-04 13:21:09,111 - utils.prediction - INFO - RandomForest predicted 4.77 workers for WorkType 203 Goods receive D
+2025-05-04 13:21:09,132 - utils.prediction - INFO - Date 2024-12-21 is a non-working day: Saturday (Weekend)
+2025-05-04 13:21:09,132 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:09,149 - utils.prediction - INFO - Date 2024-12-22 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:21:09,149 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:09,166 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-23
+2025-05-04 13:21:09,197 - utils.prediction - INFO - RandomForest predicted 4.51 workers for WorkType 203 Goods receive D
+2025-05-04 13:21:09,212 - utils.prediction - INFO - Date 2024-12-24 is a non-working day: Swedish Holiday: Christmas Eve
+2025-05-04 13:21:09,212 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:09,226 - utils.prediction - INFO - Date 2024-12-25 is a non-working day: Swedish Holiday: Christmas Day
+2025-05-04 13:21:09,226 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:09,245 - utils.prediction - INFO - Date 2024-12-26 is a non-working day: Swedish Holiday: Second Day of Christmas
+2025-05-04 13:21:09,245 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:09,262 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-27
+2025-05-04 13:21:09,299 - utils.prediction - INFO - RandomForest predicted 2.72 workers for WorkType 203 Goods receive D
+2025-05-04 13:21:09,314 - utils.prediction - INFO - Date 2024-12-28 is a non-working day: Saturday (Weekend)
+2025-05-04 13:21:09,315 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:09,332 - utils.prediction - INFO - Date 2024-12-29 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:21:09,332 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:09,348 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-30
+2025-05-04 13:21:09,382 - utils.prediction - INFO - RandomForest predicted 3.62 workers for WorkType 203 Goods receive D
+2025-05-04 13:21:09,398 - utils.prediction - INFO - Date 2024-12-31 is a non-working day: Swedish Holiday: New Year's Eve
+2025-05-04 13:21:09,398 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:09,404 - utils.prediction - INFO - Predictions completed for 30 days
+2025-05-04 13:21:49,677 - utils.prediction - INFO - Predicting for the next 30 days
+2025-05-04 13:21:49,725 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-02
+2025-05-04 13:21:49,870 - utils.prediction - INFO - RandomForest predicted 27.15 workers for WorkType 206 Replenishment
+2025-05-04 13:21:49,889 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-03
+2025-05-04 13:21:49,939 - utils.prediction - INFO - RandomForest predicted 39.70 workers for WorkType 206 Replenishment
+2025-05-04 13:21:49,954 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-04
+2025-05-04 13:21:49,991 - utils.prediction - INFO - RandomForest predicted 36.72 workers for WorkType 206 Replenishment
+2025-05-04 13:21:50,009 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-05
+2025-05-04 13:21:50,047 - utils.prediction - INFO - RandomForest predicted 34.79 workers for WorkType 206 Replenishment
+2025-05-04 13:21:50,063 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-06
+2025-05-04 13:21:50,103 - utils.prediction - INFO - RandomForest predicted 26.38 workers for WorkType 206 Replenishment
+2025-05-04 13:21:50,122 - utils.prediction - INFO - Date 2024-12-07 is a non-working day: Saturday (Weekend)
+2025-05-04 13:21:50,122 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:50,139 - utils.prediction - INFO - Date 2024-12-08 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:21:50,140 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:50,153 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-09
+2025-05-04 13:21:50,188 - utils.prediction - INFO - RandomForest predicted 22.38 workers for WorkType 206 Replenishment
+2025-05-04 13:21:50,203 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-10
+2025-05-04 13:21:50,236 - utils.prediction - INFO - RandomForest predicted 23.52 workers for WorkType 206 Replenishment
+2025-05-04 13:21:50,250 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-11
+2025-05-04 13:21:50,282 - utils.prediction - INFO - RandomForest predicted 27.35 workers for WorkType 206 Replenishment
+2025-05-04 13:21:50,296 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-12
+2025-05-04 13:21:50,327 - utils.prediction - INFO - RandomForest predicted 25.91 workers for WorkType 206 Replenishment
+2025-05-04 13:21:50,340 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-13
+2025-05-04 13:21:50,371 - utils.prediction - INFO - RandomForest predicted 23.22 workers for WorkType 206 Replenishment
+2025-05-04 13:21:50,383 - utils.prediction - INFO - Date 2024-12-14 is a non-working day: Saturday (Weekend)
+2025-05-04 13:21:50,383 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:50,398 - utils.prediction - INFO - Date 2024-12-15 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:21:50,398 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:50,413 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-16
+2025-05-04 13:21:50,445 - utils.prediction - INFO - RandomForest predicted 14.39 workers for WorkType 206 Replenishment
+2025-05-04 13:21:50,460 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-17
+2025-05-04 13:21:50,491 - utils.prediction - INFO - RandomForest predicted 15.08 workers for WorkType 206 Replenishment
+2025-05-04 13:21:50,506 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-18
+2025-05-04 13:21:50,538 - utils.prediction - INFO - RandomForest predicted 24.75 workers for WorkType 206 Replenishment
+2025-05-04 13:21:50,549 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-19
+2025-05-04 13:21:50,582 - utils.prediction - INFO - RandomForest predicted 24.31 workers for WorkType 206 Replenishment
+2025-05-04 13:21:50,596 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-20
+2025-05-04 13:21:50,664 - utils.prediction - INFO - RandomForest predicted 20.85 workers for WorkType 206 Replenishment
+2025-05-04 13:21:50,690 - utils.prediction - INFO - Date 2024-12-21 is a non-working day: Saturday (Weekend)
+2025-05-04 13:21:50,691 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:50,705 - utils.prediction - INFO - Date 2024-12-22 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:21:50,705 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:50,717 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-23
+2025-05-04 13:21:50,750 - utils.prediction - INFO - RandomForest predicted 12.49 workers for WorkType 206 Replenishment
+2025-05-04 13:21:50,766 - utils.prediction - INFO - Date 2024-12-24 is a non-working day: Swedish Holiday: Christmas Eve
+2025-05-04 13:21:50,766 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:50,780 - utils.prediction - INFO - Date 2024-12-25 is a non-working day: Swedish Holiday: Christmas Day
+2025-05-04 13:21:50,781 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:50,796 - utils.prediction - INFO - Date 2024-12-26 is a non-working day: Swedish Holiday: Second Day of Christmas
+2025-05-04 13:21:50,796 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:50,811 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-27
+2025-05-04 13:21:50,842 - utils.prediction - INFO - RandomForest predicted 13.28 workers for WorkType 206 Replenishment
+2025-05-04 13:21:50,856 - utils.prediction - INFO - Date 2024-12-28 is a non-working day: Saturday (Weekend)
+2025-05-04 13:21:50,856 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:50,871 - utils.prediction - INFO - Date 2024-12-29 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:21:50,871 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:50,884 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-30
+2025-05-04 13:21:50,916 - utils.prediction - INFO - RandomForest predicted 9.30 workers for WorkType 206 Replenishment
+2025-05-04 13:21:50,930 - utils.prediction - INFO - Date 2024-12-31 is a non-working day: Swedish Holiday: New Year's Eve
+2025-05-04 13:21:50,930 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:21:50,938 - utils.prediction - INFO - Predictions completed for 30 days
+2025-05-04 13:29:49,823 - utils.prediction - INFO - Predicting for the next 7 days
+2025-05-04 13:29:49,850 - utils.prediction - INFO - Date 2025-01-01 is a non-working day: Swedish Holiday: New Year's Day
+2025-05-04 13:29:49,851 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:29:49,876 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-02
+2025-05-04 13:29:49,922 - utils.prediction - INFO - RandomForest predicted 0.89 workers for WorkType 203 Goods receive D
+2025-05-04 13:29:49,953 - utils.prediction - INFO - RandomForest predicted 13.49 workers for WorkType 206 Replenishment
+2025-05-04 13:29:49,981 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:29:50,006 - utils.prediction - INFO - RandomForest predicted 10.14 workers for WorkType 209 Sortation
+2025-05-04 13:29:50,041 - utils.prediction - INFO - RandomForest predicted 4.24 workers for WorkType 210 Pick Sortation
+2025-05-04 13:29:50,070 - utils.prediction - INFO - RandomForest predicted 3.19 workers for WorkType 211 Misc
+2025-05-04 13:29:50,095 - utils.prediction - INFO - RandomForest predicted 1.53 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:29:50,122 - utils.prediction - INFO - RandomForest predicted 2.91 workers for WorkType 214 Large orders
+2025-05-04 13:29:50,147 - utils.prediction - INFO - RandomForest predicted 4.05 workers for WorkType 215 Picking Online
+2025-05-04 13:29:50,170 - utils.prediction - INFO - RandomForest predicted 0.27 workers for WorkType 217 Returns
+2025-05-04 13:29:50,184 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-03
+2025-05-04 13:29:50,218 - utils.prediction - INFO - RandomForest predicted 1.74 workers for WorkType 203 Goods receive D
+2025-05-04 13:29:50,242 - utils.prediction - INFO - RandomForest predicted 11.85 workers for WorkType 206 Replenishment
+2025-05-04 13:29:50,268 - utils.prediction - INFO - RandomForest predicted 2.12 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:29:50,291 - utils.prediction - INFO - RandomForest predicted 10.71 workers for WorkType 209 Sortation
+2025-05-04 13:29:50,316 - utils.prediction - INFO - RandomForest predicted 6.46 workers for WorkType 210 Pick Sortation
+2025-05-04 13:29:50,343 - utils.prediction - INFO - RandomForest predicted 3.69 workers for WorkType 211 Misc
+2025-05-04 13:29:50,375 - utils.prediction - INFO - RandomForest predicted 1.77 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:29:50,403 - utils.prediction - INFO - RandomForest predicted 3.95 workers for WorkType 214 Large orders
+2025-05-04 13:29:50,427 - utils.prediction - INFO - RandomForest predicted 4.82 workers for WorkType 215 Picking Online
+2025-05-04 13:29:50,453 - utils.prediction - INFO - RandomForest predicted 0.23 workers for WorkType 217 Returns
+2025-05-04 13:29:50,467 - utils.prediction - INFO - Date 2025-01-04 is a non-working day: Saturday (Weekend)
+2025-05-04 13:29:50,467 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:29:50,481 - utils.prediction - INFO - Date 2025-01-05 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:29:50,481 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:29:50,493 - utils.prediction - INFO - Date 2025-01-06 is a non-working day: Swedish Holiday: Epiphany
+2025-05-04 13:29:50,494 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:29:50,508 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-07
+2025-05-04 13:29:50,540 - utils.prediction - INFO - RandomForest predicted 1.02 workers for WorkType 203 Goods receive D
+2025-05-04 13:29:50,566 - utils.prediction - INFO - RandomForest predicted 11.50 workers for WorkType 206 Replenishment
+2025-05-04 13:29:50,589 - utils.prediction - INFO - RandomForest predicted 1.05 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:29:50,615 - utils.prediction - INFO - RandomForest predicted 4.87 workers for WorkType 209 Sortation
+2025-05-04 13:29:50,640 - utils.prediction - INFO - RandomForest predicted 4.16 workers for WorkType 210 Pick Sortation
+2025-05-04 13:29:50,669 - utils.prediction - INFO - RandomForest predicted 3.32 workers for WorkType 211 Misc
+2025-05-04 13:29:50,696 - utils.prediction - INFO - RandomForest predicted 0.81 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:29:50,723 - utils.prediction - INFO - RandomForest predicted 1.44 workers for WorkType 214 Large orders
+2025-05-04 13:29:50,752 - utils.prediction - INFO - RandomForest predicted 2.21 workers for WorkType 215 Picking Online
+2025-05-04 13:29:50,775 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 13:29:50,785 - utils.prediction - INFO - Predictions completed for 7 days
+2025-05-04 13:30:07,986 - utils.prediction - INFO - Predicting for the next 19 days
+2025-05-04 13:30:08,010 - utils.prediction - INFO - Date 2025-01-01 is a non-working day: Swedish Holiday: New Year's Day
+2025-05-04 13:30:08,012 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:08,031 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-02
+2025-05-04 13:30:08,079 - utils.prediction - INFO - RandomForest predicted 0.89 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:08,105 - utils.prediction - INFO - RandomForest predicted 13.49 workers for WorkType 206 Replenishment
+2025-05-04 13:30:08,135 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:30:08,162 - utils.prediction - INFO - RandomForest predicted 10.14 workers for WorkType 209 Sortation
+2025-05-04 13:30:08,190 - utils.prediction - INFO - RandomForest predicted 4.24 workers for WorkType 210 Pick Sortation
+2025-05-04 13:30:08,221 - utils.prediction - INFO - RandomForest predicted 3.19 workers for WorkType 211 Misc
+2025-05-04 13:30:08,247 - utils.prediction - INFO - RandomForest predicted 1.53 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:30:08,269 - utils.prediction - INFO - RandomForest predicted 2.91 workers for WorkType 214 Large orders
+2025-05-04 13:30:08,295 - utils.prediction - INFO - RandomForest predicted 4.05 workers for WorkType 215 Picking Online
+2025-05-04 13:30:08,318 - utils.prediction - INFO - RandomForest predicted 0.27 workers for WorkType 217 Returns
+2025-05-04 13:30:08,334 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-03
+2025-05-04 13:30:08,364 - utils.prediction - INFO - RandomForest predicted 1.74 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:08,389 - utils.prediction - INFO - RandomForest predicted 11.85 workers for WorkType 206 Replenishment
+2025-05-04 13:30:08,415 - utils.prediction - INFO - RandomForest predicted 2.12 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:30:08,438 - utils.prediction - INFO - RandomForest predicted 10.71 workers for WorkType 209 Sortation
+2025-05-04 13:30:08,464 - utils.prediction - INFO - RandomForest predicted 6.46 workers for WorkType 210 Pick Sortation
+2025-05-04 13:30:08,487 - utils.prediction - INFO - RandomForest predicted 3.69 workers for WorkType 211 Misc
+2025-05-04 13:30:08,516 - utils.prediction - INFO - RandomForest predicted 1.77 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:30:08,540 - utils.prediction - INFO - RandomForest predicted 3.95 workers for WorkType 214 Large orders
+2025-05-04 13:30:08,566 - utils.prediction - INFO - RandomForest predicted 4.82 workers for WorkType 215 Picking Online
+2025-05-04 13:30:08,588 - utils.prediction - INFO - RandomForest predicted 0.23 workers for WorkType 217 Returns
+2025-05-04 13:30:08,603 - utils.prediction - INFO - Date 2025-01-04 is a non-working day: Saturday (Weekend)
+2025-05-04 13:30:08,604 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:08,620 - utils.prediction - INFO - Date 2025-01-05 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:30:08,620 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:08,634 - utils.prediction - INFO - Date 2025-01-06 is a non-working day: Swedish Holiday: Epiphany
+2025-05-04 13:30:08,635 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:08,649 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-07
+2025-05-04 13:30:08,680 - utils.prediction - INFO - RandomForest predicted 1.02 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:08,703 - utils.prediction - INFO - RandomForest predicted 11.50 workers for WorkType 206 Replenishment
+2025-05-04 13:30:08,726 - utils.prediction - INFO - RandomForest predicted 1.05 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:30:08,750 - utils.prediction - INFO - RandomForest predicted 4.87 workers for WorkType 209 Sortation
+2025-05-04 13:30:08,773 - utils.prediction - INFO - RandomForest predicted 4.16 workers for WorkType 210 Pick Sortation
+2025-05-04 13:30:08,798 - utils.prediction - INFO - RandomForest predicted 3.32 workers for WorkType 211 Misc
+2025-05-04 13:30:08,821 - utils.prediction - INFO - RandomForest predicted 0.81 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:30:08,850 - utils.prediction - INFO - RandomForest predicted 1.44 workers for WorkType 214 Large orders
+2025-05-04 13:30:08,874 - utils.prediction - INFO - RandomForest predicted 2.21 workers for WorkType 215 Picking Online
+2025-05-04 13:30:08,906 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 13:30:08,922 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-08
+2025-05-04 13:30:08,957 - utils.prediction - INFO - RandomForest predicted 0.74 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:08,984 - utils.prediction - INFO - RandomForest predicted 3.60 workers for WorkType 206 Replenishment
+2025-05-04 13:30:09,018 - utils.prediction - INFO - RandomForest predicted 1.38 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:30:09,044 - utils.prediction - INFO - RandomForest predicted 5.76 workers for WorkType 209 Sortation
+2025-05-04 13:30:09,072 - utils.prediction - INFO - RandomForest predicted 2.76 workers for WorkType 210 Pick Sortation
+2025-05-04 13:30:09,100 - utils.prediction - INFO - RandomForest predicted 3.49 workers for WorkType 211 Misc
+2025-05-04 13:30:09,128 - utils.prediction - INFO - RandomForest predicted 0.87 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:30:09,152 - utils.prediction - INFO - RandomForest predicted 2.49 workers for WorkType 214 Large orders
+2025-05-04 13:30:09,180 - utils.prediction - INFO - RandomForest predicted 2.55 workers for WorkType 215 Picking Online
+2025-05-04 13:30:09,204 - utils.prediction - INFO - RandomForest predicted 0.01 workers for WorkType 217 Returns
+2025-05-04 13:30:09,220 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-09
+2025-05-04 13:30:09,252 - utils.prediction - INFO - RandomForest predicted 0.75 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:09,278 - utils.prediction - INFO - RandomForest predicted 16.25 workers for WorkType 206 Replenishment
+2025-05-04 13:30:09,301 - utils.prediction - INFO - RandomForest predicted 1.38 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:30:09,325 - utils.prediction - INFO - RandomForest predicted 8.52 workers for WorkType 209 Sortation
+2025-05-04 13:30:09,350 - utils.prediction - INFO - RandomForest predicted 2.61 workers for WorkType 210 Pick Sortation
+2025-05-04 13:30:09,374 - utils.prediction - INFO - RandomForest predicted 3.63 workers for WorkType 211 Misc
+2025-05-04 13:30:09,399 - utils.prediction - INFO - RandomForest predicted 1.20 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:30:09,423 - utils.prediction - INFO - RandomForest predicted 2.88 workers for WorkType 214 Large orders
+2025-05-04 13:30:09,449 - utils.prediction - INFO - RandomForest predicted 3.61 workers for WorkType 215 Picking Online
+2025-05-04 13:30:09,472 - utils.prediction - INFO - RandomForest predicted 0.09 workers for WorkType 217 Returns
+2025-05-04 13:30:09,487 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-10
+2025-05-04 13:30:09,519 - utils.prediction - INFO - RandomForest predicted 1.16 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:09,546 - utils.prediction - INFO - RandomForest predicted 8.09 workers for WorkType 206 Replenishment
+2025-05-04 13:30:09,569 - utils.prediction - INFO - RandomForest predicted 1.19 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:30:09,592 - utils.prediction - INFO - RandomForest predicted 7.13 workers for WorkType 209 Sortation
+2025-05-04 13:30:09,618 - utils.prediction - INFO - RandomForest predicted 2.79 workers for WorkType 210 Pick Sortation
+2025-05-04 13:30:09,642 - utils.prediction - INFO - RandomForest predicted 3.63 workers for WorkType 211 Misc
+2025-05-04 13:30:09,666 - utils.prediction - INFO - RandomForest predicted 1.00 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:30:09,688 - utils.prediction - INFO - RandomForest predicted 2.66 workers for WorkType 214 Large orders
+2025-05-04 13:30:09,712 - utils.prediction - INFO - RandomForest predicted 3.14 workers for WorkType 215 Picking Online
+2025-05-04 13:30:09,737 - utils.prediction - INFO - RandomForest predicted 0.24 workers for WorkType 217 Returns
+2025-05-04 13:30:09,751 - utils.prediction - INFO - Date 2025-01-11 is a non-working day: Saturday (Weekend)
+2025-05-04 13:30:09,751 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:09,764 - utils.prediction - INFO - Date 2025-01-12 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:30:09,765 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:09,779 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-13
+2025-05-04 13:30:09,809 - utils.prediction - INFO - RandomForest predicted 0.59 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:09,834 - utils.prediction - INFO - RandomForest predicted 8.32 workers for WorkType 206 Replenishment
+2025-05-04 13:30:09,860 - utils.prediction - INFO - RandomForest predicted 0.91 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:30:09,885 - utils.prediction - INFO - RandomForest predicted 4.02 workers for WorkType 209 Sortation
+2025-05-04 13:30:09,910 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 210 Pick Sortation
+2025-05-04 13:30:09,934 - utils.prediction - INFO - RandomForest predicted 3.56 workers for WorkType 211 Misc
+2025-05-04 13:30:09,958 - utils.prediction - INFO - RandomForest predicted 0.82 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:30:09,983 - utils.prediction - INFO - RandomForest predicted 1.91 workers for WorkType 214 Large orders
+2025-05-04 13:30:10,006 - utils.prediction - INFO - RandomForest predicted 2.48 workers for WorkType 215 Picking Online
+2025-05-04 13:30:10,031 - utils.prediction - INFO - RandomForest predicted 0.10 workers for WorkType 217 Returns
+2025-05-04 13:30:10,044 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-14
+2025-05-04 13:30:10,075 - utils.prediction - INFO - RandomForest predicted 1.62 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:10,108 - utils.prediction - INFO - RandomForest predicted 12.71 workers for WorkType 206 Replenishment
+2025-05-04 13:30:10,162 - utils.prediction - INFO - RandomForest predicted 1.14 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:30:10,194 - utils.prediction - INFO - RandomForest predicted 5.59 workers for WorkType 209 Sortation
+2025-05-04 13:30:10,217 - utils.prediction - INFO - RandomForest predicted 2.92 workers for WorkType 210 Pick Sortation
+2025-05-04 13:30:10,243 - utils.prediction - INFO - RandomForest predicted 3.74 workers for WorkType 211 Misc
+2025-05-04 13:30:10,266 - utils.prediction - INFO - RandomForest predicted 0.99 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:30:10,288 - utils.prediction - INFO - RandomForest predicted 2.15 workers for WorkType 214 Large orders
+2025-05-04 13:30:10,314 - utils.prediction - INFO - RandomForest predicted 2.93 workers for WorkType 215 Picking Online
+2025-05-04 13:30:10,336 - utils.prediction - INFO - RandomForest predicted 0.06 workers for WorkType 217 Returns
+2025-05-04 13:30:10,352 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-15
+2025-05-04 13:30:10,384 - utils.prediction - INFO - RandomForest predicted 0.87 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:10,408 - utils.prediction - INFO - RandomForest predicted 15.70 workers for WorkType 206 Replenishment
+2025-05-04 13:30:10,432 - utils.prediction - INFO - RandomForest predicted 1.25 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:30:10,456 - utils.prediction - INFO - RandomForest predicted 7.22 workers for WorkType 209 Sortation
+2025-05-04 13:30:10,481 - utils.prediction - INFO - RandomForest predicted 2.71 workers for WorkType 210 Pick Sortation
+2025-05-04 13:30:10,505 - utils.prediction - INFO - RandomForest predicted 4.26 workers for WorkType 211 Misc
+2025-05-04 13:30:10,530 - utils.prediction - INFO - RandomForest predicted 1.10 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:30:10,553 - utils.prediction - INFO - RandomForest predicted 2.26 workers for WorkType 214 Large orders
+2025-05-04 13:30:10,578 - utils.prediction - INFO - RandomForest predicted 3.22 workers for WorkType 215 Picking Online
+2025-05-04 13:30:10,601 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 13:30:10,616 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-16
+2025-05-04 13:30:10,647 - utils.prediction - INFO - RandomForest predicted 0.75 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:10,670 - utils.prediction - INFO - RandomForest predicted 12.81 workers for WorkType 206 Replenishment
+2025-05-04 13:30:10,695 - utils.prediction - INFO - RandomForest predicted 1.19 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:30:10,719 - utils.prediction - INFO - RandomForest predicted 7.73 workers for WorkType 209 Sortation
+2025-05-04 13:30:10,744 - utils.prediction - INFO - RandomForest predicted 2.40 workers for WorkType 210 Pick Sortation
+2025-05-04 13:30:10,767 - utils.prediction - INFO - RandomForest predicted 3.76 workers for WorkType 211 Misc
+2025-05-04 13:30:10,790 - utils.prediction - INFO - RandomForest predicted 1.13 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:30:10,816 - utils.prediction - INFO - RandomForest predicted 2.43 workers for WorkType 214 Large orders
+2025-05-04 13:30:10,839 - utils.prediction - INFO - RandomForest predicted 3.21 workers for WorkType 215 Picking Online
+2025-05-04 13:30:10,864 - utils.prediction - INFO - RandomForest predicted 0.05 workers for WorkType 217 Returns
+2025-05-04 13:30:10,878 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-17
+2025-05-04 13:30:10,908 - utils.prediction - INFO - RandomForest predicted 0.76 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:10,932 - utils.prediction - INFO - RandomForest predicted 10.20 workers for WorkType 206 Replenishment
+2025-05-04 13:30:10,955 - utils.prediction - INFO - RandomForest predicted 0.99 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:30:10,981 - utils.prediction - INFO - RandomForest predicted 6.45 workers for WorkType 209 Sortation
+2025-05-04 13:30:11,004 - utils.prediction - INFO - RandomForest predicted 2.15 workers for WorkType 210 Pick Sortation
+2025-05-04 13:30:11,032 - utils.prediction - INFO - RandomForest predicted 3.37 workers for WorkType 211 Misc
+2025-05-04 13:30:11,056 - utils.prediction - INFO - RandomForest predicted 0.92 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:30:11,082 - utils.prediction - INFO - RandomForest predicted 2.18 workers for WorkType 214 Large orders
+2025-05-04 13:30:11,105 - utils.prediction - INFO - RandomForest predicted 2.90 workers for WorkType 215 Picking Online
+2025-05-04 13:30:11,133 - utils.prediction - INFO - RandomForest predicted 0.16 workers for WorkType 217 Returns
+2025-05-04 13:30:11,148 - utils.prediction - INFO - Date 2025-01-18 is a non-working day: Saturday (Weekend)
+2025-05-04 13:30:11,148 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:11,164 - utils.prediction - INFO - Date 2025-01-19 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:30:11,164 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:11,170 - utils.prediction - INFO - Predictions completed for 19 days
+2025-05-04 13:30:20,157 - utils.prediction - INFO - Predicting for the next 30 days
+2025-05-04 13:30:20,194 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-02
+2025-05-04 13:30:20,231 - utils.prediction - INFO - RandomForest predicted 5.30 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:20,246 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-03
+2025-05-04 13:30:20,301 - utils.prediction - INFO - RandomForest predicted 5.07 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:20,315 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-04
+2025-05-04 13:30:20,352 - utils.prediction - INFO - RandomForest predicted 5.51 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:20,371 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-05
+2025-05-04 13:30:20,413 - utils.prediction - INFO - RandomForest predicted 5.55 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:20,434 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-06
+2025-05-04 13:30:20,467 - utils.prediction - INFO - RandomForest predicted 5.03 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:20,480 - utils.prediction - INFO - Date 2024-12-07 is a non-working day: Saturday (Weekend)
+2025-05-04 13:30:20,481 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:20,495 - utils.prediction - INFO - Date 2024-12-08 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:30:20,495 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:20,509 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-09
+2025-05-04 13:30:20,539 - utils.prediction - INFO - RandomForest predicted 4.91 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:20,552 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-10
+2025-05-04 13:30:20,584 - utils.prediction - INFO - RandomForest predicted 5.12 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:20,599 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-11
+2025-05-04 13:30:20,635 - utils.prediction - INFO - RandomForest predicted 5.09 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:20,649 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-12
+2025-05-04 13:30:20,698 - utils.prediction - INFO - RandomForest predicted 5.02 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:20,717 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-13
+2025-05-04 13:30:20,757 - utils.prediction - INFO - RandomForest predicted 4.86 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:20,777 - utils.prediction - INFO - Date 2024-12-14 is a non-working day: Saturday (Weekend)
+2025-05-04 13:30:20,778 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:20,797 - utils.prediction - INFO - Date 2024-12-15 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:30:20,797 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:20,817 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-16
+2025-05-04 13:30:20,862 - utils.prediction - INFO - RandomForest predicted 4.60 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:20,874 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-17
+2025-05-04 13:30:20,907 - utils.prediction - INFO - RandomForest predicted 4.79 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:20,922 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-18
+2025-05-04 13:30:20,954 - utils.prediction - INFO - RandomForest predicted 4.84 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:20,969 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-19
+2025-05-04 13:30:21,012 - utils.prediction - INFO - RandomForest predicted 4.83 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:21,031 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-20
+2025-05-04 13:30:21,069 - utils.prediction - INFO - RandomForest predicted 4.77 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:21,084 - utils.prediction - INFO - Date 2024-12-21 is a non-working day: Saturday (Weekend)
+2025-05-04 13:30:21,085 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:21,102 - utils.prediction - INFO - Date 2024-12-22 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:30:21,102 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:21,118 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-23
+2025-05-04 13:30:21,151 - utils.prediction - INFO - RandomForest predicted 4.51 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:21,166 - utils.prediction - INFO - Date 2024-12-24 is a non-working day: Swedish Holiday: Christmas Eve
+2025-05-04 13:30:21,166 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:21,183 - utils.prediction - INFO - Date 2024-12-25 is a non-working day: Swedish Holiday: Christmas Day
+2025-05-04 13:30:21,183 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:21,198 - utils.prediction - INFO - Date 2024-12-26 is a non-working day: Swedish Holiday: Second Day of Christmas
+2025-05-04 13:30:21,199 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:21,213 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-27
+2025-05-04 13:30:21,248 - utils.prediction - INFO - RandomForest predicted 2.72 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:21,263 - utils.prediction - INFO - Date 2024-12-28 is a non-working day: Saturday (Weekend)
+2025-05-04 13:30:21,263 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:21,282 - utils.prediction - INFO - Date 2024-12-29 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:30:21,282 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:21,303 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-30
+2025-05-04 13:30:21,350 - utils.prediction - INFO - RandomForest predicted 3.62 workers for WorkType 203 Goods receive D
+2025-05-04 13:30:21,370 - utils.prediction - INFO - Date 2024-12-31 is a non-working day: Swedish Holiday: New Year's Eve
+2025-05-04 13:30:21,370 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:30:21,381 - utils.prediction - INFO - Predictions completed for 30 days
+2025-05-04 13:35:53,489 - utils.prediction - INFO - Predicting for the next 7 days
+2025-05-04 13:35:53,516 - utils.prediction - INFO - Date 2025-01-01 is a non-working day: Swedish Holiday: New Year's Day
+2025-05-04 13:35:53,516 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:35:53,541 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-02
+2025-05-04 13:35:53,586 - utils.prediction - INFO - RandomForest predicted 0.89 workers for WorkType 203 Goods receive D
+2025-05-04 13:35:53,619 - utils.prediction - INFO - RandomForest predicted 13.49 workers for WorkType 206 Replenishment
+2025-05-04 13:35:53,644 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:35:53,670 - utils.prediction - INFO - RandomForest predicted 10.14 workers for WorkType 209 Sortation
+2025-05-04 13:35:53,697 - utils.prediction - INFO - RandomForest predicted 4.24 workers for WorkType 210 Pick Sortation
+2025-05-04 13:35:53,724 - utils.prediction - INFO - RandomForest predicted 3.19 workers for WorkType 211 Misc
+2025-05-04 13:35:53,749 - utils.prediction - INFO - RandomForest predicted 1.53 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:35:53,774 - utils.prediction - INFO - RandomForest predicted 2.91 workers for WorkType 214 Large orders
+2025-05-04 13:35:53,796 - utils.prediction - INFO - RandomForest predicted 4.05 workers for WorkType 215 Picking Online
+2025-05-04 13:35:53,822 - utils.prediction - INFO - RandomForest predicted 0.27 workers for WorkType 217 Returns
+2025-05-04 13:35:53,836 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-03
+2025-05-04 13:35:53,866 - utils.prediction - INFO - RandomForest predicted 1.74 workers for WorkType 203 Goods receive D
+2025-05-04 13:35:53,892 - utils.prediction - INFO - RandomForest predicted 11.85 workers for WorkType 206 Replenishment
+2025-05-04 13:35:53,915 - utils.prediction - INFO - RandomForest predicted 2.12 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:35:53,940 - utils.prediction - INFO - RandomForest predicted 10.71 workers for WorkType 209 Sortation
+2025-05-04 13:35:53,962 - utils.prediction - INFO - RandomForest predicted 6.46 workers for WorkType 210 Pick Sortation
+2025-05-04 13:35:53,986 - utils.prediction - INFO - RandomForest predicted 3.69 workers for WorkType 211 Misc
+2025-05-04 13:35:54,012 - utils.prediction - INFO - RandomForest predicted 1.77 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:35:54,043 - utils.prediction - INFO - RandomForest predicted 3.95 workers for WorkType 214 Large orders
+2025-05-04 13:35:54,066 - utils.prediction - INFO - RandomForest predicted 4.82 workers for WorkType 215 Picking Online
+2025-05-04 13:35:54,096 - utils.prediction - INFO - RandomForest predicted 0.23 workers for WorkType 217 Returns
+2025-05-04 13:35:54,114 - utils.prediction - INFO - Date 2025-01-04 is a non-working day: Saturday (Weekend)
+2025-05-04 13:35:54,115 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:35:54,131 - utils.prediction - INFO - Date 2025-01-05 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:35:54,132 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:35:54,147 - utils.prediction - INFO - Date 2025-01-06 is a non-working day: Swedish Holiday: Epiphany
+2025-05-04 13:35:54,147 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:35:54,164 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-07
+2025-05-04 13:35:54,195 - utils.prediction - INFO - RandomForest predicted 1.02 workers for WorkType 203 Goods receive D
+2025-05-04 13:35:54,221 - utils.prediction - INFO - RandomForest predicted 11.50 workers for WorkType 206 Replenishment
+2025-05-04 13:35:54,244 - utils.prediction - INFO - RandomForest predicted 1.05 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:35:54,269 - utils.prediction - INFO - RandomForest predicted 4.87 workers for WorkType 209 Sortation
+2025-05-04 13:35:54,293 - utils.prediction - INFO - RandomForest predicted 4.16 workers for WorkType 210 Pick Sortation
+2025-05-04 13:35:54,316 - utils.prediction - INFO - RandomForest predicted 3.32 workers for WorkType 211 Misc
+2025-05-04 13:35:54,342 - utils.prediction - INFO - RandomForest predicted 0.81 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:35:54,366 - utils.prediction - INFO - RandomForest predicted 1.44 workers for WorkType 214 Large orders
+2025-05-04 13:35:54,392 - utils.prediction - INFO - RandomForest predicted 2.21 workers for WorkType 215 Picking Online
+2025-05-04 13:35:54,416 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 13:35:54,425 - utils.prediction - INFO - Predictions completed for 7 days
+2025-05-04 13:36:09,952 - utils.prediction - INFO - Predicting for the next 30 days
+2025-05-04 13:36:09,990 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-02
+2025-05-04 13:36:10,052 - utils.prediction - INFO - RandomForest predicted 5.30 workers for WorkType 203 Goods receive D
+2025-05-04 13:36:10,113 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-03
+2025-05-04 13:36:10,159 - utils.prediction - INFO - RandomForest predicted 5.07 workers for WorkType 203 Goods receive D
+2025-05-04 13:36:10,176 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-04
+2025-05-04 13:36:10,210 - utils.prediction - INFO - RandomForest predicted 5.51 workers for WorkType 203 Goods receive D
+2025-05-04 13:36:10,227 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-05
+2025-05-04 13:36:10,265 - utils.prediction - INFO - RandomForest predicted 5.55 workers for WorkType 203 Goods receive D
+2025-05-04 13:36:10,281 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-06
+2025-05-04 13:36:10,319 - utils.prediction - INFO - RandomForest predicted 5.03 workers for WorkType 203 Goods receive D
+2025-05-04 13:36:10,331 - utils.prediction - INFO - Date 2024-12-07 is a non-working day: Saturday (Weekend)
+2025-05-04 13:36:10,332 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:10,348 - utils.prediction - INFO - Date 2024-12-08 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:36:10,348 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:10,364 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-09
+2025-05-04 13:36:10,396 - utils.prediction - INFO - RandomForest predicted 4.91 workers for WorkType 203 Goods receive D
+2025-05-04 13:36:10,412 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-10
+2025-05-04 13:36:10,444 - utils.prediction - INFO - RandomForest predicted 5.12 workers for WorkType 203 Goods receive D
+2025-05-04 13:36:10,463 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-11
+2025-05-04 13:36:10,508 - utils.prediction - INFO - RandomForest predicted 5.09 workers for WorkType 203 Goods receive D
+2025-05-04 13:36:10,521 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-12
+2025-05-04 13:36:10,554 - utils.prediction - INFO - RandomForest predicted 5.02 workers for WorkType 203 Goods receive D
+2025-05-04 13:36:10,565 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-13
+2025-05-04 13:36:10,598 - utils.prediction - INFO - RandomForest predicted 4.86 workers for WorkType 203 Goods receive D
+2025-05-04 13:36:10,613 - utils.prediction - INFO - Date 2024-12-14 is a non-working day: Saturday (Weekend)
+2025-05-04 13:36:10,614 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:10,629 - utils.prediction - INFO - Date 2024-12-15 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:36:10,629 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:10,644 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-16
+2025-05-04 13:36:10,675 - utils.prediction - INFO - RandomForest predicted 4.60 workers for WorkType 203 Goods receive D
+2025-05-04 13:36:10,691 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-17
+2025-05-04 13:36:10,722 - utils.prediction - INFO - RandomForest predicted 4.79 workers for WorkType 203 Goods receive D
+2025-05-04 13:36:10,737 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-18
+2025-05-04 13:36:10,767 - utils.prediction - INFO - RandomForest predicted 4.84 workers for WorkType 203 Goods receive D
+2025-05-04 13:36:10,780 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-19
+2025-05-04 13:36:10,812 - utils.prediction - INFO - RandomForest predicted 4.83 workers for WorkType 203 Goods receive D
+2025-05-04 13:36:10,827 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-20
+2025-05-04 13:36:10,862 - utils.prediction - INFO - RandomForest predicted 4.77 workers for WorkType 203 Goods receive D
+2025-05-04 13:36:10,878 - utils.prediction - INFO - Date 2024-12-21 is a non-working day: Saturday (Weekend)
+2025-05-04 13:36:10,878 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:10,896 - utils.prediction - INFO - Date 2024-12-22 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:36:10,896 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:10,914 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-23
+2025-05-04 13:36:10,958 - utils.prediction - INFO - RandomForest predicted 4.51 workers for WorkType 203 Goods receive D
+2025-05-04 13:36:10,981 - utils.prediction - INFO - Date 2024-12-24 is a non-working day: Swedish Holiday: Christmas Eve
+2025-05-04 13:36:10,981 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:11,004 - utils.prediction - INFO - Date 2024-12-25 is a non-working day: Swedish Holiday: Christmas Day
+2025-05-04 13:36:11,005 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:11,028 - utils.prediction - INFO - Date 2024-12-26 is a non-working day: Swedish Holiday: Second Day of Christmas
+2025-05-04 13:36:11,029 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:11,051 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-27
+2025-05-04 13:36:11,097 - utils.prediction - INFO - RandomForest predicted 2.72 workers for WorkType 203 Goods receive D
+2025-05-04 13:36:11,115 - utils.prediction - INFO - Date 2024-12-28 is a non-working day: Saturday (Weekend)
+2025-05-04 13:36:11,115 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:11,137 - utils.prediction - INFO - Date 2024-12-29 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:36:11,137 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:11,157 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-30
+2025-05-04 13:36:11,204 - utils.prediction - INFO - RandomForest predicted 3.62 workers for WorkType 203 Goods receive D
+2025-05-04 13:36:11,223 - utils.prediction - INFO - Date 2024-12-31 is a non-working day: Swedish Holiday: New Year's Eve
+2025-05-04 13:36:11,224 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:11,234 - utils.prediction - INFO - Predictions completed for 30 days
+2025-05-04 13:36:26,145 - utils.prediction - INFO - Predicting for the next 30 days
+2025-05-04 13:36:26,174 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-02
+2025-05-04 13:36:26,235 - utils.prediction - INFO - RandomForest predicted 27.15 workers for WorkType 206 Replenishment
+2025-05-04 13:36:26,258 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-03
+2025-05-04 13:36:26,295 - utils.prediction - INFO - RandomForest predicted 39.70 workers for WorkType 206 Replenishment
+2025-05-04 13:36:26,314 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-04
+2025-05-04 13:36:26,354 - utils.prediction - INFO - RandomForest predicted 36.72 workers for WorkType 206 Replenishment
+2025-05-04 13:36:26,368 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-05
+2025-05-04 13:36:26,400 - utils.prediction - INFO - RandomForest predicted 34.79 workers for WorkType 206 Replenishment
+2025-05-04 13:36:26,414 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-06
+2025-05-04 13:36:26,445 - utils.prediction - INFO - RandomForest predicted 26.38 workers for WorkType 206 Replenishment
+2025-05-04 13:36:26,460 - utils.prediction - INFO - Date 2024-12-07 is a non-working day: Saturday (Weekend)
+2025-05-04 13:36:26,461 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:26,475 - utils.prediction - INFO - Date 2024-12-08 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:36:26,475 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:26,490 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-09
+2025-05-04 13:36:26,521 - utils.prediction - INFO - RandomForest predicted 22.38 workers for WorkType 206 Replenishment
+2025-05-04 13:36:26,535 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-10
+2025-05-04 13:36:26,565 - utils.prediction - INFO - RandomForest predicted 23.52 workers for WorkType 206 Replenishment
+2025-05-04 13:36:26,578 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-11
+2025-05-04 13:36:26,608 - utils.prediction - INFO - RandomForest predicted 27.35 workers for WorkType 206 Replenishment
+2025-05-04 13:36:26,622 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-12
+2025-05-04 13:36:26,655 - utils.prediction - INFO - RandomForest predicted 25.91 workers for WorkType 206 Replenishment
+2025-05-04 13:36:26,671 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-13
+2025-05-04 13:36:26,707 - utils.prediction - INFO - RandomForest predicted 23.22 workers for WorkType 206 Replenishment
+2025-05-04 13:36:26,721 - utils.prediction - INFO - Date 2024-12-14 is a non-working day: Saturday (Weekend)
+2025-05-04 13:36:26,721 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:26,736 - utils.prediction - INFO - Date 2024-12-15 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:36:26,736 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:26,749 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-16
+2025-05-04 13:36:26,779 - utils.prediction - INFO - RandomForest predicted 14.39 workers for WorkType 206 Replenishment
+2025-05-04 13:36:26,794 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-17
+2025-05-04 13:36:26,825 - utils.prediction - INFO - RandomForest predicted 15.08 workers for WorkType 206 Replenishment
+2025-05-04 13:36:26,840 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-18
+2025-05-04 13:36:26,876 - utils.prediction - INFO - RandomForest predicted 24.75 workers for WorkType 206 Replenishment
+2025-05-04 13:36:26,891 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-19
+2025-05-04 13:36:26,921 - utils.prediction - INFO - RandomForest predicted 24.31 workers for WorkType 206 Replenishment
+2025-05-04 13:36:26,936 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-20
+2025-05-04 13:36:26,969 - utils.prediction - INFO - RandomForest predicted 20.85 workers for WorkType 206 Replenishment
+2025-05-04 13:36:26,983 - utils.prediction - INFO - Date 2024-12-21 is a non-working day: Saturday (Weekend)
+2025-05-04 13:36:26,983 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:26,995 - utils.prediction - INFO - Date 2024-12-22 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:36:26,995 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:27,011 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-23
+2025-05-04 13:36:27,042 - utils.prediction - INFO - RandomForest predicted 12.49 workers for WorkType 206 Replenishment
+2025-05-04 13:36:27,057 - utils.prediction - INFO - Date 2024-12-24 is a non-working day: Swedish Holiday: Christmas Eve
+2025-05-04 13:36:27,057 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:27,071 - utils.prediction - INFO - Date 2024-12-25 is a non-working day: Swedish Holiday: Christmas Day
+2025-05-04 13:36:27,072 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:27,087 - utils.prediction - INFO - Date 2024-12-26 is a non-working day: Swedish Holiday: Second Day of Christmas
+2025-05-04 13:36:27,087 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:27,102 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-27
+2025-05-04 13:36:27,136 - utils.prediction - INFO - RandomForest predicted 13.28 workers for WorkType 206 Replenishment
+2025-05-04 13:36:27,152 - utils.prediction - INFO - Date 2024-12-28 is a non-working day: Saturday (Weekend)
+2025-05-04 13:36:27,152 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:27,168 - utils.prediction - INFO - Date 2024-12-29 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:36:27,169 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:27,183 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-30
+2025-05-04 13:36:27,213 - utils.prediction - INFO - RandomForest predicted 9.30 workers for WorkType 206 Replenishment
+2025-05-04 13:36:27,227 - utils.prediction - INFO - Date 2024-12-31 is a non-working day: Swedish Holiday: New Year's Eve
+2025-05-04 13:36:27,227 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:36:27,235 - utils.prediction - INFO - Predictions completed for 30 days
+2025-05-04 13:40:41,628 - utils.prediction - INFO - Predicting for the next 7 days
+2025-05-04 13:40:41,654 - utils.prediction - INFO - Date 2025-01-01 is a non-working day: Swedish Holiday: New Year's Day
+2025-05-04 13:40:41,654 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:40:41,676 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-02
+2025-05-04 13:40:41,725 - utils.prediction - INFO - RandomForest predicted 0.89 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:41,757 - utils.prediction - INFO - RandomForest predicted 13.49 workers for WorkType 206 Replenishment
+2025-05-04 13:40:41,788 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:40:41,812 - utils.prediction - INFO - RandomForest predicted 10.14 workers for WorkType 209 Sortation
+2025-05-04 13:40:41,843 - utils.prediction - INFO - RandomForest predicted 4.24 workers for WorkType 210 Pick Sortation
+2025-05-04 13:40:41,871 - utils.prediction - INFO - RandomForest predicted 3.19 workers for WorkType 211 Misc
+2025-05-04 13:40:41,897 - utils.prediction - INFO - RandomForest predicted 1.53 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:40:41,925 - utils.prediction - INFO - RandomForest predicted 2.91 workers for WorkType 214 Large orders
+2025-05-04 13:40:41,948 - utils.prediction - INFO - RandomForest predicted 4.05 workers for WorkType 215 Picking Online
+2025-05-04 13:40:41,974 - utils.prediction - INFO - RandomForest predicted 0.27 workers for WorkType 217 Returns
+2025-05-04 13:40:41,990 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-03
+2025-05-04 13:40:42,021 - utils.prediction - INFO - RandomForest predicted 1.74 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:42,043 - utils.prediction - INFO - RandomForest predicted 11.85 workers for WorkType 206 Replenishment
+2025-05-04 13:40:42,070 - utils.prediction - INFO - RandomForest predicted 2.12 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:40:42,093 - utils.prediction - INFO - RandomForest predicted 10.71 workers for WorkType 209 Sortation
+2025-05-04 13:40:42,118 - utils.prediction - INFO - RandomForest predicted 6.46 workers for WorkType 210 Pick Sortation
+2025-05-04 13:40:42,146 - utils.prediction - INFO - RandomForest predicted 3.69 workers for WorkType 211 Misc
+2025-05-04 13:40:42,180 - utils.prediction - INFO - RandomForest predicted 1.77 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:40:42,207 - utils.prediction - INFO - RandomForest predicted 3.95 workers for WorkType 214 Large orders
+2025-05-04 13:40:42,231 - utils.prediction - INFO - RandomForest predicted 4.82 workers for WorkType 215 Picking Online
+2025-05-04 13:40:42,258 - utils.prediction - INFO - RandomForest predicted 0.23 workers for WorkType 217 Returns
+2025-05-04 13:40:42,274 - utils.prediction - INFO - Date 2025-01-04 is a non-working day: Saturday (Weekend)
+2025-05-04 13:40:42,274 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:40:42,289 - utils.prediction - INFO - Date 2025-01-05 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:40:42,289 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:40:42,304 - utils.prediction - INFO - Date 2025-01-06 is a non-working day: Swedish Holiday: Epiphany
+2025-05-04 13:40:42,304 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:40:42,320 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-07
+2025-05-04 13:40:42,354 - utils.prediction - INFO - RandomForest predicted 1.02 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:42,379 - utils.prediction - INFO - RandomForest predicted 11.50 workers for WorkType 206 Replenishment
+2025-05-04 13:40:42,407 - utils.prediction - INFO - RandomForest predicted 1.05 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 13:40:42,435 - utils.prediction - INFO - RandomForest predicted 4.87 workers for WorkType 209 Sortation
+2025-05-04 13:40:42,460 - utils.prediction - INFO - RandomForest predicted 4.16 workers for WorkType 210 Pick Sortation
+2025-05-04 13:40:42,488 - utils.prediction - INFO - RandomForest predicted 3.32 workers for WorkType 211 Misc
+2025-05-04 13:40:42,512 - utils.prediction - INFO - RandomForest predicted 0.81 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 13:40:42,540 - utils.prediction - INFO - RandomForest predicted 1.44 workers for WorkType 214 Large orders
+2025-05-04 13:40:42,564 - utils.prediction - INFO - RandomForest predicted 2.21 workers for WorkType 215 Picking Online
+2025-05-04 13:40:42,591 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 13:40:42,596 - utils.prediction - INFO - Predictions completed for 7 days
+2025-05-04 13:40:56,684 - utils.prediction - INFO - Predicting for the next 30 days
+2025-05-04 13:40:56,708 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-02
+2025-05-04 13:40:56,759 - utils.prediction - INFO - RandomForest predicted 5.30 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:56,775 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-03
+2025-05-04 13:40:56,844 - utils.prediction - INFO - RandomForest predicted 5.07 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:56,860 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-04
+2025-05-04 13:40:56,895 - utils.prediction - INFO - RandomForest predicted 5.51 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:56,913 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-05
+2025-05-04 13:40:56,952 - utils.prediction - INFO - RandomForest predicted 5.55 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:56,972 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-06
+2025-05-04 13:40:57,009 - utils.prediction - INFO - RandomForest predicted 5.03 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:57,024 - utils.prediction - INFO - Date 2024-12-07 is a non-working day: Saturday (Weekend)
+2025-05-04 13:40:57,024 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:40:57,040 - utils.prediction - INFO - Date 2024-12-08 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:40:57,040 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:40:57,056 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-09
+2025-05-04 13:40:57,087 - utils.prediction - INFO - RandomForest predicted 4.91 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:57,101 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-10
+2025-05-04 13:40:57,130 - utils.prediction - INFO - RandomForest predicted 5.12 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:57,144 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-11
+2025-05-04 13:40:57,174 - utils.prediction - INFO - RandomForest predicted 5.09 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:57,193 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-12
+2025-05-04 13:40:57,236 - utils.prediction - INFO - RandomForest predicted 5.02 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:57,248 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-13
+2025-05-04 13:40:57,279 - utils.prediction - INFO - RandomForest predicted 4.86 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:57,294 - utils.prediction - INFO - Date 2024-12-14 is a non-working day: Saturday (Weekend)
+2025-05-04 13:40:57,294 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:40:57,308 - utils.prediction - INFO - Date 2024-12-15 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:40:57,309 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:40:57,324 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-16
+2025-05-04 13:40:57,354 - utils.prediction - INFO - RandomForest predicted 4.60 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:57,369 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-17
+2025-05-04 13:40:57,402 - utils.prediction - INFO - RandomForest predicted 4.79 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:57,419 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-18
+2025-05-04 13:40:57,453 - utils.prediction - INFO - RandomForest predicted 4.84 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:57,468 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-19
+2025-05-04 13:40:57,499 - utils.prediction - INFO - RandomForest predicted 4.83 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:57,511 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-20
+2025-05-04 13:40:57,543 - utils.prediction - INFO - RandomForest predicted 4.77 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:57,558 - utils.prediction - INFO - Date 2024-12-21 is a non-working day: Saturday (Weekend)
+2025-05-04 13:40:57,558 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:40:57,573 - utils.prediction - INFO - Date 2024-12-22 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:40:57,573 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:40:57,588 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-23
+2025-05-04 13:40:57,623 - utils.prediction - INFO - RandomForest predicted 4.51 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:57,639 - utils.prediction - INFO - Date 2024-12-24 is a non-working day: Swedish Holiday: Christmas Eve
+2025-05-04 13:40:57,639 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:40:57,661 - utils.prediction - INFO - Date 2024-12-25 is a non-working day: Swedish Holiday: Christmas Day
+2025-05-04 13:40:57,661 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:40:57,679 - utils.prediction - INFO - Date 2024-12-26 is a non-working day: Swedish Holiday: Second Day of Christmas
+2025-05-04 13:40:57,679 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:40:57,696 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-27
+2025-05-04 13:40:57,735 - utils.prediction - INFO - RandomForest predicted 2.72 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:57,748 - utils.prediction - INFO - Date 2024-12-28 is a non-working day: Saturday (Weekend)
+2025-05-04 13:40:57,749 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:40:57,763 - utils.prediction - INFO - Date 2024-12-29 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 13:40:57,763 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:40:57,779 - utils.prediction - INFO - Predicting NoOfMan for 2024-12-30
+2025-05-04 13:40:57,811 - utils.prediction - INFO - RandomForest predicted 3.62 workers for WorkType 203 Goods receive D
+2025-05-04 13:40:57,827 - utils.prediction - INFO - Date 2024-12-31 is a non-working day: Swedish Holiday: New Year's Eve
+2025-05-04 13:40:57,828 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 13:40:57,839 - utils.prediction - INFO - Predictions completed for 30 days
+2025-05-04 16:30:11,012 - __main__ - INFO - Loading data from uploaded file: work_utilization_melted1.xlsx
+2025-05-04 16:30:11,019 - utils.data_loader - INFO - Loading data from UploadedFile(file_id='218acf1a-6bb0-48a7-abd1-21f7c09fcd14', name='work_utilization_melted1.xlsx', type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', size=1438356, _file_urls=file_id: "218acf1a-6bb0-48a7-abd1-21f7c09fcd14"
+upload_url: "/_stcore/upload_file/e48fbd8c-af48-4dba-bf8b-d7db5fa7831d/218acf1a-6bb0-48a7-abd1-21f7c09fcd14"
+delete_url: "/_stcore/upload_file/e48fbd8c-af48-4dba-bf8b-d7db5fa7831d/218acf1a-6bb0-48a7-abd1-21f7c09fcd14"
+)
+2025-05-04 16:30:17,324 - utils.data_loader - INFO - Data loaded successfully. Shape: (32131, 9)
+2025-05-04 16:30:17,384 - utils.feature_engineering - INFO - Engineering features
+2025-05-04 16:30:17,472 - utils.feature_engineering - INFO - Feature engineering completed. Added 9 new features.
+2025-05-04 16:30:17,532 - utils.feature_engineering - INFO - Creating lag features for NoOfMan grouped by WorkType
+2025-05-04 16:30:18,224 - utils.feature_engineering - INFO - Lag features created. Dropped 4015 rows with NaN values.
+2025-05-04 16:30:18,225 - utils.feature_engineering - INFO - Final shape: (28116, 37)
+2025-05-04 16:30:22,785 - utils.data_loader - INFO - Models loaded successfully. Number of models: 11
+2025-05-04 16:30:22,789 - __main__ - INFO - Models loaded successfully
+2025-05-04 16:30:58,887 - utils.prediction - INFO - Predicting for the next 7 days
+2025-05-04 16:30:58,936 - utils.prediction - INFO - Date 2025-01-01 is a non-working day: Swedish Holiday: New Year's Day
+2025-05-04 16:30:58,936 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 16:30:58,965 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-02
+2025-05-04 16:30:59,044 - utils.prediction - INFO - RandomForest predicted 0.89 workers for WorkType 203 Goods receive D
+2025-05-04 16:30:59,106 - utils.prediction - INFO - RandomForest predicted 13.49 workers for WorkType 206 Replenishment
+2025-05-04 16:30:59,163 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:30:59,222 - utils.prediction - INFO - RandomForest predicted 10.14 workers for WorkType 209 Sortation
+2025-05-04 16:30:59,330 - utils.prediction - INFO - RandomForest predicted 4.24 workers for WorkType 210 Pick Sortation
+2025-05-04 16:30:59,460 - utils.prediction - INFO - RandomForest predicted 3.19 workers for WorkType 211 Misc
+2025-05-04 16:30:59,545 - utils.prediction - INFO - RandomForest predicted 1.53 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:30:59,618 - utils.prediction - INFO - RandomForest predicted 2.91 workers for WorkType 214 Large orders
+2025-05-04 16:30:59,690 - utils.prediction - INFO - RandomForest predicted 4.05 workers for WorkType 215 Picking Online
+2025-05-04 16:30:59,807 - utils.prediction - INFO - RandomForest predicted 0.27 workers for WorkType 217 Returns
+2025-05-04 16:30:59,869 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-03
+2025-05-04 16:31:00,027 - utils.prediction - INFO - RandomForest predicted 1.74 workers for WorkType 203 Goods receive D
+2025-05-04 16:31:00,161 - utils.prediction - INFO - RandomForest predicted 11.85 workers for WorkType 206 Replenishment
+2025-05-04 16:31:00,278 - utils.prediction - INFO - RandomForest predicted 2.12 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:31:00,391 - utils.prediction - INFO - RandomForest predicted 10.71 workers for WorkType 209 Sortation
+2025-05-04 16:31:00,509 - utils.prediction - INFO - RandomForest predicted 6.46 workers for WorkType 210 Pick Sortation
+2025-05-04 16:31:00,622 - utils.prediction - INFO - RandomForest predicted 3.69 workers for WorkType 211 Misc
+2025-05-04 16:31:00,740 - utils.prediction - INFO - RandomForest predicted 1.77 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:31:00,856 - utils.prediction - INFO - RandomForest predicted 3.95 workers for WorkType 214 Large orders
+2025-05-04 16:31:00,974 - utils.prediction - INFO - RandomForest predicted 4.82 workers for WorkType 215 Picking Online
+2025-05-04 16:31:01,071 - utils.prediction - INFO - RandomForest predicted 0.23 workers for WorkType 217 Returns
+2025-05-04 16:31:01,110 - utils.prediction - INFO - Date 2025-01-04 is a non-working day: Saturday (Weekend)
+2025-05-04 16:31:01,111 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 16:31:01,154 - utils.prediction - INFO - Date 2025-01-05 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 16:31:01,155 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 16:31:01,199 - utils.prediction - INFO - Date 2025-01-06 is a non-working day: Swedish Holiday: Epiphany
+2025-05-04 16:31:01,200 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 16:31:01,242 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-07
+2025-05-04 16:31:01,342 - utils.prediction - INFO - RandomForest predicted 1.02 workers for WorkType 203 Goods receive D
+2025-05-04 16:31:01,454 - utils.prediction - INFO - RandomForest predicted 11.50 workers for WorkType 206 Replenishment
+2025-05-04 16:31:01,553 - utils.prediction - INFO - RandomForest predicted 1.05 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:31:01,677 - utils.prediction - INFO - RandomForest predicted 4.87 workers for WorkType 209 Sortation
+2025-05-04 16:31:01,737 - utils.prediction - INFO - RandomForest predicted 4.16 workers for WorkType 210 Pick Sortation
+2025-05-04 16:31:01,793 - utils.prediction - INFO - RandomForest predicted 3.32 workers for WorkType 211 Misc
+2025-05-04 16:31:01,888 - utils.prediction - INFO - RandomForest predicted 0.81 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:31:02,004 - utils.prediction - INFO - RandomForest predicted 1.44 workers for WorkType 214 Large orders
+2025-05-04 16:31:02,106 - utils.prediction - INFO - RandomForest predicted 2.21 workers for WorkType 215 Picking Online
+2025-05-04 16:31:02,214 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 16:31:02,227 - utils.prediction - INFO - Predictions completed for 7 days
+2025-05-04 16:31:15,528 - utils.prediction - INFO - Predicting for the next 18 days
+2025-05-04 16:31:15,568 - utils.prediction - INFO - Date 2025-01-01 is a non-working day: Swedish Holiday: New Year's Day
+2025-05-04 16:31:15,569 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 16:31:15,595 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-02
+2025-05-04 16:31:15,677 - utils.prediction - INFO - RandomForest predicted 0.89 workers for WorkType 203 Goods receive D
+2025-05-04 16:31:15,745 - utils.prediction - INFO - RandomForest predicted 13.49 workers for WorkType 206 Replenishment
+2025-05-04 16:31:15,803 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:31:15,859 - utils.prediction - INFO - RandomForest predicted 10.14 workers for WorkType 209 Sortation
+2025-05-04 16:31:15,947 - utils.prediction - INFO - RandomForest predicted 4.24 workers for WorkType 210 Pick Sortation
+2025-05-04 16:31:16,002 - utils.prediction - INFO - RandomForest predicted 3.19 workers for WorkType 211 Misc
+2025-05-04 16:31:16,061 - utils.prediction - INFO - RandomForest predicted 1.53 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:31:16,123 - utils.prediction - INFO - RandomForest predicted 2.91 workers for WorkType 214 Large orders
+2025-05-04 16:31:16,182 - utils.prediction - INFO - RandomForest predicted 4.05 workers for WorkType 215 Picking Online
+2025-05-04 16:31:16,261 - utils.prediction - INFO - RandomForest predicted 0.27 workers for WorkType 217 Returns
+2025-05-04 16:31:16,323 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-03
+2025-05-04 16:31:16,469 - utils.prediction - INFO - RandomForest predicted 1.74 workers for WorkType 203 Goods receive D
+2025-05-04 16:31:16,579 - utils.prediction - INFO - RandomForest predicted 11.85 workers for WorkType 206 Replenishment
+2025-05-04 16:31:16,695 - utils.prediction - INFO - RandomForest predicted 2.12 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:31:16,800 - utils.prediction - INFO - RandomForest predicted 10.71 workers for WorkType 209 Sortation
+2025-05-04 16:31:16,915 - utils.prediction - INFO - RandomForest predicted 6.46 workers for WorkType 210 Pick Sortation
+2025-05-04 16:31:17,028 - utils.prediction - INFO - RandomForest predicted 3.69 workers for WorkType 211 Misc
+2025-05-04 16:31:17,150 - utils.prediction - INFO - RandomForest predicted 1.77 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:31:17,262 - utils.prediction - INFO - RandomForest predicted 3.95 workers for WorkType 214 Large orders
+2025-05-04 16:31:17,375 - utils.prediction - INFO - RandomForest predicted 4.82 workers for WorkType 215 Picking Online
+2025-05-04 16:31:17,470 - utils.prediction - INFO - RandomForest predicted 0.23 workers for WorkType 217 Returns
+2025-05-04 16:31:17,527 - utils.prediction - INFO - Date 2025-01-04 is a non-working day: Saturday (Weekend)
+2025-05-04 16:31:17,528 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 16:31:17,592 - utils.prediction - INFO - Date 2025-01-05 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 16:31:17,592 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 16:31:17,656 - utils.prediction - INFO - Date 2025-01-06 is a non-working day: Swedish Holiday: Epiphany
+2025-05-04 16:31:17,657 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 16:31:17,721 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-07
+2025-05-04 16:31:17,871 - utils.prediction - INFO - RandomForest predicted 1.02 workers for WorkType 203 Goods receive D
+2025-05-04 16:31:17,985 - utils.prediction - INFO - RandomForest predicted 11.50 workers for WorkType 206 Replenishment
+2025-05-04 16:31:18,102 - utils.prediction - INFO - RandomForest predicted 1.05 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:31:18,220 - utils.prediction - INFO - RandomForest predicted 4.87 workers for WorkType 209 Sortation
+2025-05-04 16:31:18,343 - utils.prediction - INFO - RandomForest predicted 4.16 workers for WorkType 210 Pick Sortation
+2025-05-04 16:31:18,456 - utils.prediction - INFO - RandomForest predicted 3.32 workers for WorkType 211 Misc
+2025-05-04 16:31:18,556 - utils.prediction - INFO - RandomForest predicted 0.81 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:31:18,674 - utils.prediction - INFO - RandomForest predicted 1.44 workers for WorkType 214 Large orders
+2025-05-04 16:31:18,764 - utils.prediction - INFO - RandomForest predicted 2.21 workers for WorkType 215 Picking Online
+2025-05-04 16:31:18,820 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 16:31:18,852 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-08
+2025-05-04 16:31:18,926 - utils.prediction - INFO - RandomForest predicted 0.74 workers for WorkType 203 Goods receive D
+2025-05-04 16:31:18,983 - utils.prediction - INFO - RandomForest predicted 3.60 workers for WorkType 206 Replenishment
+2025-05-04 16:31:19,044 - utils.prediction - INFO - RandomForest predicted 1.38 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:31:19,164 - utils.prediction - INFO - RandomForest predicted 5.76 workers for WorkType 209 Sortation
+2025-05-04 16:31:19,266 - utils.prediction - INFO - RandomForest predicted 2.76 workers for WorkType 210 Pick Sortation
+2025-05-04 16:31:19,381 - utils.prediction - INFO - RandomForest predicted 3.49 workers for WorkType 211 Misc
+2025-05-04 16:31:19,501 - utils.prediction - INFO - RandomForest predicted 0.87 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:31:19,623 - utils.prediction - INFO - RandomForest predicted 2.49 workers for WorkType 214 Large orders
+2025-05-04 16:31:19,747 - utils.prediction - INFO - RandomForest predicted 2.55 workers for WorkType 215 Picking Online
+2025-05-04 16:31:19,832 - utils.prediction - INFO - RandomForest predicted 0.01 workers for WorkType 217 Returns
+2025-05-04 16:31:19,872 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-09
+2025-05-04 16:31:19,965 - utils.prediction - INFO - RandomForest predicted 0.75 workers for WorkType 203 Goods receive D
+2025-05-04 16:31:20,062 - utils.prediction - INFO - RandomForest predicted 16.25 workers for WorkType 206 Replenishment
+2025-05-04 16:31:20,182 - utils.prediction - INFO - RandomForest predicted 1.38 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:31:20,308 - utils.prediction - INFO - RandomForest predicted 8.52 workers for WorkType 209 Sortation
+2025-05-04 16:31:20,388 - utils.prediction - INFO - RandomForest predicted 2.61 workers for WorkType 210 Pick Sortation
+2025-05-04 16:31:20,473 - utils.prediction - INFO - RandomForest predicted 3.63 workers for WorkType 211 Misc
+2025-05-04 16:31:20,550 - utils.prediction - INFO - RandomForest predicted 1.20 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:31:20,621 - utils.prediction - INFO - RandomForest predicted 2.88 workers for WorkType 214 Large orders
+2025-05-04 16:31:20,742 - utils.prediction - INFO - RandomForest predicted 3.61 workers for WorkType 215 Picking Online
+2025-05-04 16:31:20,855 - utils.prediction - INFO - RandomForest predicted 0.09 workers for WorkType 217 Returns
+2025-05-04 16:31:20,918 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-10
+2025-05-04 16:31:21,066 - utils.prediction - INFO - RandomForest predicted 1.16 workers for WorkType 203 Goods receive D
+2025-05-04 16:31:21,148 - utils.prediction - INFO - RandomForest predicted 8.09 workers for WorkType 206 Replenishment
+2025-05-04 16:31:21,256 - utils.prediction - INFO - RandomForest predicted 1.19 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:31:21,359 - utils.prediction - INFO - RandomForest predicted 7.13 workers for WorkType 209 Sortation
+2025-05-04 16:31:21,464 - utils.prediction - INFO - RandomForest predicted 2.79 workers for WorkType 210 Pick Sortation
+2025-05-04 16:31:21,546 - utils.prediction - INFO - RandomForest predicted 3.63 workers for WorkType 211 Misc
+2025-05-04 16:31:21,632 - utils.prediction - INFO - RandomForest predicted 1.00 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:31:21,740 - utils.prediction - INFO - RandomForest predicted 2.66 workers for WorkType 214 Large orders
+2025-05-04 16:31:21,855 - utils.prediction - INFO - RandomForest predicted 3.14 workers for WorkType 215 Picking Online
+2025-05-04 16:31:21,953 - utils.prediction - INFO - RandomForest predicted 0.24 workers for WorkType 217 Returns
+2025-05-04 16:31:22,014 - utils.prediction - INFO - Date 2025-01-11 is a non-working day: Saturday (Weekend)
+2025-05-04 16:31:22,015 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 16:31:22,075 - utils.prediction - INFO - Date 2025-01-12 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 16:31:22,076 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 16:31:22,143 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-13
+2025-05-04 16:31:22,287 - utils.prediction - INFO - RandomForest predicted 0.59 workers for WorkType 203 Goods receive D
+2025-05-04 16:31:22,373 - utils.prediction - INFO - RandomForest predicted 8.32 workers for WorkType 206 Replenishment
+2025-05-04 16:31:22,462 - utils.prediction - INFO - RandomForest predicted 0.91 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:31:22,566 - utils.prediction - INFO - RandomForest predicted 4.02 workers for WorkType 209 Sortation
+2025-05-04 16:31:22,678 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 210 Pick Sortation
+2025-05-04 16:31:22,770 - utils.prediction - INFO - RandomForest predicted 3.56 workers for WorkType 211 Misc
+2025-05-04 16:31:22,877 - utils.prediction - INFO - RandomForest predicted 0.82 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:31:22,983 - utils.prediction - INFO - RandomForest predicted 1.91 workers for WorkType 214 Large orders
+2025-05-04 16:31:23,055 - utils.prediction - INFO - RandomForest predicted 2.48 workers for WorkType 215 Picking Online
+2025-05-04 16:31:23,123 - utils.prediction - INFO - RandomForest predicted 0.10 workers for WorkType 217 Returns
+2025-05-04 16:31:23,164 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-14
+2025-05-04 16:31:23,327 - utils.prediction - INFO - RandomForest predicted 1.62 workers for WorkType 203 Goods receive D
+2025-05-04 16:31:23,413 - utils.prediction - INFO - RandomForest predicted 12.71 workers for WorkType 206 Replenishment
+2025-05-04 16:31:23,534 - utils.prediction - INFO - RandomForest predicted 1.14 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:31:23,639 - utils.prediction - INFO - RandomForest predicted 5.59 workers for WorkType 209 Sortation
+2025-05-04 16:31:23,710 - utils.prediction - INFO - RandomForest predicted 2.92 workers for WorkType 210 Pick Sortation
+2025-05-04 16:31:23,787 - utils.prediction - INFO - RandomForest predicted 3.74 workers for WorkType 211 Misc
+2025-05-04 16:31:23,903 - utils.prediction - INFO - RandomForest predicted 0.99 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:31:24,016 - utils.prediction - INFO - RandomForest predicted 2.15 workers for WorkType 214 Large orders
+2025-05-04 16:31:24,086 - utils.prediction - INFO - RandomForest predicted 2.93 workers for WorkType 215 Picking Online
+2025-05-04 16:31:24,145 - utils.prediction - INFO - RandomForest predicted 0.06 workers for WorkType 217 Returns
+2025-05-04 16:31:24,176 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-15
+2025-05-04 16:31:24,250 - utils.prediction - INFO - RandomForest predicted 0.87 workers for WorkType 203 Goods receive D
+2025-05-04 16:31:24,305 - utils.prediction - INFO - RandomForest predicted 15.70 workers for WorkType 206 Replenishment
+2025-05-04 16:31:24,359 - utils.prediction - INFO - RandomForest predicted 1.25 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:31:24,415 - utils.prediction - INFO - RandomForest predicted 7.22 workers for WorkType 209 Sortation
+2025-05-04 16:31:24,473 - utils.prediction - INFO - RandomForest predicted 2.71 workers for WorkType 210 Pick Sortation
+2025-05-04 16:31:24,593 - utils.prediction - INFO - RandomForest predicted 4.26 workers for WorkType 211 Misc
+2025-05-04 16:31:24,699 - utils.prediction - INFO - RandomForest predicted 1.10 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:31:24,758 - utils.prediction - INFO - RandomForest predicted 2.26 workers for WorkType 214 Large orders
+2025-05-04 16:31:24,831 - utils.prediction - INFO - RandomForest predicted 3.22 workers for WorkType 215 Picking Online
+2025-05-04 16:31:24,882 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 16:31:24,911 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-16
+2025-05-04 16:31:24,990 - utils.prediction - INFO - RandomForest predicted 0.75 workers for WorkType 203 Goods receive D
+2025-05-04 16:31:25,090 - utils.prediction - INFO - RandomForest predicted 12.81 workers for WorkType 206 Replenishment
+2025-05-04 16:31:25,179 - utils.prediction - INFO - RandomForest predicted 1.19 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:31:25,256 - utils.prediction - INFO - RandomForest predicted 7.73 workers for WorkType 209 Sortation
+2025-05-04 16:31:25,322 - utils.prediction - INFO - RandomForest predicted 2.40 workers for WorkType 210 Pick Sortation
+2025-05-04 16:31:25,383 - utils.prediction - INFO - RandomForest predicted 3.76 workers for WorkType 211 Misc
+2025-05-04 16:31:25,450 - utils.prediction - INFO - RandomForest predicted 1.13 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:31:25,519 - utils.prediction - INFO - RandomForest predicted 2.43 workers for WorkType 214 Large orders
+2025-05-04 16:31:25,581 - utils.prediction - INFO - RandomForest predicted 3.21 workers for WorkType 215 Picking Online
+2025-05-04 16:31:25,642 - utils.prediction - INFO - RandomForest predicted 0.05 workers for WorkType 217 Returns
+2025-05-04 16:31:25,675 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-17
+2025-05-04 16:31:25,761 - utils.prediction - INFO - RandomForest predicted 0.76 workers for WorkType 203 Goods receive D
+2025-05-04 16:31:25,818 - utils.prediction - INFO - RandomForest predicted 10.20 workers for WorkType 206 Replenishment
+2025-05-04 16:31:25,887 - utils.prediction - INFO - RandomForest predicted 0.99 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:31:25,956 - utils.prediction - INFO - RandomForest predicted 6.45 workers for WorkType 209 Sortation
+2025-05-04 16:31:26,020 - utils.prediction - INFO - RandomForest predicted 2.15 workers for WorkType 210 Pick Sortation
+2025-05-04 16:31:26,079 - utils.prediction - INFO - RandomForest predicted 3.37 workers for WorkType 211 Misc
+2025-05-04 16:31:26,178 - utils.prediction - INFO - RandomForest predicted 0.92 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:31:26,234 - utils.prediction - INFO - RandomForest predicted 2.18 workers for WorkType 214 Large orders
+2025-05-04 16:31:26,351 - utils.prediction - INFO - RandomForest predicted 2.90 workers for WorkType 215 Picking Online
+2025-05-04 16:31:26,465 - utils.prediction - INFO - RandomForest predicted 0.16 workers for WorkType 217 Returns
+2025-05-04 16:31:26,521 - utils.prediction - INFO - Date 2025-01-18 is a non-working day: Saturday (Weekend)
+2025-05-04 16:31:26,522 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 16:31:26,544 - utils.prediction - INFO - Predictions completed for 18 days
+2025-05-04 16:37:24,458 - __main__ - INFO - Loading data from uploaded file: work_utilization_melted1.xlsx
+2025-05-04 16:37:24,552 - __main__ - INFO - Models loaded successfully
+2025-05-04 16:37:36,480 - utils.prediction - INFO - Predicting for the next 7 days
+2025-05-04 16:37:36,515 - utils.prediction - INFO - Date 2025-01-01 is a non-working day: Swedish Holiday: New Year's Day
+2025-05-04 16:37:36,516 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 16:37:36,541 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-02
+2025-05-04 16:37:36,613 - utils.prediction - INFO - RandomForest predicted 0.89 workers for WorkType 203 Goods receive D
+2025-05-04 16:37:36,690 - utils.prediction - INFO - RandomForest predicted 13.49 workers for WorkType 206 Replenishment
+2025-05-04 16:37:36,748 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:37:36,804 - utils.prediction - INFO - RandomForest predicted 10.14 workers for WorkType 209 Sortation
+2025-05-04 16:37:36,892 - utils.prediction - INFO - RandomForest predicted 4.24 workers for WorkType 210 Pick Sortation
+2025-05-04 16:37:37,010 - utils.prediction - INFO - RandomForest predicted 3.19 workers for WorkType 211 Misc
+2025-05-04 16:37:37,123 - utils.prediction - INFO - RandomForest predicted 1.53 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:37:37,189 - utils.prediction - INFO - RandomForest predicted 2.91 workers for WorkType 214 Large orders
+2025-05-04 16:37:37,290 - utils.prediction - INFO - RandomForest predicted 4.05 workers for WorkType 215 Picking Online
+2025-05-04 16:37:37,409 - utils.prediction - INFO - RandomForest predicted 0.27 workers for WorkType 217 Returns
+2025-05-04 16:37:37,468 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-03
+2025-05-04 16:37:37,600 - utils.prediction - INFO - RandomForest predicted 1.74 workers for WorkType 203 Goods receive D
+2025-05-04 16:37:37,719 - utils.prediction - INFO - RandomForest predicted 11.85 workers for WorkType 206 Replenishment
+2025-05-04 16:37:37,843 - utils.prediction - INFO - RandomForest predicted 2.12 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:37:37,959 - utils.prediction - INFO - RandomForest predicted 10.71 workers for WorkType 209 Sortation
+2025-05-04 16:37:38,100 - utils.prediction - INFO - RandomForest predicted 6.46 workers for WorkType 210 Pick Sortation
+2025-05-04 16:37:38,178 - utils.prediction - INFO - RandomForest predicted 3.69 workers for WorkType 211 Misc
+2025-05-04 16:37:38,237 - utils.prediction - INFO - RandomForest predicted 1.77 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:37:38,303 - utils.prediction - INFO - RandomForest predicted 3.95 workers for WorkType 214 Large orders
+2025-05-04 16:37:38,374 - utils.prediction - INFO - RandomForest predicted 4.82 workers for WorkType 215 Picking Online
+2025-05-04 16:37:38,438 - utils.prediction - INFO - RandomForest predicted 0.23 workers for WorkType 217 Returns
+2025-05-04 16:37:38,469 - utils.prediction - INFO - Date 2025-01-04 is a non-working day: Saturday (Weekend)
+2025-05-04 16:37:38,470 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 16:37:38,503 - utils.prediction - INFO - Date 2025-01-05 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 16:37:38,503 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 16:37:38,533 - utils.prediction - INFO - Date 2025-01-06 is a non-working day: Swedish Holiday: Epiphany
+2025-05-04 16:37:38,534 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 16:37:38,565 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-07
+2025-05-04 16:37:38,644 - utils.prediction - INFO - RandomForest predicted 1.02 workers for WorkType 203 Goods receive D
+2025-05-04 16:37:38,724 - utils.prediction - INFO - RandomForest predicted 11.50 workers for WorkType 206 Replenishment
+2025-05-04 16:37:38,814 - utils.prediction - INFO - RandomForest predicted 1.05 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:37:38,927 - utils.prediction - INFO - RandomForest predicted 4.87 workers for WorkType 209 Sortation
+2025-05-04 16:37:39,042 - utils.prediction - INFO - RandomForest predicted 4.16 workers for WorkType 210 Pick Sortation
+2025-05-04 16:37:39,181 - utils.prediction - INFO - RandomForest predicted 3.32 workers for WorkType 211 Misc
+2025-05-04 16:37:39,304 - utils.prediction - INFO - RandomForest predicted 0.81 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:37:39,400 - utils.prediction - INFO - RandomForest predicted 1.44 workers for WorkType 214 Large orders
+2025-05-04 16:37:39,514 - utils.prediction - INFO - RandomForest predicted 2.21 workers for WorkType 215 Picking Online
+2025-05-04 16:37:39,579 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 16:37:39,594 - utils.prediction - INFO - Predictions completed for 7 days
+2025-05-04 16:59:20,534 - __main__ - INFO - Loading data from uploaded file: work_utilization_melted1.xlsx
+2025-05-04 16:59:20,627 - __main__ - INFO - Models loaded successfully
+2025-05-04 16:59:27,312 - utils.prediction - INFO - Predicting for the next 7 days
+2025-05-04 16:59:27,353 - utils.prediction - INFO - Date 2025-01-01 is a non-working day: Swedish Holiday: New Year's Day
+2025-05-04 16:59:27,353 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 16:59:27,384 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-02
+2025-05-04 16:59:27,464 - utils.prediction - INFO - RandomForest predicted 0.89 workers for WorkType 203 Goods receive D
+2025-05-04 16:59:27,526 - utils.prediction - INFO - RandomForest predicted 13.49 workers for WorkType 206 Replenishment
+2025-05-04 16:59:27,585 - utils.prediction - INFO - RandomForest predicted 1.66 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:59:27,657 - utils.prediction - INFO - RandomForest predicted 10.14 workers for WorkType 209 Sortation
+2025-05-04 16:59:27,776 - utils.prediction - INFO - RandomForest predicted 4.24 workers for WorkType 210 Pick Sortation
+2025-05-04 16:59:27,905 - utils.prediction - INFO - RandomForest predicted 3.19 workers for WorkType 211 Misc
+2025-05-04 16:59:28,015 - utils.prediction - INFO - RandomForest predicted 1.53 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:59:28,090 - utils.prediction - INFO - RandomForest predicted 2.91 workers for WorkType 214 Large orders
+2025-05-04 16:59:28,178 - utils.prediction - INFO - RandomForest predicted 4.05 workers for WorkType 215 Picking Online
+2025-05-04 16:59:28,240 - utils.prediction - INFO - RandomForest predicted 0.27 workers for WorkType 217 Returns
+2025-05-04 16:59:28,269 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-03
+2025-05-04 16:59:28,339 - utils.prediction - INFO - RandomForest predicted 1.74 workers for WorkType 203 Goods receive D
+2025-05-04 16:59:28,432 - utils.prediction - INFO - RandomForest predicted 11.85 workers for WorkType 206 Replenishment
+2025-05-04 16:59:28,509 - utils.prediction - INFO - RandomForest predicted 2.12 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:59:28,624 - utils.prediction - INFO - RandomForest predicted 10.71 workers for WorkType 209 Sortation
+2025-05-04 16:59:28,703 - utils.prediction - INFO - RandomForest predicted 6.46 workers for WorkType 210 Pick Sortation
+2025-05-04 16:59:28,787 - utils.prediction - INFO - RandomForest predicted 3.69 workers for WorkType 211 Misc
+2025-05-04 16:59:28,893 - utils.prediction - INFO - RandomForest predicted 1.77 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:59:28,953 - utils.prediction - INFO - RandomForest predicted 3.95 workers for WorkType 214 Large orders
+2025-05-04 16:59:29,071 - utils.prediction - INFO - RandomForest predicted 4.82 workers for WorkType 215 Picking Online
+2025-05-04 16:59:29,188 - utils.prediction - INFO - RandomForest predicted 0.23 workers for WorkType 217 Returns
+2025-05-04 16:59:29,242 - utils.prediction - INFO - Date 2025-01-04 is a non-working day: Saturday (Weekend)
+2025-05-04 16:59:29,244 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 16:59:29,301 - utils.prediction - INFO - Date 2025-01-05 is a non-working day: Swedish Holiday: Sunday
+2025-05-04 16:59:29,302 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 16:59:29,366 - utils.prediction - INFO - Date 2025-01-06 is a non-working day: Swedish Holiday: Epiphany
+2025-05-04 16:59:29,367 - utils.prediction - INFO - No work is carried out on this day. Setting all predictions to 0.
+2025-05-04 16:59:29,423 - utils.prediction - INFO - Predicting NoOfMan for 2025-01-07
+2025-05-04 16:59:29,551 - utils.prediction - INFO - RandomForest predicted 1.02 workers for WorkType 203 Goods receive D
+2025-05-04 16:59:29,664 - utils.prediction - INFO - RandomForest predicted 11.50 workers for WorkType 206 Replenishment
+2025-05-04 16:59:29,775 - utils.prediction - INFO - RandomForest predicted 1.05 workers for WorkType 208 Sorter 2 SALE
+2025-05-04 16:59:29,877 - utils.prediction - INFO - RandomForest predicted 4.87 workers for WorkType 209 Sortation
+2025-05-04 16:59:29,998 - utils.prediction - INFO - RandomForest predicted 4.16 workers for WorkType 210 Pick Sortation
+2025-05-04 16:59:30,113 - utils.prediction - INFO - RandomForest predicted 3.32 workers for WorkType 211 Misc
+2025-05-04 16:59:30,230 - utils.prediction - INFO - RandomForest predicted 0.81 workers for WorkType 213 Pick3PL_Astro
+2025-05-04 16:59:30,316 - utils.prediction - INFO - RandomForest predicted 1.44 workers for WorkType 214 Large orders
+2025-05-04 16:59:30,372 - utils.prediction - INFO - RandomForest predicted 2.21 workers for WorkType 215 Picking Online
+2025-05-04 16:59:30,449 - utils.prediction - INFO - RandomForest predicted 0.04 workers for WorkType 217 Returns
+2025-05-04 16:59:30,468 - utils.prediction - INFO - Predictions completed for 7 days

@@ -272,7 +272,7 @@ def predict_multiple_days(df, models, num_days=7, use_neural_network=False):
         for i in range(num_days):
             prediction_date = latest_date + timedelta(days=i+1)  # +1 to start with the next day
             
-            # Check if the date is a non-working day
+            # Check if the date is a non-working day using the utility function
             is_nonworking, reason = is_non_working_day(prediction_date)
             
             if is_nonworking:
@@ -354,7 +354,8 @@ def predict_multiple_days(df, models, num_days=7, use_neural_network=False):
         logger.error(f"Error predicting multiple days: {str(e)}")
         logger.error(traceback.format_exc())
         raise Exception(f"Failed to predict multiple days: {str(e)}")
-
+    
+    
 def evaluate_predictions(y_true, y_pred):
     """
     Calculate evaluation metrics for predictions

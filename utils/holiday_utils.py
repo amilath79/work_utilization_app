@@ -103,6 +103,9 @@ def is_non_working_day(date):
         if weekday == 5:  # 5 = Saturday
             return True, "Saturday (Weekend)"
         
+        if weekday == 6:  # 6 = Sunday
+            return False, "Sunday"
+        
         # It's a working day
         return False, None
         
