@@ -15,17 +15,18 @@ This application helps you predict the number of workers needed for different wo
 
 ## Installation
 
-1. Clone this repository:
 
-
-echo "# work_utilization_app" >> README.md
+# Initialize Git repository (if not already initialized)
 git init
-git add README.md
-git commit -m "first commit"
-git branch -M main
-git remote add origin https://github.com/amilath79/work_utilization_app.git
-git push -u origin main
 
+# Add all files except those specified in .gitignore
+git add .
+
+# Commit the changes
+git commit -m "Initial commit - work utilization app without model files"
+
+# Add GitHub repository as remote
 git remote add origin https://github.com/amilath79/work_utilization_app.git
-git branch -M main
-git push -u origin main
+
+# Push to GitHub
+git push -u origin master
