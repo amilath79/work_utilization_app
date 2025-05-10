@@ -379,8 +379,8 @@ def evaluate_predictions(y_true, y_pred):
         
         # Calculate MAPE (Mean Absolute Percentage Error)
         # Handle zero values in y_true to avoid division by zero
-        y_true_nonzero = np.array([max(0.0001, y) for y in y_true])
-        mape = np.mean(np.abs((y_true_nonzero - y_pred) / y_true_nonzero)) * 100
+        y_true_nonzero = np.maximum(np.abs(y_true), 1.0)  # Use epsilon=1.0 like in training
+        mape = np.mean(np.abs((y_true - y_pred) / y_true_nonzero)) * 100
         
         return {
             'MAE': mae,

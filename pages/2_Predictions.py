@@ -1,6 +1,8 @@
 """
 Predictions page for the Work Utilization Prediction app.
 """
+import os
+os.environ["STREAMLIT_SERVER_WATCH_CHANGES"] = "false"
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -9,6 +11,7 @@ from datetime import datetime, timedelta
 import os
 import io
 import sys
+import plotly.graph_objects as go
 
 # Add parent directory to path to import from utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -184,7 +187,7 @@ def main():
         num_days = st.slider(
             "Number of Days",
             min_value=1,
-            max_value=30,
+            max_value=366,
             value=7,
             help="Select the number of days to predict"
         )
@@ -194,9 +197,9 @@ def main():
     
     # Work type selector
     selected_work_types = st.multiselect(
-        "Select Work Types",
+        "Select Punch Codes",
         options=available_work_types,
-        default=available_work_types[:10] if len(available_work_types) > 10 else available_work_types,
+        default=available_work_types,  # This selects ALL work types by default
         help="Select the work types for which you want to make predictions"
     )
     
@@ -222,7 +225,6 @@ def main():
                 
                 # Display results
                 model_type_text = "Neural Network" if use_neural else "Random Forest"
-                st.subheader(f"Predictions from {pred_start_date.strftime('%B %d, %Y')} to {pred_end_date.strftime('%B %d, %Y')} using {model_type_text}")
                 
                 # Create a dataframe for display
                 results_records = []
@@ -242,40 +244,52 @@ def main():
                                 'Predicted Workers': round(display_value, 0),
                                 'Day of Week': date.strftime('%A'),
                                 'Is Non-Working Day': "Yes" if is_non_working else "No",
-                                'Reason': reason if is_non_working else ""
+                                'Reason': reason if is_non_working else "",
+                                'Is Sunday': "Yes" if date.weekday() == 6 else "No"  # Added for clarity
                             })
                 
                 results_df = pd.DataFrame(results_records)
+                # results_df['Date'] = results_df['Date'].apply(lambda d: d.strftime('%Y-%m-%d'))
+
+                st.subheader(f"Predictions from {pred_start_date.strftime('%B %d, %Y')} to {pred_end_date.strftime('%B %d, %Y')} using {model_type_text}")
+                with st.expander("📊 View Holiday Infomations", expanded=False):
+                                    
+                    # If there are non-working days in the prediction period, show a warning
+                    non_working_dates = results_df[results_df['Is Non-Working Day'] == "Yes"]['Date'].unique()
+                    if len(non_working_dates) > 0:
+                        st.warning("⚠️ Non-working days detected during the prediction period:")
+                        for non_working_date in non_working_dates:
+                            reason = results_df[results_df['Date'] == non_working_date]['Reason'].iloc[0]
+                            st.info(f"• {non_working_date.strftime('%A, %B %d, %Y')}: {reason} (No work carried out)")
+                    
+                    # Add special section to highlight Sundays are working days
+                    sundays = [date for date in multi_day_predictions.keys() if date.weekday() == 6]
+                    if sundays:
+                        st.success("ℹ️ Sundays detected in the prediction period:")
+                        for sunday in sundays:
+                            st.info(f"• {sunday.strftime('%A, %B %d, %Y')}: Sunday is a normal working day")
                 
-                # If there are non-working days in the prediction period, show a warning
-                non_working_dates = results_df[results_df['Is Non-Working Day'] == "Yes"]['Date'].unique()
-                if len(non_working_dates) > 0:
-                    st.warning("⚠️ Non-working days detected during the prediction period:")
-                    for non_working_date in non_working_dates:
-                        reason = results_df[results_df['Date'] == non_working_date]['Reason'].iloc[0]
-                        st.info(f"• {non_working_date.strftime('%A, %B %d, %Y')}: {reason} (No work carried out)")
-                
-                # Display table
-                st.dataframe(
-                    results_df,
-                    use_container_width=True,
-                    column_config={
-                        'Date': st.column_config.DateColumn('Date'),
-                        'Predicted Workers': st.column_config.NumberColumn(
-                            'Predicted Workers',
-                            format="%.2f",
-                            help="Predicted number of workers required"
-                        ),
-                        'Is Non-Working Day': st.column_config.TextColumn(
-                            'Is Non-Working Day',
-                            help="Whether this date is a non-working day"
-                        ),
-                        'Reason': st.column_config.TextColumn(
-                            'Reason',
-                            help="Reason for non-working day"
-                        )
-                    }
-                )
+                # # Display table
+                # st.dataframe(
+                #     results_df,
+                #     use_container_width=True,
+                #     column_config={
+                #         'Date': st.column_config.DateColumn('Date'),
+                #         'Predicted Workers': st.column_config.NumberColumn(
+                #             'Predicted Workers',
+                #             format="%.2f",
+                #             help="Predicted number of workers required"
+                #         ),
+                #         'Is Non-Working Day': st.column_config.TextColumn(
+                #             'Is Non-Working Day',
+                #             help="Whether this date is a non-working day"
+                #         ),
+                #         'Reason': st.column_config.TextColumn(
+                #             'Reason',
+                #             help="Reason for non-working day"
+                #         )
+                #     }
+                # )
 
                 # Add pivot table for resource planning
                 st.subheader("Resource Planning View")
@@ -289,7 +303,18 @@ def main():
                     fill_value=0
                 )
 
+                # Create a monthly pivot table
+                monthly_pivot = pd.pivot_table(
+                    results_df,
+                    values='Predicted Workers',
+                    index=pd.Grouper(key='Date', freq='M'),  # Group by month
+                    columns='Work Type',
+                    fill_value=0,
+                    aggfunc='sum'  # Sum values for each month
+                ).rename(lambda x: x.strftime('%Y-%m'))  # Optional: Format month names
+
                 # Add day of week for better context
+                
                 pivot['Day'] = [d.strftime('%a') for d in pivot.index]  # %a gives abbreviated day name
 
                 # Move Day column to first position
@@ -300,8 +325,11 @@ def main():
                 # Display the pivot table
                 st.dataframe(pivot, use_container_width=True)
 
+                # Display the pivot table
+                st.dataframe(monthly_pivot, use_container_width=True)
+
                 # Download options
-                col1, col2 = st.columns(2)
+                col1, col2, col3 = st.columns(3)
                 
                 with col1:
                     # Download raw predictions
@@ -325,6 +353,19 @@ def main():
                         file_name=f"resource_plan_{pred_start_date.strftime('%Y%m%d')}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     )
+
+                with col3:
+                    # Download resource plan
+                    pivot_buffer_month = io.BytesIO()
+                    monthly_pivot.to_excel(pivot_buffer_month)
+                    pivot_buffer_month.seek(0)
+                    
+                    st.download_button(
+                        label="Download Resource Plan Monthly (Excel)",
+                        data=pivot_buffer_month,
+                        file_name=f"resource_plan_{pred_start_date.strftime('%Y%m%d')}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
     
     # Add backtesting section
     st.markdown("---")
@@ -336,27 +377,24 @@ def main():
     predictions against actual historical data.
     """)
     
-    # Date range for backtesting
-    col1, col2 = st.columns(2)
     
-    with col1:
-        backtest_days = st.slider(
-            "Number of Days for Backtesting",
-            min_value=7,
-            max_value=90,
-            value=30,
-            step=7,
-            help="Select number of days from the end of your dataset to use for validation"
-        )
+    backtest_days = st.slider(
+        "Number of Days for Backtesting",
+        min_value=7,
+        max_value=90,
+        value=30,
+        step=7,
+        help="Select number of days from the end of your dataset to use for validation"
+    )
     
-    with col2:
-        backtest_work_types = st.multiselect(
-            "Select Work Types for Backtesting",
-            options=available_work_types,
-            default=[available_work_types[0]] if available_work_types else [],
-            help="Select work types to include in backtesting",
-            key="backtest_work_types"
-        )
+    
+    backtest_work_types = st.multiselect(
+        "Select Punch Codes for Backtesting",
+        options=available_work_types,
+        default=available_work_types, 
+        help="Select Punch Codes to include in backtesting",
+        key="backtest_work_types"
+    )
     
     # Add neural network option for backtesting
     backtest_model_type = st.radio(
@@ -369,9 +407,10 @@ def main():
     
     use_neural_backtest = backtest_model_type == "Neural Network"
     
+    # Backtesting button
     if st.button("Run Backtesting", type="primary"):
         if not backtest_work_types:
-            st.warning("Please select at least one work type for backtesting")
+            st.warning("Please select at least one Punch Codes for backtesting")
         else:
             if use_neural_backtest and not nn_available:
                 st.warning("Neural network models are not available. Using Random Forest models for backtesting.")
@@ -453,6 +492,73 @@ def main():
                 if len(non_working_dates) > 0:
                     st.info("📅 The backtesting period includes non-working days (Saturdays and Swedish holidays) where no work is carried out. Predictions for these days are set to 0.")
                 
+                # Add the actual vs predicted line chart - THIS IS THE NEW SECTION
+                st.subheader("Actual vs Predicted Comparison")
+                
+                # Work type selector for the chart
+                selected_work_type_for_chart = st.selectbox(
+                    "Select a Punch Code for Chart",
+                    options=backtest_work_types,
+                    index=0 if backtest_work_types else None,
+                    key="chart_work_type"
+                )
+                
+                # Create and display the chart
+                if selected_work_type_for_chart:
+                    chart_data = results_df[results_df['Work Type'] == selected_work_type_for_chart].copy()
+                    
+                    # Filter out rows with missing actual values
+                    chart_data = chart_data.dropna(subset=['Actual'])
+                    
+                    if len(chart_data) > 0:
+                        # Create figure
+                        fig = go.Figure()
+                        
+                        # Add actual line
+                        fig.add_trace(go.Scatter(
+                            x=chart_data['Date'],
+                            y=chart_data['Actual'],
+                            mode='lines+markers',
+                            name='Actual',
+                            line=dict(color='blue', width=2),
+                            marker=dict(size=8)
+                        ))
+                        
+                        # Add predicted line
+                        fig.add_trace(go.Scatter(
+                            x=chart_data['Date'],
+                            y=chart_data['Predicted'],
+                            mode='lines+markers',
+                            name='Predicted',
+                            line=dict(color='red', width=2, dash='dash'),
+                            marker=dict(size=8)
+                        ))
+                        
+                        # Update layout
+                        title = f"Actual vs Predicted Values for {selected_work_type_for_chart}"
+                        
+                        fig.update_layout(
+                            title=title,
+                            xaxis_title='Date',
+                            yaxis_title='Number of Workers',
+                            legend=dict(
+                                orientation="h",
+                                yanchor="bottom",
+                                y=1.02,
+                                xanchor="right",
+                                x=1
+                            ),
+                            hovermode="x unified",
+                            height=500
+                        )
+                        
+                        # Display the chart
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.info(f"No actual data available for {selected_work_type_for_chart} during the selected period.")
+                else:
+                    st.warning("Please select a Punch Code to display the chart.")
+                
                 # Display metrics
                 st.write("Model Performance Metrics:")
                 
@@ -479,40 +585,40 @@ def main():
                     }
                 )
                 
-                # Display results table
-                st.subheader("Prediction Results vs Actual Values")
+                # # Display results table
+                # st.subheader("Prediction Results vs Actual Values")
                 
-                # IMPORTANT: Check if there are Sunday results to validate our fix
-                sunday_data = results_df[results_df['Day of Week'] == 'Sunday']
-                if not sunday_data.empty:
-                    st.write("### Sunday Results Check")
+                # # IMPORTANT: Check if there are Sunday results to validate our fix
+                # sunday_data = results_df[results_df['Day of Week'] == 'Sunday']
+                # if not sunday_data.empty:
+                #     st.write("### Sunday Results Check")
                     
-                    # Filter to show only Sundays to verify resource allocation
-                    sunday_results = sunday_data.sort_values('Date')
-                    st.dataframe(
-                        sunday_results,
-                        use_container_width=True,
-                        column_config={
-                            'Date': st.column_config.DateColumn('Date'),
-                            'Day of Week': st.column_config.TextColumn('Day of Week'),
-                            'Predicted': st.column_config.NumberColumn('Predicted', format="%.2f"),
-                            'Actual': st.column_config.NumberColumn('Actual', format="%.2f")
-                        }
-                    )
+                #     # Filter to show only Sundays to verify resource allocation
+                #     sunday_results = sunday_data.sort_values('Date')
+                #     st.dataframe(
+                #         sunday_results,
+                #         use_container_width=True,
+                #         column_config={
+                #             'Date': st.column_config.DateColumn('Date'),
+                #             'Day of Week': st.column_config.TextColumn('Day of Week'),
+                #             'Predicted': st.column_config.NumberColumn('Predicted', format="%.2f"),
+                #             'Actual': st.column_config.NumberColumn('Actual', format="%.2f")
+                #         }
+                #     )
                 
-                # Display all results
-                st.write("### All Prediction Results")
-                st.dataframe(
-                    results_df,
-                    use_container_width=True,
-                    column_config={
-                        'Date': st.column_config.DateColumn('Date'),
-                        'Day of Week': st.column_config.TextColumn('Day of Week'),
-                        'Predicted': st.column_config.NumberColumn('Predicted', format="%.2f"),
-                        'Actual': st.column_config.NumberColumn('Actual', format="%.2f"),
-                        'Difference': st.column_config.NumberColumn('Difference', format="%.2f")
-                    }
-                )
+                # # Display all results
+                # st.write("### All Prediction Results")
+                # st.dataframe(
+                #     results_df,
+                #     use_container_width=True,
+                #     column_config={
+                #         'Date': st.column_config.DateColumn('Date'),
+                #         'Day of Week': st.column_config.TextColumn('Day of Week'),
+                #         'Predicted': st.column_config.NumberColumn('Predicted', format="%.2f"),
+                #         'Actual': st.column_config.NumberColumn('Actual', format="%.2f"),
+                #         'Difference': st.column_config.NumberColumn('Difference', format="%.2f")
+                #     }
+                # )
 
 # Run the main function
 if __name__ == "__main__":

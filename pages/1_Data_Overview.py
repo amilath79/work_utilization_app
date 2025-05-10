@@ -183,26 +183,26 @@ def display_time_analysis(df):
 
 def display_work_type_analysis(df):
     """Display work type analysis"""
-    st.subheader("Work Type Analysis")
+    st.subheader("Work Type (Punch Code) Analysis")
     
     # Aggregate by work type
     work_type_data = df.groupby('WorkType')['NoOfMan'].sum().reset_index()
     work_type_data = work_type_data.sort_values('NoOfMan', ascending=False)
     
     # Top work types
-    st.write("### Top Work Types by Total Workers")
+    st.write("### Top Punch Code by Total Workers")
     
     fig = px.bar(
-        work_type_data.head(15),
+        work_type_data.head(11),
         x='WorkType',
         y='NoOfMan',
-        title='Top 15 Work Types by Total Workers',
+        title='Top 11 Punch Codes by Total Workers',
         color='NoOfMan',
         labels={'NoOfMan': 'Total Workers', 'WorkType': 'Work Type'}
     )
     
     fig.update_layout(
-        xaxis_title='Work Type',
+        xaxis_title='Punch Code',
         yaxis_title='Total Workers',
         xaxis={'categoryorder': 'total descending'}
     )
@@ -210,10 +210,10 @@ def display_work_type_analysis(df):
     st.plotly_chart(fig, use_container_width=True)
     
     # Work type trends over time
-    st.write("### Work Type Trends")
+    st.write("### Punch Code Trends")
     
     # Allow user to select work types to visualize
-    top_work_types = work_type_data.head(10)['WorkType'].tolist()
+    top_work_types = work_type_data.head(11)['WorkType'].tolist()
     selected_work_types = st.multiselect(
         "Select Work Types to Visualize",
         options=work_type_data['WorkType'].unique(),
@@ -257,7 +257,7 @@ def main():
     df = st.session_state.df
     
     # Create tabs for different analyses
-    tab1, tab2, tab3 = st.tabs(["Data Summary", "Time Analysis", "Work Type Analysis"])
+    tab1, tab2, tab3 = st.tabs(["Data Summary", "Time Analysis", "Work Type (Punch Code) Analysis"])
     
     with tab1:
         display_data_summary(df)

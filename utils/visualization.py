@@ -436,3 +436,94 @@ def plot_metrics_comparison(metrics, metric_name='MAE'):
         logger.error(traceback.format_exc())
         st.error(f"Error generating metrics comparison plot: {str(e)}")
         return None
+    
+def create_actual_vs_predicted_chart(results_df, work_type=None):
+    """
+    Create a line chart comparing actual vs predicted values
+    
+    Parameters:
+    -----------
+    results_df : pd.DataFrame
+        DataFrame with prediction results
+    work_type : str, optional
+        Work type to filter for, or None for all
+    
+    Returns:
+    --------
+    plotly.graph_objects.Figure
+        Plotly figure object
+    """
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+    import pandas as pd
+    
+    # Filter for specific work type if provided
+    if work_type is not None:
+        df = results_df[results_df['Work Type'] == work_type].copy()
+    else:
+        df = results_df.copy()
+    
+    # Make sure we have data
+    if len(df) == 0:
+        return None
+    
+    # Sort by date
+    df = df.sort_values('Date')
+    
+    # Create figure
+    fig = go.Figure()
+    
+    # Add actual line
+    fig.add_trace(go.Scatter(
+        x=df['Date'],
+        y=df['Actual'],
+        mode='lines+markers',
+        name='Actual',
+        line=dict(color='blue', width=2),
+        marker=dict(size=8)
+    ))
+    
+    # Add predicted line
+    fig.add_trace(go.Scatter(
+        x=df['Date'],
+        y=df['Predicted'],
+        mode='lines+markers',
+        name='Predicted',
+        line=dict(color='red', width=2, dash='dash'),
+        marker=dict(size=8)
+    ))
+    
+    # Update layout
+    title = "Actual vs Predicted Values"
+    if work_type:
+        title += f" for {work_type}"
+        
+    fig.update_layout(
+        title=title,
+        xaxis_title='Date',
+        yaxis_title='Number of Workers',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        ),
+        template="plotly_dark",
+        hovermode="x unified",
+        height=500
+    )
+    
+    # Add day of week annotations to x-axis
+    date_ticks = []
+    for date in df['Date']:
+        day_name = date.strftime('%a')
+        date_str = date.strftime('%Y-%m-%d')
+        date_ticks.append(f"{day_name}<br>{date_str}")
+    
+    fig.update_xaxes(
+        ticktext=date_ticks,
+        tickvals=df['Date']
+    )
+    
+    return fig

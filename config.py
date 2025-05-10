@@ -5,17 +5,18 @@ import os
 from pathlib import Path
 
 # Application settings
-APP_TITLE = "Work Utilization Prediction"
-APP_ICON = "📊"
+APP_TITLE = "Workforce Prediction"
 DEFAULT_LAYOUT = "wide"  # or "centered"
 THEME_COLOR = "#1E88E5"  # Primary theme color
 
 # Paths
 BASE_DIR = Path(__file__).parent.absolute()
-LOGO_PATH = os.path.join(BASE_DIR, "assets", "logo.png")
+LOGO_PATH = os.path.join(BASE_DIR, "assets", "2.png")
 MODELS_DIR = "C:/forlogssystems/Models"
 DATA_DIR = os.path.join(BASE_DIR, "data")
 LOGS_DIR = os.path.join(BASE_DIR, "logs")
+
+APP_ICON = os.path.join(BASE_DIR, "assets", "2.png")
 
 # Model and data configurations
 MODEL_CONFIGS = {
@@ -49,13 +50,13 @@ DEFAULT_MODEL_PARAMS = {
     "random_state": 42
 }
 
-# Feature engineering settings
+# Feature engineering settingsa
 LAG_DAYS = [1, 2, 3, 7, 14, 30, 365]  # Default lag days for feature engineering
 ROLLING_WINDOWS = [7, 14, 30, 90]    # Default rolling windows for feature engineering
  
 # SQL Server settings
 SQL_SERVER = "192.168.1.43"
-SQL_DATABASE = "lts"
+SQL_DATABASE = "ABC"
 SQL_TRUSTED_CONNECTION = True
 SQL_USERNAME = None
 SQL_PASSWORD = None

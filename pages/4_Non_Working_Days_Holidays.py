@@ -38,7 +38,7 @@ def main():
     **At this company:**
     - Swedish holidays are non-working days
     - Saturdays are non-working days
-    - Sundays ARE working days
+    - Sundays are working days
     
     The prediction system automatically accounts for this and sets workforce requirements to zero on non-working days.
     """)
