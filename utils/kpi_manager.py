@@ -468,3 +468,69 @@ def save_kpi_data(kpi_df, start_date, end_date, username, period_type='DAILY'):
             cursor.close()
         if 'conn' in locals() and conn:
             conn.close()
+
+
+def save_financial_year(start_date, end_date, username):
+    """
+    Save a financial year record to the database
+    
+    Parameters:
+    -----------
+    start_date : datetime.date
+        Start date of the financial year (May 1)
+    end_date : datetime.date
+        End date of the financial year (April 30)
+    username : str
+        Username for audit purposes
+    
+    Returns:
+    --------
+    bool
+        True if successful, False otherwise
+    """
+    try:
+        # Connect to SQL Server
+        conn = SQLDataConnector.connect_to_sql(
+            server=SQL_SERVER,
+            database=SQL_DATABASE,
+            trusted_connection=SQL_TRUSTED_CONNECTION
+        )
+        
+        if not conn:
+            logger.error("Failed to connect to database")
+            return False
+        
+        cursor = conn.cursor()
+        
+        # Create financial year description (e.g. "FY 2025-2026")
+        fy_description = f"FY {start_date.year}-{end_date.year}"
+        
+        # Call stored procedure to insert/update financial year
+        cursor.execute(
+            "EXEC usp_UpsertKPIFinancialYear @StartDate=?, @EndDate=?, @Description=?, @Username=?, @IsActive=?",
+            start_date, end_date, fy_description, username, 1
+        )
+        
+        # Get the financial year ID
+        result = cursor.fetchone()
+        if result:
+            fin_year_id = result[0]
+            logger.info(f"Saved financial year with ID: {fin_year_id}")
+            
+            conn.commit()
+            return True
+        else:
+            logger.error("Failed to save financial year")
+            return False
+    
+    except Exception as e:
+        logger.error(f"Error saving financial year: {str(e)}")
+        logger.error(traceback.format_exc())
+        if 'conn' in locals() and conn:
+            conn.rollback()
+        return False
+    finally:
+        if 'cursor' in locals() and cursor:
+            cursor.close()
+        if 'conn' in locals() and conn:
+            conn.close()

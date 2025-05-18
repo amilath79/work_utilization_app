@@ -140,6 +140,55 @@ def is_swedish_holiday(date_to_check):
             pass
         return False, None
 
+# def is_non_working_day(date_to_check):
+#     """
+#     Check if the date is a non-working day (Saturday or a Swedish holiday)
+#     For this company: Sunday is a working day, Saturday is not
+    
+#     Parameters:
+#     -----------
+#     date_to_check : datetime.date or datetime.datetime
+#         Date to check
+    
+#     Returns:
+#     --------
+#     tuple
+#         (is_non_working_day, reason)
+#     """
+#     try:
+#         # Check if it's a holiday
+#         is_holiday, holiday_name = is_swedish_holiday(date_to_check)
+#         if is_holiday:
+#             return True, f"Swedish Holiday: {holiday_name}"
+        
+#         # Get the day of week
+#         if isinstance(date_to_check, datetime):
+#             day_of_week = date_to_check.weekday()
+#         else:
+#             day_of_week = date_to_check.weekday()
+        
+#         # Check if it's Saturday (5 = Saturday in Python's weekday())
+#         if day_of_week == 5:  # 5 = Saturday
+#             return True, "Saturday (Weekend)"
+        
+#         # Check if it's Sunday (6 = Sunday in Python's weekday())
+#         if day_of_week == 6:  # 6 = Sunday
+#             return False, "Sunday (Working Day)"
+        
+#         # It's a working day
+#         return False, None
+        
+#     except Exception as e:
+#         logger.error(f"Error checking if date {date_to_check} is a non-working day: {str(e)}")
+#         # In case of an error, try to at least check if it's New Year's Day
+#         try:
+#             if isinstance(date_to_check, datetime):
+#                 if date_to_check.month == 1 and date_to_check.day == 1:
+#                     return True, "Swedish Holiday: New Year's Day"
+#         except:
+#             pass
+#         return False, None
+
 def is_non_working_day(date_to_check):
     """
     Check if the date is a non-working day (Saturday or a Swedish holiday)
@@ -156,37 +205,32 @@ def is_non_working_day(date_to_check):
         (is_non_working_day, reason)
     """
     try:
+        # Convert to date object if it's a datetime
+        if isinstance(date_to_check, datetime):
+            date_obj = date_to_check.date()
+        else:
+            date_obj = date_to_check
+            
+        # Add debug logging
+        logger.info(f"Checking if date {date_obj.strftime('%Y-%m-%d')} (weekday: {date_obj.weekday()}) is a non-working day")
+        
         # Check if it's a holiday
         is_holiday, holiday_name = is_swedish_holiday(date_to_check)
         if is_holiday:
+            logger.info(f"Date {date_obj.strftime('%Y-%m-%d')} is a holiday: {holiday_name}")
             return True, f"Swedish Holiday: {holiday_name}"
         
-        # Get the day of week
-        if isinstance(date_to_check, datetime):
-            day_of_week = date_to_check.weekday()
-        else:
-            day_of_week = date_to_check.weekday()
-        
         # Check if it's Saturday (5 = Saturday in Python's weekday())
-        if day_of_week == 5:  # 5 = Saturday
+        if date_obj.weekday() == 5:  # 5 = Saturday
+            logger.info(f"Date {date_obj.strftime('%Y-%m-%d')} is a Saturday")
             return True, "Saturday (Weekend)"
         
-        # Check if it's Sunday (6 = Sunday in Python's weekday())
-        if day_of_week == 6:  # 6 = Sunday
-            return False, "Sunday (Working Day)"
-        
         # It's a working day
+        logger.info(f"Date {date_obj.strftime('%Y-%m-%d')} is a normal working day")
         return False, None
         
     except Exception as e:
         logger.error(f"Error checking if date {date_to_check} is a non-working day: {str(e)}")
-        # In case of an error, try to at least check if it's New Year's Day
-        try:
-            if isinstance(date_to_check, datetime):
-                if date_to_check.month == 1 and date_to_check.day == 1:
-                    return True, "Swedish Holiday: New Year's Day"
-        except:
-            pass
         return False, None
 
 def add_holiday_features(df, date_col='Date'):

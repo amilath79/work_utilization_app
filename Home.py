@@ -1,380 +1,242 @@
 """
-Main application entry point for the Work Utilization Prediction app.
+Home page for the Work Utilization Prediction app.
 """
 import streamlit as st
 import pandas as pd
-import numpy as np
 import logging
 import os
-os.environ["STREAMLIT_SERVER_WATCH_CHANGES"] = "false"
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime
+import traceback
 
-# Import from other modules
-from utils.data_loader import load_data, load_models
+# Add parent directory to path to import from utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from utils.data_loader import load_data, load_combined_models
+from utils.sql_data_connector import extract_sql_data
 from utils.feature_engineering import engineer_features, create_lag_features
+from utils.state_manager import StateManager
+from config import DATA_DIR, MODELS_DIR, LOGO_PATH, APP_TITLE, SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION, APP_ICON
 
-
-
-from config import (
-    APP_TITLE, 
-    APP_ICON, 
-    DEFAULT_LAYOUT,
-    THEME_COLOR,
-    LOGO_PATH,
-    MODELS_DIR,
-    DATA_DIR,
-    LOGS_DIR
-)
-
-
-# Page configuration - THIS MUST BE THE FIRST STREAMLIT COMMAND
+# Configure page
 st.set_page_config(
     page_title=APP_TITLE,
     page_icon=APP_ICON,
-    layout=DEFAULT_LAYOUT,
-    initial_sidebar_state="expanded",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# Check if the theme is dark
-is_dark_theme = st.get_option("theme.base") == "dark"
-
-# Use different colors based on theme
-primary_color = "#1E88E5" if not is_dark_theme else "#4DA6FF"
-background_color = "#f8f9fa" if not is_dark_theme else "#262730"
-text_color = "#212529" if not is_dark_theme else "#FAFAFA"
-
-# Then use these variables in your app
-st.markdown(f"""
-<style>
-.custom-header {{
-    color: {text_color};
-    background-color: {background_color};
-}}
-</style>
-""", unsafe_allow_html=True)
-
-# Configure logging
-os.makedirs(LOGS_DIR, exist_ok=True)
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(os.path.join(LOGS_DIR, "app.log")),
-        logging.StreamHandler()
-    ]
-)
+# Configure logger
 logger = logging.getLogger(__name__)
 
-# Apply custom CSS
-def apply_custom_css():
-    st.markdown("""
-    <style>
-    /* Theme-independent styles */
-    .main .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-    }
-    
-    /* Light theme styles */
-    .light-mode {
-        background-color: #f8f9fa;
-        color: #212529;
-    }
-    
-    /* Dark theme styles */
-    .dark-mode {
-        background-color: #262730;
-        color: #ffffff;
-    }
-    
-    /* Use theme-sensitive color variables that Streamlit provides */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 2px;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        background-color: var(--background-secondary);
-        border-radius: 4px 4px 0px 0px;
-        padding: 10px 20px;
-        color: var(--text-color);
-    }
-    
-    .stTabs [aria-selected="true"] {
-        background-color: var(--primary-color);
-        color: var(--background-color);
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-def add_theme_toggle():
-    """Add theme toggle to sidebar"""
-    with st.sidebar:
-        st.markdown("---")
-        theme = st.selectbox(
-            "Theme",
-            ["Light", "Dark"],
-            index=1
-        )
-        if theme == "Dark":
-            st.markdown("""
-            <script>
-                const setDarkMode = () => {
-                    document.documentElement.classList.add('dark-theme');
-                    localStorage.setItem('theme', 'dark');
-                };
-                setDarkMode();
-            </script>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown("""
-            <script>
-                const setLightMode = () => {
-                    document.documentElement.classList.remove('dark-theme');
-                    localStorage.setItem('theme', 'light');
-                };
-                setLightMode();
-            </script>
-            """, unsafe_allow_html=True)
-
-# Create session state for data persistence
-def init_session_state():
-    if 'df' not in st.session_state:
-        st.session_state.df = None
-    if 'processed_df' not in st.session_state:
-        st.session_state.processed_df = None
-    if 'ts_data' not in st.session_state:
-        st.session_state.ts_data = None
-    if 'models' not in st.session_state:
-        st.session_state.models = None
-    if 'feature_importances' not in st.session_state:
-        st.session_state.feature_importances = None
-    if 'metrics' not in st.session_state:
-        st.session_state.metrics = None
-    if 'last_prediction' not in st.session_state:
-        st.session_state.last_prediction = None
-    if 'prediction_date' not in st.session_state:
-        st.session_state.prediction_date = None
-
-
-
-
-# Display app header
-def display_header():
-    col1, col2 = st.columns([1, 5])
-    
-    # Display logo if available
+def load_data_from_database():
+    """
+    Load data from the WorkUtilizationData database table using configuration from config.py
+    Returns DataFrame on success, None on failure
+    """
     try:
-        with col1:
-            if os.path.exists(LOGO_PATH):
-                st.image(LOGO_PATH, width=80)
-            else:
-                st.write("📊")
-    except:
-        st.write("📊")
+        # Create SQL query for WorkUtilizationData table
+        sql_query = """
+        SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
+        FROM WorkUtilizationData WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 208, 210, 217)
+        ORDER BY Date
+        """
         
-    with col2:
-        st.title(APP_TITLE)
-    
-    st.markdown("---")
-
-# Sidebar components
-def sidebar_components():
-    with st.sidebar:
-        # Show logo if available
-        try:
-            if os.path.exists(LOGO_PATH):
-                st.image(LOGO_PATH, width=100)
-            else:
-                st.title("📊 WorkForce AI")
-        except:
-            st.title("📊 WorkForce AI")
-        
-        st.markdown("---")
-        
-        # Data Input section - Moved from page-specific navigation
-        st.header("Data Input")
-        
-        # File uploader
-        uploaded_file = st.file_uploader(
-            "Upload Excel File", 
-            type=["xlsx", "xls"],
-            help="Upload your Work Utilization Excel file"
-        )
-        
-        # Sample data option
-        use_sample_data = st.checkbox(
-            "Use Sample Data", 
-            value=False,
-            help="Use sample data if you don't have your own file"
-        )
-        
-        st.markdown("---")
-        
-        # App information
-        st.info(
-            f"Workforce Prediction\n\n"
-            f"Version: 1.1.5\n"
-            f"Last updated: {datetime.now().strftime('%Y-%m-%d')}"
-        )
-        
-        # Add theme toggle
-        add_theme_toggle()
-        
-        # Return data options
-        return uploaded_file, use_sample_data
-
-def load_work_types():
-    try:
-        # Path to the Excel file
-        excel_path = os.path.join(DATA_DIR, 'WorkTypes.xlsx')
-        
-        if os.path.exists(excel_path):
-            # Load work types from Excel file once at startup
-            work_types_df = pd.read_excel(excel_path)
+        # Show connecting message
+        with st.spinner(f"Connecting to database {SQL_DATABASE} on {SQL_SERVER}..."):
+            # Use the extract_sql_data function from sql_data_connector.py
+            df = extract_sql_data(
+                server=SQL_SERVER,
+                database=SQL_DATABASE,
+                query=sql_query,
+                trusted_connection=SQL_TRUSTED_CONNECTION
+            )
             
-            # Convert to a format usable by the multiselect
-            available_work_types = [f"{row['Name']}" for _, row in work_types_df.iterrows()]
-            available_work_types = sorted(available_work_types)
-        else:
-            st.error(f"Work types file not found at: {excel_path}")
-            available_work_types = []
-    except Exception as e:
-        st.error(f"Error loading work types: {e}")
-        available_work_types = []
-    return available_work_types
-
-# Load and prepare data
-def load_and_prepare_data(uploaded_file, use_sample_data):
-    try:
-        if uploaded_file is not None:
-            # Use uploaded file
-            logger.info(f"Loading data from uploaded file: {uploaded_file.name}")
-            st.session_state.df = load_data(uploaded_file)
-            return True
-        elif use_sample_data:
-            # Use sample data
-            logger.info("Loading sample data")
-            sample_path = os.path.join(DATA_DIR, "sample_work_utilization.xlsx")
-            
-            if os.path.exists(sample_path):
-                st.session_state.df = load_data(sample_path)
-                return True
-            else:
-                st.warning("Sample data file not found. Please upload your own data.")
-                return False
-        else:
-            if st.session_state.df is None:
-                st.info("Please upload an Excel file or use sample data to get started.")
-                return False
-            return True
-    except Exception as e:
-        logger.error(f"Error loading data: {str(e)}")
-        st.error(f"Error loading data: {str(e)}")
-        st.error("Please ensure your file has the correct format with columns: Date, WorkType, NoOfMan, etc.")
-        return False
-
-# Load models if available
-def load_prediction_models():
-    try:
-        if st.session_state.models is None:
-            models, feature_importances, metrics = load_models()
-            
-            if models:
-                st.session_state.models = models
-                st.session_state.feature_importances = feature_importances
-                st.session_state.metrics = metrics
-                logger.info("Models loaded successfully")
-                return True
-            else:
-                if not os.path.exists(os.path.join(MODELS_DIR, 'work_utilization_models.pkl')):
-                    st.info("No trained models found. Please run the notebook first to train models.")
-                else:
-                    st.warning("Error loading models. Please check the logs for details.")
-                return False
-        return True
-    except Exception as e:
-        logger.error(f"Error loading models: {str(e)}")
-        st.warning(f"Error loading models: {str(e)}")
-        return False
-
-# Main function to run the Streamlit app
-def main():
-    try:
-        # Apply custom CSS
-        apply_custom_css()
-        
-        # Initialize session state
-        init_session_state()
-        
-        # Display app header
-        display_header()
-        
-        # Sidebar components - just the data loading controls
-        uploaded_file, use_sample_data = sidebar_components()
-        
-        # Load and prepare data
-        data_loaded = load_and_prepare_data(uploaded_file, use_sample_data)
-        
-        # Process the data if it's loaded
-        if data_loaded:
-            # Ensure feature engineering is done
-            if st.session_state.processed_df is None and st.session_state.df is not None:
-                with st.spinner("Processing data..."):
-                    st.session_state.processed_df = engineer_features(st.session_state.df)
-            
-            if st.session_state.ts_data is None and st.session_state.processed_df is not None:
-                with st.spinner("Creating time series features..."):
-                    st.session_state.ts_data = create_lag_features(st.session_state.processed_df)
-            
-            # Load models
-            load_prediction_models()
-            
-            # Main page content - this is the home/welcome page
-            st.subheader("Welcome to the Workforce Prediction App")
-            st.write("""
-            This application helps you predict workforce requirements based on historical data.
-            
-            Navigation:
-            - **Data Overview**: Explore your data and view statistics
-            - **Predictions**: Generate workforce predictions for future dates
-            - **Model Analysis**: Analyze model performance and feature importance
-            
-            Your data has been loaded successfully. Use the navigation in the sidebar to explore the app.
-            """)
-            
-            # Display a quick summary of the data
-            if st.session_state.df is not None:
-                st.subheader("Data Summary")
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Total Records", f"{len(st.session_state.df):,}")
-                with col2:
-                    st.metric("Date Range", f"{st.session_state.df['Date'].min().strftime('%Y-%m-%d')} to {st.session_state.df['Date'].max().strftime('%Y-%m-%d')}")
-                with col3:
-                    st.metric("Work Types (Punch Codes)", f"{st.session_state.df['WorkType'].nunique():,}")
+            if df is not None and not df.empty:
+                # Ensure Date is datetime type
+                df['Date'] = pd.to_datetime(df['Date'])
                 
-                st.markdown("---")
-                st.info("**Tip**: Use the **Data Overview** page to explore your data in more detail.")
-        else:
-            # Show welcome message if no data is loaded
-            st.subheader("Welcome to the Workforce Prediction App")
-            st.write("""
-            This application helps you predict workforce requirements based on historical data.
-            
-            To get started:
-            1. Upload your Excel file containing work utilization data, or use the sample data
-            2. Explore your data in the Data Overview page
-            3. Generate predictions in the Predictions page
-            4. Analyze model performance in the Model Analysis page
-            """)
-            
-            st.info("Please upload your data or select 'Use Sample Data' in the sidebar to begin.")
-            
+                # Ensure WorkType is string
+                df['WorkType'] = df['WorkType'].astype(str)
+                
+                logger.info(f"Successfully loaded {len(df)} records from database")
+                return df
+            else:
+                logger.warning("No data returned from database query")
+                return None
     except Exception as e:
-        logger.error(f"Unexpected error in main app: {str(e)}")
-        st.error(f"An unexpected error occurred: {str(e)}")
-        st.error("Please check the logs for more details or contact support.")
+        logger.error(f"Error loading data from database: {str(e)}")
+        logger.error(traceback.format_exc())
+        return None
+
+def main():
+    # Display logo if available
+    if os.path.exists(LOGO_PATH):
+        st.image(LOGO_PATH, width=150)
+    
+    st.title("Work Utilization Prediction")
+    
+    st.write("""
+    Welcome to the Work Utilization Prediction application! This tool helps you predict
+    workforce requirements based on historical data using machine learning.
+    
+    Use the sidebar to navigate between different pages.
+    """)
+    
+    # Data Loading Section
+    st.header("↗️ Data Management")
+    
+    # Check if data is already loaded
+    if 'df' in st.session_state and st.session_state.df is not None:
+        st.success(f"✅ Data loaded successfully with {len(st.session_state.df):,} records from {st.session_state.df['Date'].min().strftime('%Y-%m-%d')} to {st.session_state.df['Date'].max().strftime('%Y-%m-%d')}")
+        
+        # Option to clear and reload data
+        if st.button("Clear Data and Reload"):
+            st.session_state.df = None
+            st.session_state.processed_df = None
+            st.session_state.ts_data = None
+            st.rerun()
+    else:
+        # First, try to load data from database
+        db_data = load_data_from_database()
+        
+        if db_data is not None:
+            # Successfully loaded from database
+            st.session_state.df = db_data
+            st.success(f"✅ Data loaded from database with {len(db_data):,} records from {db_data['Date'].min().strftime('%Y-%m-%d')} to {db_data['Date'].max().strftime('%Y-%m-%d')}")
+            st.rerun()
+        else:
+            # Database connection failed, show Excel options
+            st.warning("⚠️ Could not connect to database. Please upload data from Excel file instead.")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                uploaded_file = st.file_uploader(
+                    "Upload Excel File", 
+                    type=["xlsx", "xls"],
+                    help="Upload your Work Utilization Excel file"
+                )
+            
+            with col2:
+                use_sample_data = st.checkbox(
+                    "Use Sample Data", 
+                    value=False,
+                    help="Use sample data if you don't have your own file"
+                )
+            
+            if uploaded_file is not None:
+                # Use uploaded file
+                with st.spinner("Loading data from uploaded file..."):
+                    st.session_state.df = load_data(uploaded_file)
+                    st.success(f"✅ Data loaded successfully with {len(st.session_state.df):,} records")
+                    st.rerun()
+                    
+            elif use_sample_data:
+                # Use sample data
+                sample_path = os.path.join(DATA_DIR, "sample_work_utilization.xlsx")
+                
+                if os.path.exists(sample_path):
+                    with st.spinner("Loading sample data..."):
+                        st.session_state.df = load_data(sample_path)
+                        st.success(f"✅ Sample data loaded successfully with {len(st.session_state.df):,} records")
+                        st.rerun()
+                else:
+                    st.warning("Sample data file not found. Please upload your own data.")
+    
+    # Process data if not already done
+    if 'df' in st.session_state and st.session_state.df is not None:
+        if 'processed_df' not in st.session_state or st.session_state.processed_df is None:
+            with st.spinner("Processing data..."):
+                st.session_state.processed_df = engineer_features(st.session_state.df)
+        
+        if 'ts_data' not in st.session_state or st.session_state.ts_data is None:
+            with st.spinner("Creating time series features..."):
+                st.session_state.ts_data = create_lag_features(st.session_state.processed_df)
+    
+    # Models Section
+    st.header("🤖 Models")
+    
+    # Check if models are already loaded
+    if 'models' in st.session_state and st.session_state.models is not None:
+        st.success(f"✅ Models loaded successfully. {len(st.session_state.models)} work type models available.")
+        
+        # Display model info
+        if st.checkbox("Show Model Details"):
+            if 'metrics' in st.session_state and st.session_state.metrics is not None:
+                metrics_df = pd.DataFrame([
+                    {
+                        'Work Type': wt,
+                        'MAE': m.get('MAE', '-'),
+                        'RMSE': m.get('RMSE', '-'),
+                        'R²': m.get('R²', '-')
+                    }
+                    for wt, m in st.session_state.metrics.items()
+                ]).sort_values('MAE')
+                
+                st.dataframe(metrics_df, use_container_width=True)
+    else:
+        # Try to load models
+        try:
+            with st.spinner("Loading all models..."):
+                models, feature_importances, metrics = load_combined_models()
+                
+                if models:
+                    st.session_state.models = models
+                    st.session_state.feature_importances = feature_importances
+                    st.session_state.metrics = metrics
+                    st.success(f"✅ Models loaded successfully. {len(models)} work type models available.")
+                else:
+                    st.warning("No trained models found. You need to train models before making predictions.")
+                    
+                    if st.button("Train Models"):
+                        st.info("Training models... This may take several minutes.")
+                        st.write("Please run 'python train_models.py' from the command line to train the models.")
+        except Exception as e:
+            st.error(f"Error loading models: {str(e)}")
+    
+    # Quick Start Guide
+    with st.expander("📚 Quick Start Guide", expanded=True):
+        st.write("""
+        ### How to use this application
+        
+        1. **Load Data**: By default, data is loaded from the database. If that fails, you can upload an Excel file.
+        2. **Explore Data**: Go to the Data Overview page to explore trends and patterns
+        3. **Generate Predictions**: Use the Predictions page to forecast workforce requirements
+        4. **Analyze Models**: Check model performance and feature importance on the Model Analysis page
+        5. **Manage Non-Working Days**: View holidays and non-working days on the dedicated page
+        
+        ### Data Format Requirements
+        
+        Your database table or Excel file should contain the following columns:
+        - **Date**: Date of the utilization record
+        - **WorkType** or **PunchCode**: Type of work being performed
+        - **NoOfMan**: Number of workers utilized
+        - **Hours**: Optional - Hours worked
+        - **SystemHours**: Optional - System hours recorded
+        - **Quantity**: Optional - Quantity of work processed
+        - **ResourceKPI**: Optional - Resource KPI
+        - **SystemKPI**: Optional - System KPI
+        """)
+    
+    # System Status
+    st.sidebar.header("System Status")
+    
+    # Check if data is loaded
+    if 'df' in st.session_state and st.session_state.df is not None:
+        st.sidebar.success("✅ Data loaded")
+    else:
+        st.sidebar.warning("❌ No data loaded")
+    
+    # Check if models are loaded
+    if 'models' in st.session_state and st.session_state.models is not None:
+        st.sidebar.success("✅ Models loaded")
+    else:
+        st.sidebar.warning("❌ No models loaded")
+    
+    # Display current date
+    st.sidebar.write(f"Current date: {datetime.now().strftime('%Y-%m-%d')}")
 
 if __name__ == "__main__":
     main()
+    StateManager.initialize()

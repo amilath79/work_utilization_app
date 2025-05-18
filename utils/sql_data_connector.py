@@ -1,6 +1,7 @@
 # utils/sql_data_connector.py
 """
 SQL Server data extraction and parquet storage utilities.
+Also includes prediction database operations.
 """
 import pandas as pd
 import pyodbc
@@ -8,7 +9,7 @@ import os
 import logging
 import traceback
 from datetime import datetime
-from config import DATA_DIR, CACHE_TTL, CHUNK_SIZE
+from config import DATA_DIR, CACHE_TTL, CHUNK_SIZE, SQL_SERVER, SQL_TRUSTED_CONNECTION, SQL_DATABASE_LIVE, SQL_DATABASE
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -199,3 +200,382 @@ def extract_sql_data(server, database, query, username=None, password=None,
         logger.error(f"Error in extract_sql_data: {str(e)}")
         logger.error(traceback.format_exc())
         return None
+    
+
+def load_demand_forecast_data(server=SQL_SERVER, database=SQL_DATABASE_LIVE, 
+                             trusted_connection=SQL_TRUSTED_CONNECTION,
+                             username=None, password=None, chunk_size=CHUNK_SIZE):
+    """
+    Load demand forecast data from SQL Server using the specialized query
+    
+    Parameters:
+    -----------
+    server : str
+        SQL Server name
+    database : str
+        Database name (defaults to configured SQL_DATABASE)
+    trusted_connection : bool
+        Whether to use Windows authentication
+    username : str, optional
+        SQL Server username (if not using trusted connection)
+    password : str, optional
+        SQL Server password (if not using trusted connection)
+    chunk_size : int
+        Number of rows to fetch in each chunk
+        
+    Returns:
+    --------
+    pd.DataFrame or None
+        DataFrame containing the forecast data or None if error occurs
+    """
+    try:
+        # First try to connect to the primary database to ensure connectivity
+        logger.info(f"Testing connection to primary database {database} before loading forecast data")
+        test_conn = SQLDataConnector.connect_to_sql(
+            server=server,
+            database=database,  # Use the primary database from config
+            username=username,
+            password=password,
+            trusted_connection=trusted_connection
+        )
+        
+        if test_conn is None:
+            logger.error(f"Failed to connect to primary database {database}")
+            return None
+        
+        # Close the test connection
+        test_conn.close()
+        
+        # Use the correct database for the query
+        target_database = database
+        logger.info(f"Loading demand forecast data from {server}/{target_database}")
+        
+        # Define query that gets all quantities up to tomorrow as tomorrow's quantity
+        # and keeps original dates for quantities after tomorrow
+        query = """
+        -- Get tomorrow's date for reference
+        DECLARE @Tomorrow DATE = CAST(GETDATE() + 1 AS DATE);
+
+        SELECT 
+            -- Use tomorrow's date for all dates up to tomorrow, otherwise use the original date
+            CASE 
+                WHEN R08T1.oppdate <= @Tomorrow THEN @Tomorrow
+                ELSE R08T1.oppdate 
+            END AS PlanDate,
+            COUNT(*) AS nrows,
+            SUM(reqquant - delquant) AS Quantity,
+            pc.Punchcode
+        FROM O08T1
+        JOIN R08T1 ON O08T1.shortr08 = R08T1.shortr08
+        OUTER APPLY
+        (
+            SELECT 
+                CASE
+                    WHEN routeno = 'MÄSSA' THEN '207'
+                    WHEN routeno LIKE ('N1Z%') THEN '209'
+                    WHEN routeno LIKE ('1Z%') THEN '209'
+                    WHEN routeno LIKE ('N2Z%') THEN '209'
+                    WHEN routeno LIKE ('2Z%')  THEN '209'
+                    WHEN routeno IN ('SORT1', 'SORTP1') THEN '209' 
+                    WHEN routeno IN ('BOOZT', 'ÅHLENS', 'AMZN', 'ENS1', 'ENS2', 'EMV', 'EXPRES', 'KLUBB', 'ÖPFAPO', 'ÖPLOCK', 'ÖPSPEC', 'ÖPUTRI', 'PRINTW', 'RLEV') THEN '211'
+                    WHEN routeno IN ('LÄROME', 'SORDER', 'FSMAK', 'ORKLA', 'REAAKB', 'REAUGG') THEN '214'
+                    WHEN routeno IN ('ADLIB', 'BIB', 'BOKUS', 'DIVNÄT', 'BUYERS') THEN '215'
+                    WHEN divcode IN ('LIB', 'NYP', 'STU') THEN '213'
+                    WHEN routeno NOT IN('LÄROME', 'SORDER', 'FSMAK') THEN '201'
+                    ELSE 'undef_pick'
+                END AS Punchcode
+        ) pc
+        WHERE linestat IN (2, 4, 22, 30)
+        GROUP BY 
+            CASE 
+                WHEN R08T1.oppdate <= @Tomorrow THEN @Tomorrow
+                ELSE R08T1.oppdate 
+            END,
+            pc.Punchcode
+        ORDER BY 
+            CASE 
+                WHEN R08T1.oppdate <= @Tomorrow THEN @Tomorrow
+                ELSE R08T1.oppdate 
+            END, 
+            pc.Punchcode
+        """
+        
+        # Try to connect to the target database
+        try:
+            conn = SQLDataConnector.connect_to_sql(
+                server=server,
+                database=target_database,
+                username=username,
+                password=password,
+                trusted_connection=trusted_connection
+            )
+            
+            if conn is None:
+                logger.error(f"Failed to connect to database {target_database}")
+                return None
+            
+            # Extract data to DataFrame
+            forecast_df = SQLDataConnector.extract_to_df(query, conn, chunk_size)
+            
+            # Close connection
+            conn.close()
+            
+            if forecast_df is not None:
+                logger.info(f"Successfully loaded forecast data from {target_database}. Shape: {forecast_df.shape}")
+            
+            return forecast_df
+            
+        except Exception as e:
+            logger.error(f"Error connecting to {target_database} database: {str(e)}")
+            logger.error(f"Will attempt to use query on primary database {SQL_DATABASE}")
+            
+            # Try executing the query on the primary database as a fallback
+            try:
+                conn = SQLDataConnector.connect_to_sql(
+                    server=server,
+                    database=SQL_DATABASE,  # Use the primary database as fallback
+                    username=username,
+                    password=password,
+                    trusted_connection=trusted_connection
+                )
+                
+                if conn is None:
+                    logger.error(f"Failed to connect to fallback database {SQL_DATABASE}")
+                    return None
+                
+                # We need to modify the query to prepend the database name to table references
+                modified_query = query.replace("FROM O08T1", f"FROM {target_database}.dbo.O08T1")
+                modified_query = modified_query.replace("JOIN R08T1", f"JOIN {target_database}.dbo.R08T1")
+                
+                # Extract data to DataFrame
+                forecast_df = SQLDataConnector.extract_to_df(modified_query, conn, chunk_size)
+                
+                # Close connection
+                conn.close()
+                
+                if forecast_df is not None:
+                    logger.info(f"Successfully loaded forecast data using fallback approach. Shape: {forecast_df.shape}")
+                
+                return forecast_df
+                
+            except Exception as inner_e:
+                logger.error(f"Error using fallback query approach: {str(inner_e)}")
+                logger.error(traceback.format_exc())
+                return None
+        
+    except Exception as e:
+        logger.error(f"Error loading demand forecast data: {str(e)}")
+        logger.error(traceback.format_exc())
+        return None
+
+
+# ================ PREDICTION DATABASE FUNCTIONS ================
+
+def save_predictions_to_db(predictions_dict, hours_dict, username, server=None, database=None):
+    """
+    Save predictions to the database using stored procedure
+    
+    Parameters:
+    -----------
+    predictions_dict : dict
+        Dictionary of predictions with dates as keys and worktype predictions as values
+    hours_dict : dict
+        Dictionary of hour predictions with dates as keys and worktype hours as values
+    username : str
+        Username who made the prediction
+    server : str, optional
+        SQL Server name (defaults to configured SQL_SERVER)
+    database : str, optional
+        Database name (defaults to configured SQL_DATABASE)
+        
+    Returns:
+    --------
+    bool
+        True if successful, False if error occurred
+    """
+    try:
+        # Get configured values if not provided
+        server = server or SQL_SERVER
+        database = database or SQL_DATABASE
+        
+        # Get database connection
+        conn = SQLDataConnector.connect_to_sql(
+            server=server,
+            database=database,
+            trusted_connection=SQL_TRUSTED_CONNECTION
+        )
+        
+        if conn is None:
+            return False
+        
+        cursor = conn.cursor()
+        
+        # Count for success tracking
+        success_count = 0
+        error_count = 0
+        
+        # Process each prediction
+        for date, work_types in predictions_dict.items():
+            for work_type, man_value in work_types.items():
+                # Convert work_type to integer for database storage
+                try:
+                    punch_code_int = int(work_type)
+                except ValueError:
+                    logger.warning(f"Skipping work type {work_type} - cannot convert to integer")
+                    error_count += 1
+                    continue
+                
+                # Get hours value if available
+                hours_value = 0
+                if date in hours_dict and work_type in hours_dict[date]:
+                    hours_value = hours_dict[date][work_type]
+                
+                # Execute stored procedure for this prediction
+                try:
+                    cursor.execute(
+                        "EXEC usp_UpsertPrediction @Date=?, @PunchCode=?, @NoOfMan=?, @Hours=?, @Username=?",
+                        date.strftime('%Y-%m-%d'), 
+                        punch_code_int, 
+                        man_value, 
+                        hours_value, 
+                        username
+                    )
+                    success_count += 1
+                except Exception as proc_error:
+                    logger.error(f"Error executing stored procedure for {date}, {punch_code_int}: {str(proc_error)}")
+                    error_count += 1
+        
+        # Commit the transaction
+        conn.commit()
+        
+        logger.info(f"Successfully saved {success_count} predictions to database")
+        if error_count > 0:
+            logger.warning(f"Failed to save {error_count} predictions due to errors")
+        
+        return success_count > 0
+    
+    except Exception as e:
+        logger.error(f"Error saving predictions to database: {str(e)}")
+        logger.error(traceback.format_exc())
+        if 'conn' in locals() and conn:
+            conn.rollback()
+        return False
+    finally:
+        if 'cursor' in locals() and cursor:
+            cursor.close()
+        if 'conn' in locals() and conn:
+            conn.close()
+
+
+def get_saved_predictions(start_date, end_date, work_types=None, server=None, database=None):
+    """
+    Get saved predictions from the database using stored procedure
+    
+    Parameters:
+    -----------
+    start_date : datetime.date
+        Start date for predictions
+    end_date : datetime.date
+        End date for predictions
+    work_types : list, optional
+        List of work types to filter by, or None for all
+    server : str, optional
+        SQL Server name (defaults to configured SQL_SERVER)
+    database : str, optional
+        Database name (defaults to configured SQL_DATABASE)
+        
+    Returns:
+    --------
+    tuple
+        (predictions_dict, hours_dict)
+    """
+    try:
+        # Get configured values if not provided
+        server = server or SQL_SERVER
+        database = database or SQL_DATABASE
+        
+        # Get database connection
+        conn = SQLDataConnector.connect_to_sql(
+            server=server,
+            database=database,
+            trusted_connection=SQL_TRUSTED_CONNECTION
+        )
+        
+        if conn is None:
+            return {}, {}
+        
+        cursor = conn.cursor()
+        
+        # Prepare punch codes parameter if provided
+        punch_codes_param = None
+        if work_types:
+            try:
+                int_work_types = [int(wt) for wt in work_types]
+                punch_codes_param = ','.join(map(str, int_work_types))
+            except ValueError as e:
+                logger.warning(f"Error converting work types to integers: {str(e)}")
+                # Filter for valid integer work types only
+                int_work_types = []
+                for wt in work_types:
+                    try:
+                        int_work_types.append(int(wt))
+                    except ValueError:
+                        continue
+                if int_work_types:
+                    punch_codes_param = ','.join(map(str, int_work_types))
+        
+        # Execute stored procedure
+        if punch_codes_param:
+            cursor.execute(
+                "EXEC usp_GetSavedPredictions @StartDate=?, @EndDate=?, @PunchCodes=?",
+                start_date.strftime('%Y-%m-%d'),
+                end_date.strftime('%Y-%m-%d'),
+                punch_codes_param
+            )
+        else:
+            cursor.execute(
+                "EXEC usp_GetSavedPredictions @StartDate=?, @EndDate=?",
+                start_date.strftime('%Y-%m-%d'),
+                end_date.strftime('%Y-%m-%d')
+            )
+        
+        # Initialize results
+        predictions_dict = {}
+        hours_dict = {}
+        
+        # Process results
+        for row in cursor.fetchall():
+            date_obj = row[0]  # Date from the database
+            punch_code_int = row[1]  # PunchCode as integer
+            no_of_man = row[2]
+            hours = row[3]
+            
+            # Convert date from SQL Server format if needed
+            if isinstance(date_obj, str):
+                date_obj = datetime.strptime(date_obj, '%Y-%m-%d').date()
+            
+            # Convert PunchCode to string for application use
+            punch_code = str(punch_code_int)
+            
+            # Initialize dictionaries for this date if needed
+            if date_obj not in predictions_dict:
+                predictions_dict[date_obj] = {}
+                hours_dict[date_obj] = {}
+            
+            # Store values
+            predictions_dict[date_obj][punch_code] = no_of_man
+            hours_dict[date_obj][punch_code] = hours
+        
+        result_count = len(predictions_dict)
+        logger.info(f"Retrieved {result_count} prediction dates from database")
+        return predictions_dict, hours_dict
+    
+    except Exception as e:
+        logger.error(f"Error retrieving predictions from database: {str(e)}")
+        logger.error(traceback.format_exc())
+        return {}, {}
+    finally:
+        if 'cursor' in locals() and cursor:
+            cursor.close()
+        if 'conn' in locals() and conn:
+            conn.close()

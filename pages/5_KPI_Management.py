@@ -3,7 +3,6 @@ KPI Management page for the Work Utilization Prediction app.
 """
 import streamlit as st
 import pandas as pd
-import numpy as np
 import logging
 import traceback
 from datetime import datetime, timedelta
@@ -14,9 +13,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.state_manager import StateManager
-from utils.sql_data_connector import SQLDataConnector
-from utils.kpi_manager import load_kpi_data, save_kpi_data, initialize_kpi_dataframe, load_punch_codes
-from config import DATA_DIR, SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION
+from utils.kpi_manager import load_kpi_data, save_kpi_data, initialize_kpi_dataframe, save_financial_year
 
 # Configure page
 st.set_page_config(
@@ -28,6 +25,32 @@ st.set_page_config(
 
 # Configure logger
 logger = logging.getLogger(__name__)
+
+def ensure_dataframe(data):
+    """
+    Ensure data is a valid pandas DataFrame regardless of input type
+    """
+    try:
+        if data is None:
+            return pd.DataFrame({'Date': []})
+        elif isinstance(data, pd.DataFrame):
+            return data
+        elif isinstance(data, dict):
+            return pd.DataFrame([data])
+        elif isinstance(data, list):
+            if not data:  # Empty list
+                return pd.DataFrame({'Date': []})
+            elif isinstance(data[0], dict):  # List of dicts
+                return pd.DataFrame(data)
+            else:  # List of values
+                return pd.DataFrame({'Value': data})
+        else:
+            # Last resort - just convert to string
+            return pd.DataFrame({'Value': [str(data)]})
+    except Exception as e:
+        logger.error(f"Error ensuring DataFrame: {str(e)}")
+        # Return an empty DataFrame as fallback
+        return pd.DataFrame({'Date': []})
 
 def main():
     st.header("📈 KPI Management")
@@ -82,70 +105,111 @@ def main():
         st.session_state.kpi_df = None
         st.session_state.last_date_key = date_key
     
-    # Initialize or get dataframe
+    # Initialize or get dataframe and attempt to auto-load data
     if st.session_state.kpi_df is None:
-        kpi_df = initialize_kpi_dataframe(from_date, to_date, date_range_type)
-        st.session_state.kpi_df = kpi_df
-    else:
-        kpi_df = st.session_state.kpi_df
+        try:
+            # First try to load data from database
+            loaded_df = load_kpi_data(from_date, to_date, date_range_type.upper())
+            
+            # Use loaded data if available, otherwise initialize empty
+            if loaded_df is not None and not loaded_df.empty:
+                st.session_state.kpi_df = ensure_dataframe(loaded_df)
+            else:
+                st.session_state.kpi_df = ensure_dataframe(initialize_kpi_dataframe(from_date, to_date, date_range_type))
+        except Exception as e:
+            logger.error(f"Error auto-loading KPI data: {str(e)}")
+            # Fall back to empty dataframe on error
+            st.session_state.kpi_df = ensure_dataframe(initialize_kpi_dataframe(from_date, to_date, date_range_type))
     
-    # Load button
-    if st.button("Load KPI Data", type="primary"):
-        with st.spinner(f"Loading KPI data for {date_range_type.lower()} view..."):
-            try:
-                # Call utility function to load data
-                loaded_df = load_kpi_data(from_date, to_date, date_range_type.upper())
-                
-                if not loaded_df.empty:
-                    st.session_state.kpi_df = loaded_df
-                    kpi_df = loaded_df
-                    st.success(f"KPI data loaded for {date_range_type.lower()} view")
-                else:
-                    st.info("No existing KPI data found. You can enter new values below.")
-            except Exception as e:
-                logger.error(f"Error loading KPI data: {str(e)}")
-                logger.error(traceback.format_exc())
-                st.error(f"An error occurred while loading KPI data: {str(e)}")
+    # Check if we're in monthly view for financial year
+    is_financial_year_view = (date_range_type == "Monthly" and 
+                             from_date.month == 5 and from_date.day == 1 and
+                             to_date.month == 4 and to_date.day == 30 and
+                             to_date.year == from_date.year + 1)
+                      
+    if is_financial_year_view:
+        st.info(f"🗓️ Financial Year View: {from_date.strftime('%Y-%m-%d')} to {to_date.strftime('%Y-%m-%d')}")
     
-    # KPI data editor
     st.subheader(f"Manage {date_range_type} KPIs")
     
-    # Use Streamlit's data editor to make the table editable
-    edited_df = st.data_editor(
+    # Always ensure kpi_df is a DataFrame with the robust function
+    kpi_df = ensure_dataframe(st.session_state.kpi_df)
+    
+    # Function to handle data edits
+    def on_data_change():
+        if 'kpi_data_editor' in st.session_state:
+            st.session_state.kpi_df = st.session_state.kpi_data_editor
+    
+    # Use the data editor with the callback
+    st.data_editor(
         kpi_df,
         use_container_width=True,
         num_rows="fixed",
         hide_index=True,
-        key="kpi_data_editor"
+        key="kpi_data_editor",
+        on_change=on_data_change
     )
     
-    # Immediately update session state with edited values to preserve changes
-    st.session_state.kpi_df = edited_df
+    # Save buttons
+    col1, col2 = st.columns(2)
     
-    # Save button
-    if st.button("Save KPI Data", type="secondary"):
-        with st.spinner("Saving KPI data..."):
-            try:
-                # Get current user from system
-                username = os.environ.get('USERNAME', 'Unknown')
-                
-                # Important: Use the edited dataframe from session state
-                success = save_kpi_data(
-                    st.session_state.kpi_df,  # Use session state data
-                    from_date,
-                    to_date,
-                    username,
-                    date_range_type.upper()
-                )
-                
-                if success:
-                    st.success("KPI data saved successfully!")
-                else:
-                    st.error("Error saving KPI data. Please check the application logs for details.")
-            except Exception as e:
-                logger.error(f"Error in save button handler: {str(e)}")
-                logger.error(traceback.format_exc())
-                st.error(f"An unexpected error occurred: {str(e)}")
+    with col1:
+        # Save button
+        if st.button("Save KPI Data", type="secondary"):
+            with st.spinner("Saving KPI data..."):
+                try:
+                    # Get current user from system
+                    username = os.environ.get('USERNAME', 'Unknown')
+                    
+                    # Get the edited data, ensure it's a DataFrame
+                    save_df = ensure_dataframe(st.session_state.kpi_df)
+                    
+                    # Save using session state data
+                    success = save_kpi_data(
+                        save_df,
+                        from_date,
+                        to_date,
+                        username,
+                        date_range_type.upper()
+                    )
+                    
+                    if success:
+                        # Reload data to show the saved version
+                        loaded_df = load_kpi_data(from_date, to_date, date_range_type.upper())
+                        st.session_state.kpi_df = ensure_dataframe(loaded_df)
+                        st.success("KPI data saved successfully!")
+                        st.rerun()
+                    else:
+                        st.error("Error saving KPI data. Please check the application logs for details.")
+                except Exception as e:
+                    logger.error(f"Error in save button handler: {str(e)}")
+                    logger.error(traceback.format_exc())
+                    st.error(f"An unexpected error occurred: {str(e)}")
+
+    with col2:
+        # Financial year button (only show in financial year view)
+        if is_financial_year_view:
+            if st.button("Register as Financial Year", type="primary"):
+                with st.spinner("Registering financial year..."):
+                    try:
+                        # Get current user from system
+                        username = os.environ.get('USERNAME', 'Unknown')
+                        
+                        # Save to KPIFinancialYears table
+                        success = save_financial_year(
+                            from_date,
+                            to_date,
+                            username
+                        )
+                        
+                        if success:
+                            st.success(f"Financial year {from_date.year}-{to_date.year} registered successfully!")
+                        else:
+                            st.error("Error registering financial year. Please check the application logs for details.")
+                    except Exception as e:
+                        logger.error(f"Error in financial year handler: {str(e)}")
+                        logger.error(traceback.format_exc())
+                        st.error(f"An unexpected error occurred: {str(e)}")
 
 if __name__ == "__main__":
     main()

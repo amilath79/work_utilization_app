@@ -33,6 +33,23 @@ def engineer_features(df):
         # Create a copy to avoid modifying the original dataframe
         data = df.copy()
         
+        # Ensure Date column is datetime
+        if 'Date' in data.columns:
+            # Check the type of Date column
+            if not pd.api.types.is_datetime64_any_dtype(data['Date']):
+                logger.info("Converting Date column to datetime")
+                data['Date'] = pd.to_datetime(data['Date'], errors='coerce')
+                
+                # Check if conversion created NaT values and log a warning
+                nat_count = data['Date'].isna().sum()
+                if nat_count > 0:
+                    logger.warning(f"Date conversion created {nat_count} NaT values")
+                    # Drop NaT values to avoid issues in feature engineering
+                    data = data.dropna(subset=['Date'])
+        else:
+            logger.error("Date column not found in dataframe")
+            raise ValueError("Date column is required for feature engineering")
+        
         # Extract date features from the Date column only
         data['Year_feat'] = data['Date'].dt.year
         data['Month_feat'] = data['Date'].dt.month

@@ -117,6 +117,85 @@ def load_models():
         logger.error(traceback.format_exc())
         return {}, {}, {}
 
+@st.cache_resource
+def load_combined_models():
+    """
+    Load both standard and basic models and combine them into a single dictionary
+    
+    Returns:
+    --------
+    tuple
+        (combined_models_dict, combined_feature_importances_dict, combined_metrics_dict)
+    """
+    try:
+        # Load standard models
+        standard_models_path = os.path.join(MODELS_DIR, 'work_utilization_models.pkl')
+        standard_feature_importances_path = os.path.join(MODELS_DIR, 'work_utilization_feature_importances.pkl')
+        standard_metrics_path = os.path.join(MODELS_DIR, 'work_utilization_metrics.pkl')
+        
+        # Load basic models
+        basic_models_path = os.path.join(MODELS_DIR, 'work_utilization_basic_models.pkl')
+        basic_feature_importances_path = os.path.join(MODELS_DIR, 'work_utilization_basic_feature_importances.pkl')
+        basic_metrics_path = os.path.join(MODELS_DIR, 'work_utilization_basic_metrics.pkl')
+        
+        # Initialize dictionaries
+        combined_models = {}
+        combined_feature_importances = {}
+        combined_metrics = {}
+        
+        # Check and load standard models if they exist
+        if os.path.exists(standard_models_path):
+            with open(standard_models_path, 'rb') as f:
+                standard_models = pickle.load(f)
+            
+            with open(standard_feature_importances_path, 'rb') as f:
+                standard_feature_importances = pickle.load(f)
+            
+            with open(standard_metrics_path, 'rb') as f:
+                standard_metrics = pickle.load(f)
+            
+            # Add to combined dictionaries
+            combined_models.update(standard_models)
+            combined_feature_importances.update(standard_feature_importances)
+            combined_metrics.update(standard_metrics)
+            
+            logger.info(f"Standard models loaded successfully. Number of models: {len(standard_models)}")
+        else:
+            logger.warning("Standard model files not found")
+        
+        # Check and load basic models if they exist
+        if os.path.exists(basic_models_path):
+            with open(basic_models_path, 'rb') as f:
+                basic_models = pickle.load(f)
+            
+            with open(basic_feature_importances_path, 'rb') as f:
+                basic_feature_importances = pickle.load(f)
+            
+            with open(basic_metrics_path, 'rb') as f:
+                basic_metrics = pickle.load(f)
+            
+            # Add to combined dictionaries
+            combined_models.update(basic_models)
+            combined_feature_importances.update(basic_feature_importances)
+            combined_metrics.update(basic_metrics)
+            
+            logger.info(f"Basic models loaded successfully. Number of models: {len(basic_models)}")
+        else:
+            logger.warning("Basic model files not found")
+        
+        # Check if any models were loaded
+        if not combined_models:
+            logger.error("No models were found in either model directory")
+            return {}, {}, {}
+        
+        logger.info(f"Combined models loaded successfully. Total number of models: {len(combined_models)}")
+        return combined_models, combined_feature_importances, combined_metrics
+    
+    except Exception as e:
+        logger.error(f"Error loading combined models: {str(e)}")
+        logger.error(traceback.format_exc())
+        return {}, {}, {}
+
 def save_models(models, feature_importances, metrics):
     """
     Save trained models, feature importances, and metrics
@@ -150,6 +229,42 @@ def save_models(models, feature_importances, metrics):
     
     except Exception as e:
         logger.error(f"Error saving models: {str(e)}")
+        logger.error(traceback.format_exc())
+        return False
+
+def save_basic_models(models, feature_importances, metrics):
+    """
+    Save trained basic models, feature importances, and metrics
+    
+    Parameters:
+    -----------
+    models : dict
+        Dictionary of trained basic models for each WorkType
+    feature_importances : dict
+        Dictionary of feature importances for each WorkType
+    metrics : dict
+        Dictionary of evaluation metrics for each WorkType
+    """
+    try:
+        os.makedirs(MODELS_DIR, exist_ok=True)
+        
+        # Save models
+        with open(os.path.join(MODELS_DIR, 'work_utilization_basic_models.pkl'), 'wb') as f:
+            pickle.dump(models, f)
+        
+        # Save feature importances
+        with open(os.path.join(MODELS_DIR, 'work_utilization_basic_feature_importances.pkl'), 'wb') as f:
+            pickle.dump(feature_importances, f)
+        
+        # Save metrics
+        with open(os.path.join(MODELS_DIR, 'work_utilization_basic_metrics.pkl'), 'wb') as f:
+            pickle.dump(metrics, f)
+        
+        logger.info(f"Basic models saved successfully. Number of models: {len(models)}")
+        return True
+    
+    except Exception as e:
+        logger.error(f"Error saving basic models: {str(e)}")
         logger.error(traceback.format_exc())
         return False
     
@@ -192,3 +307,6 @@ def export_predictions(predictions, file_path):
         logger.error(f"Error exporting predictions: {str(e)}")
         logger.error(traceback.format_exc())
         return False
+    
+
+    

@@ -57,6 +57,7 @@ ROLLING_WINDOWS = [7, 14, 30, 90]    # Default rolling windows for feature engin
 # SQL Server settings
 SQL_SERVER = "192.168.1.43"
 SQL_DATABASE = "ABC"
+SQL_DATABASE_LIVE = "fsystemp"
 SQL_TRUSTED_CONNECTION = True
 SQL_USERNAME = None
 SQL_PASSWORD = None
