@@ -102,80 +102,7 @@ def calculate_hours_prediction(df, work_type, no_of_man_prediction, date=None):
         # Fallback to simple calculation
         return no_of_man_prediction * 8.0
 
-def _fix_missing_columns(X_pred, work_type):
-    """
-    Add missing columns to prediction dataframe based on work type
-    
-    Parameters:
-    -----------
-    X_pred : pd.DataFrame
-        Input prediction dataframe
-    work_type : str
-        Work type code
-    
-    Returns:
-    --------
-    pd.DataFrame
-        DataFrame with all required columns
-    """
-    try:
-        # Comprehensive list of potential productivity features for full models
-        productivity_features = [
-            # Core productivity features
-            'SystemKPI_rolling_mean_7', 'Quantity_lag_7', 'Combined_KPI_lag_1', 
-            'Hours_SystemHours_Ratio', 'Workers_Predicted_from_Quantity',
-            'Relative_Quantity', 'Quantity_1day_trend', 'Quantity_same_dow_lag',
-            'NoOfMan_rolling_mean_90', 'Quantity_rolling_mean_7', 'Quantity_7day_trend',
-            'Hours_per_Quantity', 'Quantity_lag_1', 'SystemHours_per_Quantity',
-            'ResourceKPI_lag_1', 'Quantity_per_Worker', 'SystemKPI_lag_1',
-            'ResourceKPI_rolling_mean_7',
-            
-            # Specifically add the missing lag feature that's causing the error
-            'Hours_SystemHours_Ratio_lag_1',
-            
-            # Add other potential ratio lag features
-            'Hours_per_Quantity_lag_1',
-            'SystemHours_per_Quantity_lag_1',
-            'Quantity_per_Worker_lag_1',
-            'Relative_Quantity_lag_1',
-            
-            # Add any other potential missing features used in models
-            'NoOfMan_rolling_mean_14', 'NoOfMan_rolling_mean_30',
-            'Combined_KPI_rolling_mean_7', 'ResourceKPI_rolling_mean_7', 'SystemKPI_rolling_mean_7',
-            'NoOfMan_lag_14', 'NoOfMan_lag_30', 'NoOfMan_lag_365',
-            'Combined_KPI_lag_7', 'ResourceKPI_lag_7', 'SystemKPI_lag_7'
-        ]
-        
-        # Basic time-series features needed for all models
-        basic_features = [
-            'NoOfMan_rolling_mean_90',
-            'NoOfMan_rolling_mean_14', 
-            'NoOfMan_rolling_mean_30',
-            'NoOfMan_lag_14', 
-            'NoOfMan_lag_30', 
-            'NoOfMan_lag_365'
-        ]
-        
-        # Determine which features to check based on work type
-        basic_work_types = ["202", "203", "206", "208", "210", "217"]
-        features_to_check = basic_features
-        
-        # If it's a full-featured work type, check for all productivity metrics
-        if work_type not in basic_work_types:
-            features_to_check = basic_features + productivity_features
-        
-        # Check each potential column and add it if missing
-        for col in features_to_check:
-            if col not in X_pred.columns:
-                X_pred[col] = 0.0
-                logger.info(f"Added missing column '{col}' for WorkType {work_type}")
-                
-        return X_pred
-    
-    except Exception as e:
-        logger.error(f"Error fixing missing columns: {str(e)}")
-        logger.error(traceback.format_exc())
-        return X_pred
+
 
 def load_neural_models():
     """
@@ -379,198 +306,7 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
             model = models[work_type]
             required_features = _get_required_features(model)
             
-            # Define all potential productivity features that might be needed by any model
-            productivity_features = [
-                'SystemKPI_rolling_mean_7', 'Quantity_lag_7', 'Combined_KPI_lag_1', 
-                'Hours_SystemHours_Ratio', 'Workers_Predicted_from_Quantity',
-                'Relative_Quantity', 'Quantity_1day_trend', 'Quantity_same_dow_lag',
-                'NoOfMan_rolling_mean_90', 'Quantity_rolling_mean_7', 'Quantity_7day_trend',
-                'Hours_per_Quantity', 'Quantity_lag_1', 'SystemHours_per_Quantity',
-                'ResourceKPI_lag_1', 'Quantity_per_Worker', 'SystemKPI_lag_1',
-                'ResourceKPI_rolling_mean_7', 'Hours_SystemHours_Ratio_lag_1',
-                'Hours_per_Quantity_lag_1', 'SystemHours_per_Quantity_lag_1',
-                'Quantity_per_Worker_lag_1', 'Relative_Quantity_lag_1',
-                'Combined_KPI_rolling_mean_7', 'ResourceKPI_rolling_mean_7', 'SystemKPI_rolling_mean_7',
-                'Combined_KPI_lag_7', 'ResourceKPI_lag_7', 'SystemKPI_lag_7',
-                'NoOfMan_rolling_mean_14', 'NoOfMan_rolling_mean_30', 'NoOfMan_lag_14', 
-                'NoOfMan_lag_30', 'NoOfMan_lag_365'
-            ]
-            
-            # Add any missing required features
-            complete_features = all_features.copy()
-            
-            # Add any missing required features (with default value 0)
-            for feature in required_features:
-                if feature not in complete_features:
-                    complete_features[feature] = 0
-                    logger.info(f"Added missing column '{feature}' for WorkType {work_type}")
-            
-            # Create the prediction dataframe with all required features
-            X_pred = pd.DataFrame([{
-                feature: complete_features.get(feature, 0) 
-                for feature in required_features
-            }])
-            
-            # Make prediction
-            try:
-                prediction = model.predict(X_pred)[0]
-                
-                # Ensure prediction is not negative
-                prediction = max(0, prediction)
-                
-                predictions[work_type] = prediction
-                hours_predictions[work_type] = calculate_hours_prediction(df, work_type, prediction, next_date)
-                
-                logger.info(f"RandomForest predicted {prediction:.2f} workers for WorkType {work_type}")
-            except Exception as e:
-                logger.error(f"Error predicting for WorkType {work_type}: {str(e)}")
-                logger.error(traceback.format_exc())
-                continue
-        
-        # Return the date, predictions dictionary, and hours dictionary
-        return next_date, predictions, hours_predictions
-    
-    except Exception as e:
-        logger.error(f"Error predicting next day: {str(e)}")
-        logger.error(traceback.format_exc())
-        raise Exception(f"Failed to predict next day: {str(e)}")
-
-    """
-    Predict NoOfMan and Hours for the next day for each WorkType
-    """
-    try:
-        # Find the latest date in the dataset or use specified date
-        latest_date = df['Date'].max() if date is None else date
-        next_date = latest_date + timedelta(days=1)
-        
-        logger.info(f"Predicting NoOfMan for {next_date.strftime('%Y-%m-%d')}")
-        
-       # Check if the prediction date is a non-working day (holiday or Saturday)
-        is_nonworking, reason = is_non_working_day(next_date)
-
-        if is_nonworking:
-            logger.info(f"Date {next_date.strftime('%Y-%m-%d')} is a non-working day: {reason}")
-            logger.info("No work is carried out on this day. Setting all predictions to 0.")
-    
-            # Return zero predictions for all work types
-            zero_predictions = {work_type: 0 for work_type in models.keys()}
-            zero_hours = {work_type: 0 for work_type in models.keys()}
-            return next_date, zero_predictions, zero_hours
-
-        # Load neural network models if requested
-        nn_models, nn_scalers, nn_metrics = {}, {}, {}
-        if use_neural_network:
-            nn_models, nn_scalers, nn_metrics = load_neural_models()
-        
-        # Get the day of week, month, etc. for the next day
-        next_day_features = {
-            'Date': next_date,
-            'DayOfWeek_feat': next_date.dayofweek,
-            'Month_feat': next_date.month,
-            'IsWeekend_feat': 1 if next_date.dayofweek >= 5 else 0,
-            'Year_feat': next_date.year,
-            'Quarter': (next_date.month - 1) // 3 + 1,
-            'DayOfMonth': next_date.day,
-            'WeekOfYear': next_date.isocalendar()[1]
-        }
-        
-        predictions = {}
-        hours_predictions = {}
-        
-        for work_type in models.keys():
-            # Try neural network prediction first if requested
-            if use_neural_network and nn_models and work_type in nn_models:
-                nn_prediction = predict_with_neural_network(df, nn_models, nn_scalers, work_type, date)
-                
-                if nn_prediction is not None:
-                    predictions[work_type] = nn_prediction
-                    hours_predictions[work_type] = calculate_hours_prediction(df, work_type, nn_prediction, next_date)
-                    logger.info(f"Neural network predicted {nn_prediction:.2f} workers for WorkType {work_type}")
-                    continue
-            
-            # Fall back to traditional model if neural prediction fails or wasn't requested
-            # Filter data for this WorkType
-            work_type_data = df[df['WorkType'] == work_type]
-            
-            if len(work_type_data) < 8:  # Need at least 7 days of history for lag features
-                logger.warning(f"Not enough data for WorkType {work_type}. Skipping.")
-                continue
-                
-            # Get the most recent values for lag features
-            lag_features = {}
-            for lag in [1, 2, 3, 7, 14, 30, 365]:
-                try:
-                    lag_date = latest_date - timedelta(days=lag)
-                    lag_records = work_type_data[work_type_data['Date'] == lag_date]
-                    lag_value = lag_records['NoOfMan'].sum() if not lag_records.empty else 0
-                    lag_features[f'NoOfMan_lag_{lag}'] = lag_value
-                except:
-                    # If a lag day isn't available
-                    lag_features[f'NoOfMan_lag_{lag}'] = 0
-            
-            # Calculate rolling statistics
-            for window in [7, 14, 30, 90]:  # Added 90-day window
-                try:
-                    recent_data = work_type_data[work_type_data['Date'] > latest_date - timedelta(days=window)]
-                    values = recent_data['NoOfMan'].values
-                    
-                    # Calculate rolling mean
-                    rolling_mean = values.mean() if len(values) > 0 else 0
-                    lag_features[f'NoOfMan_rolling_mean_{window}'] = rolling_mean
-                    
-                    # Calculate other rolling statistics if needed by the model
-                    if window == 7:  # Only for 7-day window to avoid feature explosion
-                        lag_features[f'NoOfMan_rolling_max_{window}'] = values.max() if len(values) > 0 else 0
-                        lag_features[f'NoOfMan_rolling_min_{window}'] = values.min() if len(values) > 0 else 0
-                        lag_features[f'NoOfMan_rolling_std_{window}'] = values.std() if len(values) > 1 else 0
-                except Exception as roll_err:
-                    logger.warning(f"Error calculating rolling stats for window {window}: {str(roll_err)}")
-                    lag_features[f'NoOfMan_rolling_mean_{window}'] = 0
-                    if window == 7:
-                        lag_features[f'NoOfMan_rolling_max_{window}'] = 0
-                        lag_features[f'NoOfMan_rolling_min_{window}'] = 0
-                        lag_features[f'NoOfMan_rolling_std_{window}'] = 0
-            
-            # Same day of week lag
-            try:
-                same_dow_records = work_type_data[
-                    (work_type_data['DayOfWeek_feat'] == next_day_features['DayOfWeek_feat']) &
-                    (work_type_data['Date'] < latest_date)
-                ].sort_values('Date', ascending=False)
-                
-                same_dow_value = same_dow_records.iloc[0]['NoOfMan'] if not same_dow_records.empty else 0
-                lag_features['NoOfMan_same_dow_lag'] = same_dow_value
-            except:
-                lag_features['NoOfMan_same_dow_lag'] = 0
-            
-            # Same day of month lag
-            try:
-                same_dom_records = work_type_data[
-                    (work_type_data['DayOfMonth'] == next_day_features['DayOfMonth']) &
-                    (work_type_data['Date'] < latest_date)
-                ].sort_values('Date', ascending=False)
-                
-                same_dom_value = same_dom_records.iloc[0]['NoOfMan'] if not same_dom_records.empty else 0
-                lag_features['NoOfMan_same_dom_lag'] = same_dom_value
-            except:
-                lag_features['NoOfMan_same_dom_lag'] = 0
-            
-            # Add trend indicators
-            try:
-                lag_features['NoOfMan_7day_trend'] = lag_features['NoOfMan_lag_1'] - lag_features['NoOfMan_lag_7']
-                lag_features['NoOfMan_1day_trend'] = lag_features['NoOfMan_lag_1'] - lag_features['NoOfMan_lag_2']
-            except:
-                lag_features['NoOfMan_7day_trend'] = 0
-                lag_features['NoOfMan_1day_trend'] = 0
-            
-            # Combine features
-            all_features = {**next_day_features, **lag_features}
-            
-            # Prepare input for prediction based on model's expected features
-            model = models[work_type]
-            required_features = _get_required_features(model)
-            
-            # Create prediction dataframe with only the required features
+            # Create the prediction dataframe with required features
             X_pred = pd.DataFrame([{
                 feature: all_features.get(feature, 0) 
                 for feature in required_features
@@ -578,24 +314,29 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
             
             # Make prediction
             try:
-                # Fix missing columns before prediction
-                X_pred = _fix_missing_columns(X_pred, work_type)
+                # Ensure all required productivity columns exist in the dataframe
+                productivity_columns = [
+                    'Quantity_1day_trend', 'Quantity_7day_trend', 'Quantity_lag_7', 
+                    'Hours_SystemHours_Ratio_lag_1', 'SystemHours_per_Quantity', 
+                    'Combined_KPI_lag_1', 'Quantity_lag_1', 'ResourceKPI_lag_1', 
+                    'Relative_Quantity', 'Quantity_rolling_mean_7', 'SystemKPI_lag_1', 
+                    'Quantity_per_Worker', 'Workers_Predicted_from_Quantity', 
+                    'Hours_per_Quantity', 'Quantity_same_dow_lag',
+                    'NoOfMan_rolling_mean_14', 'NoOfMan_rolling_mean_30',
+                    'NoOfMan_rolling_mean_90', 'NoOfMan_lag_14', 'NoOfMan_lag_30', 
+                    'NoOfMan_lag_365', 'Combined_KPI_rolling_mean_7',
+                    'ResourceKPI_rolling_mean_7', 'SystemKPI_rolling_mean_7',
+                    'Hours_per_Quantity_lag_1', 'SystemHours_per_Quantity_lag_1',
+                    'Quantity_per_Worker_lag_1', 'Relative_Quantity_lag_1'
+                ]
                 
-                # Get required columns for this model
-                required_features = _get_required_features(model)
-                
-                # Check for any remaining missing columns needed by the model
-                missing_cols = []
-                for col in required_features:
+                # Add any missing columns to X_pred with value 0
+                for col in productivity_columns:
                     if col not in X_pred.columns:
-                        missing_cols.append(col)
+                        X_pred[col] = 0.0
+                        logger.info(f"Added missing column '{col}' for WorkType {work_type}")
                 
-                if missing_cols:
-                    error_msg = f"columns are missing: {set(missing_cols)}"
-                    logger.error(f"Error predicting for WorkType {work_type}: {error_msg}")
-                    continue
-                
-                # Make the prediction with the fixed dataframe
+                # Proceed with prediction now that all columns are present
                 prediction = model.predict(X_pred)[0]
                 
                 # Ensure prediction is not negative
@@ -617,7 +358,7 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
         logger.error(f"Error predicting next day: {str(e)}")
         logger.error(traceback.format_exc())
         raise Exception(f"Failed to predict next day: {str(e)}")
-
+    
 def predict_multiple_days(df, models, num_days=7, use_neural_network=False):
     """
     Predict NoOfMan and Hours for multiple days for each WorkType
@@ -740,6 +481,7 @@ def predict_multiple_days(df, models, num_days=7, use_neural_network=False):
         logger.error(f"Error predicting multiple days: {str(e)}")
         logger.error(traceback.format_exc())
         raise Exception(f"Failed to predict multiple days: {str(e)}")
+
     
 
 def evaluate_predictions(y_true, y_pred):

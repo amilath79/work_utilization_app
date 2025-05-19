@@ -22,6 +22,7 @@ from utils.prediction import predict_next_day, predict_multiple_days, evaluate_p
 from utils.data_loader import export_predictions, load_models, load_data
 from utils.sql_data_connector import extract_sql_data, save_predictions_to_db
 from utils.holiday_utils import is_non_working_day
+from utils.sql_data_connector import extract_sql_data
 from config import MODELS_DIR, DATA_DIR, SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION
 
 # Configure logging to display debug information
@@ -57,6 +58,11 @@ if 'current_predictions' not in st.session_state:
 if 'current_hours_predictions' not in st.session_state:
     st.session_state.current_hours_predictions = None
 
+if 'save_button_clicked' not in st.session_state:
+    st.session_state.save_button_clicked = False
+
+def set_save_clicked():
+    st.session_state.save_button_clicked = True
 
 def load_workutilizationdata():
     """Load data from the WorkUtilizationData table"""
@@ -93,6 +99,70 @@ def load_workutilizationdata():
         logger.error(traceback.format_exc())
         return None
 
+def simple_save_predictions(predictions_dict, hours_dict, username, server=None, database=None):
+    """
+    Simple function to save predictions to database with minimal complexity
+    """
+    import pyodbc
+    from config import SQL_SERVER, SQL_DATABASE
+    
+    # Use provided or default values
+    server = server or SQL_SERVER
+    database = database or SQL_DATABASE
+    
+    try:
+        # Create connection string
+        conn_str = f'DRIVER={{SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
+        
+        # Connect to database
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+        
+        # Track success
+        saved_count = 0
+        
+        # Process each prediction one by one
+        for date, work_types in predictions_dict.items():
+            for work_type, man_value in work_types.items():
+                try:
+                    # Convert work_type to integer
+                    punch_code = int(work_type)
+                    
+                    # Format date as string
+                    date_str = date.strftime('%Y-%m-%d')
+                    
+                    # Get hours value
+                    hours = 0.0
+                    if date in hours_dict and work_type in hours_dict[date]:
+                        hours = float(hours_dict[date][work_type])
+                    
+                    # Execute stored procedure
+                    cursor.execute(
+                        "EXEC usp_UpsertPrediction @Date=?, @PunchCode=?, @NoOfMan=?, @Hours=?, @Username=?",
+                        date_str, 
+                        punch_code, 
+                        float(man_value), 
+                        hours, 
+                        username
+                    )
+                    
+                    # Commit immediately
+                    conn.commit()
+                    saved_count += 1
+                    
+                except Exception as e:
+                    print(f"Error saving prediction for {date_str}, {work_type}: {str(e)}")
+                    # Continue with next prediction
+        
+        # Close resources
+        cursor.close()
+        conn.close()
+        
+        return saved_count > 0
+    
+    except Exception as e:
+        print(f"Database error: {str(e)}")
+        return False
 
 def ensure_data_and_models():
     """Ensure data and models are loaded"""
@@ -348,34 +418,14 @@ def main():
                     
                     # Display results
                     model_type_text = "Neural Network" if use_neural else "Random Forest"
-                    
+
                     st.subheader(f"Predictions from {pred_start_date.strftime('%B %d, %Y')} to {pred_end_date.strftime('%B %d, %Y')} using {model_type_text}")
-                    
-                    # Get current user
-                    current_user = get_current_user()
-                    
-                    # Username input for saving predictions
-                    username = st.text_input("Your Username", value=current_user)
-                    
-                    # Add save predictions button
-                    if st.button("Save Predictions to Database", type="primary"):
-                        if not username:
-                            st.error("Please enter your username")
-                        else:
-                            with st.spinner("Saving predictions to database..."):
-                                # Save predictions to database - always use 'A' for prediction type
-                                success = save_predictions_to_db(
-                                    predictions_dict=predictions,
-                                    hours_dict=hours_predictions,
-                                    username=username
-                                )
-                                
-                                if success:
-                                    st.success(f"Successfully saved predictions to database.")
-                                    # Add timestamp for user confidence
-                                    st.info(f"Saved at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-                                else:
-                                    st.error("Failed to save predictions to database. See logs for details.")
+
+                    # Display debug info
+                    # if st.session_state.debug_info:
+                    #     with st.expander("Debug Information", expanded=True):
+                    #         for info in st.session_state.debug_info:
+                    #             st.write(info)
                     
                     # Holiday information
                     with st.expander("📊 View Holiday Information", expanded=False):
@@ -472,6 +522,33 @@ def main():
                     st.error(f"Error generating predictions: {str(e)}")
                     logger.error(f"Error generating predictions: {str(e)}")
                     logger.error(traceback.format_exc())
+
+
+    # Username input
+    username = st.text_input("Your Username", value=get_current_user())
+
+    # Simple save button
+    if st.button("Save Predictions to Database"):
+        if not username:
+            st.error("Please enter your username")
+        elif not st.session_state.current_predictions:
+            st.error("No predictions to save. Generate predictions first.")
+        else:
+            with st.spinner("Saving predictions..."):
+                try:
+                    # Use the simple save function
+                    success = simple_save_predictions(
+                        predictions_dict=st.session_state.current_predictions,
+                        hours_dict=st.session_state.current_hours_predictions,
+                        username=username
+                    )
+                    
+                    if success:
+                        st.success("✅ Predictions saved successfully!")
+                    else:
+                        st.error("Failed to save predictions")
+                except Exception as e:
+                    st.error(f"Error: {str(e)}")
 
 if __name__ == "__main__":
     main()

@@ -398,6 +398,18 @@ def save_predictions_to_db(predictions_dict, hours_dict, username, server=None, 
         server = server or SQL_SERVER
         database = database or SQL_DATABASE
         
+        # Add comprehensive logging at the start
+        logger.info(f"Starting save_predictions_to_db with username: {username}")
+        logger.info(f"Connecting to {server}/{database}")
+        logger.info(f"Number of dates in predictions: {len(predictions_dict)}")
+        prediction_count = sum(len(work_types) for work_types in predictions_dict.values())
+        logger.info(f"Total predictions to save: {prediction_count}")
+        
+        # Check if predictions_dict is empty
+        if not predictions_dict:
+            logger.error("No predictions to save. predictions_dict is empty.")
+            return False
+            
         # Get database connection
         conn = SQLDataConnector.connect_to_sql(
             server=server,
@@ -406,8 +418,10 @@ def save_predictions_to_db(predictions_dict, hours_dict, username, server=None, 
         )
         
         if conn is None:
+            logger.error(f"Failed to connect to database {database} on server {server}")
             return False
         
+        logger.info("Database connection successful")
         cursor = conn.cursor()
         
         # Count for success tracking
@@ -416,37 +430,72 @@ def save_predictions_to_db(predictions_dict, hours_dict, username, server=None, 
         
         # Process each prediction
         for date, work_types in predictions_dict.items():
+            logger.info(f"Processing predictions for date: {date.strftime('%Y-%m-%d')}")
+            
             for work_type, man_value in work_types.items():
-                # Convert work_type to integer for database storage
                 try:
-                    punch_code_int = int(work_type)
-                except ValueError:
-                    logger.warning(f"Skipping work type {work_type} - cannot convert to integer")
-                    error_count += 1
-                    continue
-                
-                # Get hours value if available
-                hours_value = 0
-                if date in hours_dict and work_type in hours_dict[date]:
-                    hours_value = hours_dict[date][work_type]
-                
-                # Execute stored procedure for this prediction
-                try:
+                    # Convert work_type to integer for database storage
+                    logger.info(f"Processing work type: {work_type}, Man Power: {man_value}")
+                    
+                    try:
+                        punch_code_int = int(work_type)
+                    except ValueError:
+                        logger.warning(f"Skipping work type {work_type} - cannot convert to integer")
+                        error_count += 1
+                        continue
+                    
+                    # Ensure man_value is a valid float
+                    if pd.isna(man_value) or man_value is None:
+                        man_value = 0.0
+                    else:
+                        man_value = float(man_value)
+                    
+                    # Get hours value if available
+                    hours_value = 0.0
+                    if date in hours_dict and work_type in hours_dict[date]:
+                        hours_value = hours_dict[date][work_type]
+                        if pd.isna(hours_value) or hours_value is None:
+                            hours_value = 0.0
+                        else:
+                            hours_value = float(hours_value)
+                        logger.info(f"Hours value for {work_type}: {hours_value}")
+                    
+                    # Formatting date as string for SQL
+                    date_str = date.strftime('%Y-%m-%d')
+                    
+                    # Log the parameters being sent to the stored procedure
+                    log_msg = (f"Executing stored procedure with params: Date={date_str}, "
+                             f"PunchCode={punch_code_int}, NoOfMan={man_value}, "
+                             f"Hours={hours_value}, Username={username}")
+                    logger.info(log_msg)
+                    
+                    # Execute stored procedure for this prediction
                     cursor.execute(
                         "EXEC usp_UpsertPrediction @Date=?, @PunchCode=?, @NoOfMan=?, @Hours=?, @Username=?",
-                        date.strftime('%Y-%m-%d'), 
+                        date_str, 
                         punch_code_int, 
-                        man_value, 
-                        hours_value, 
+                        float(man_value),  # Ensure it's a float
+                        float(hours_value),  # Ensure it's a float
                         username
                     )
+                    
+                    # Commit after each prediction to avoid losing all on error
+                    conn.commit()
+                    
                     success_count += 1
-                except Exception as proc_error:
-                    logger.error(f"Error executing stored procedure for {date}, {punch_code_int}: {str(proc_error)}")
+                    logger.info(f"Successfully executed stored procedure for {date}, {punch_code_int}")
+                    
+                except Exception as item_error:
+                    # Log the specific error for this prediction
+                    logger.error(f"Error processing prediction for date={date}, work_type={work_type}: {str(item_error)}")
+                    logger.error(traceback.format_exc())
                     error_count += 1
-        
-        # Commit the transaction
-        conn.commit()
+                    
+                    # Try to continue with next prediction
+                    try:
+                        conn.rollback()  # Rollback this specific prediction
+                    except:
+                        pass
         
         logger.info(f"Successfully saved {success_count} predictions to database")
         if error_count > 0:
@@ -458,14 +507,22 @@ def save_predictions_to_db(predictions_dict, hours_dict, username, server=None, 
         logger.error(f"Error saving predictions to database: {str(e)}")
         logger.error(traceback.format_exc())
         if 'conn' in locals() and conn:
-            conn.rollback()
+            try:
+                conn.rollback()
+            except:
+                pass
         return False
     finally:
         if 'cursor' in locals() and cursor:
-            cursor.close()
+            try:
+                cursor.close()
+            except:
+                pass
         if 'conn' in locals() and conn:
-            conn.close()
-
+            try:
+                conn.close()
+            except:
+                pass
 
 def get_saved_predictions(start_date, end_date, work_types=None, server=None, database=None):
     """
