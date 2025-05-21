@@ -135,19 +135,19 @@ def main():
     # Always ensure kpi_df is a DataFrame with the robust function
     kpi_df = ensure_dataframe(st.session_state.kpi_df)
     
-    # Function to handle data edits
-    def on_data_change():
-        if 'kpi_data_editor' in st.session_state:
-            st.session_state.kpi_df = st.session_state.kpi_data_editor
+    # Store the original data in session state for later reference
+    st.session_state.original_kpi_df = kpi_df.copy()
     
-    # Use the data editor with the callback
+    # Use the data editor - now without saving the return value
     st.data_editor(
         kpi_df,
         use_container_width=True,
         num_rows="fixed",
         hide_index=True,
         key="kpi_data_editor",
-        on_change=on_data_change
+        column_config={
+            "Date": st.column_config.TextColumn("Date", disabled=True)
+        }
     )
     
     # Save buttons
@@ -161,10 +161,23 @@ def main():
                     # Get current user from system
                     username = os.environ.get('USERNAME', 'Unknown')
                     
-                    # Get the edited data, ensure it's a DataFrame
-                    save_df = ensure_dataframe(st.session_state.kpi_df)
+                    # Get the original dataframe
+                    save_df = st.session_state.original_kpi_df.copy()
                     
-                    # Save using session state data
+                    # Check if we have edits and apply them if available
+                    if 'kpi_data_editor' in st.session_state:
+                        edit_data = st.session_state.kpi_data_editor
+                        
+                        # Apply edits from the editor if they exist
+                        if 'edited_rows' in edit_data and edit_data['edited_rows']:
+                            for row_idx, edits in edit_data['edited_rows'].items():
+                                row_idx = int(row_idx)  # Convert string index to integer
+                                for col, value in edits.items():
+                                    save_df.at[row_idx, col] = value
+                        
+                        # No need to handle added_rows or deleted_rows as they're not enabled in this interface
+                    
+                    # Save using the updated dataframe
                     success = save_kpi_data(
                         save_df,
                         from_date,
@@ -174,11 +187,10 @@ def main():
                     )
                     
                     if success:
-                        # Reload data to show the saved version
-                        loaded_df = load_kpi_data(from_date, to_date, date_range_type.upper())
-                        st.session_state.kpi_df = ensure_dataframe(loaded_df)
+                        # Update session state with the saved data
+                        st.session_state.kpi_df = save_df
                         st.success("KPI data saved successfully!")
-                        st.rerun()
+                        st.rerun()  # Refresh the page to show updated data
                     else:
                         st.error("Error saving KPI data. Please check the application logs for details.")
                 except Exception as e:
@@ -210,7 +222,7 @@ def main():
                         logger.error(f"Error in financial year handler: {str(e)}")
                         logger.error(traceback.format_exc())
                         st.error(f"An unexpected error occurred: {str(e)}")
-
+                        
 if __name__ == "__main__":
     main()
     StateManager.initialize()

@@ -319,7 +319,7 @@ def save_kpi_data(kpi_df, start_date, end_date, username, period_type='DAILY'):
         
         # Counter for successful saves
         save_count = 0
-        
+        print(kpi_df.columns)
         # Loop through each row (date)
         for _, row in kpi_df.iterrows():
             date_label = row['Date']
@@ -458,7 +458,7 @@ def save_kpi_data(kpi_df, start_date, end_date, username, period_type='DAILY'):
         return True
         
     except Exception as e:
-        logger.error(f"Error saving KPI data: {str(e)}")
+        logger.error(f"Error saving KPI data: {str(e)}, {logger.info(kpi_df.columns)}")
         logger.error(traceback.format_exc())
         if 'conn' in locals() and conn:
             conn.rollback()
