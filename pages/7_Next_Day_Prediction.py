@@ -317,39 +317,6 @@ def create_comparison_data(target_predictions, improved_predictions):
     
     return comparison_data
 
-def send_test_email():
-    """
-    Send a simple test email to verify SMTP connection
-    """
-    try:
-        # Email configuration
-        sender_email = "noreply_wfp@forlagssystem.se"
-        receiver_email = "amila.g@forlagssystem.se"
-        smtp_server = "forlagssystem-se.mail.protection.outlook.com"
-        
-        # Create a simple text message
-        msg = MIMEMultipart()
-        msg["Subject"] = "Test Email from Workforce Prediction System"
-        msg["From"] = sender_email
-        msg["To"] = receiver_email
-        
-        # Add simple text body
-        text = "This is a test email from the Workforce Prediction System. If you receive this, email functionality is working correctly."
-        part = MIMEText(text, "plain")
-        msg.attach(part)
-        
-        # Send email
-        with smtplib.SMTP(smtp_server, 25, timeout=30) as server:
-            logger.info(f"Attempting to send test email to {receiver_email}...")
-            server.send_message(msg)
-            logger.info(f"Test email sent successfully to {receiver_email}")
-            return True
-            
-    except Exception as e:
-        logger.error(f"Error sending test email: {str(e)}")
-        logger.error(traceback.format_exc())
-        return False
-
 def send_email(comparison_df, current_date, next_date, total_original, total_improved, total_efficiency, efficiency_pct):
     """
     Send prediction improvements via email
@@ -357,7 +324,7 @@ def send_email(comparison_df, current_date, next_date, total_original, total_imp
     try:
         # Email configuration
         sender_email = "noreply_wfp@forlagssystem.se"
-        receiver_email = "amila.g@forlagssystem.se"
+        receiver_email = "david.skoglund@forlagssystem.se, amila.g@forlagssystem.se"
         smtp_server = "forlagssystem-se.mail.protection.outlook.com"
         
         # Create message
@@ -667,38 +634,25 @@ def main():
                     help="Improvement in prediction accuracy"
                 )
 
-            # Email buttons - test and full report
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                # Test email button
-                if st.button("Send Test Email", type="secondary"):
-                    with st.spinner("Sending test email..."):
-                        success = send_test_email()
-                        if success:
-                            st.success("Test email sent successfully to users@forlagssystem.se")
-                        else:
-                            st.error("Failed to send test email. Check logs for details.")
-            
-            with col2:
-                # Full report email button
-                if st.button("Email Improvement", type="primary"):
-                    with st.spinner("Sending email..."):
-                        # Send the email with the prediction improvements
-                        success = send_email(
-                            comparison_df,
-                            current_date,
-                            next_date,
-                            total_original,
-                            total_improved,
-                            total_efficiency,
-                            efficiency_pct
-                        )
-                        
-                        if success:
-                            st.success("Report created successfully! If email sending failed, the report was saved as an HTML file.")
-                        else:
-                            st.error("Failed to send email and save report. Check logs for details.")
+
+            # Full report email button
+            if st.button("Email Prediction Change", type="primary"):
+                with st.spinner("Sending email..."):
+                    # Send the email with the prediction improvements
+                    success = send_email(
+                        comparison_df,
+                        current_date,
+                        next_date,
+                        total_original,
+                        total_improved,
+                        total_efficiency,
+                        efficiency_pct
+                    )
+                    
+                    if success:
+                        st.success("Report created successfully! If email sending failed, the report was saved as an HTML file.")
+                    else:
+                        st.error("Failed to send email and save report. Check logs for details.")
 
 if __name__ == "__main__":
     main()
