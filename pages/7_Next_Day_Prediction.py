@@ -151,7 +151,7 @@ def calculate_improved_prediction(prediction_df, book_quantity_df, target_date):
     """
     try:
         improved_predictions = {}
-        DEMAND_BASED_PUNCH_CODES = ['202', '203', '206', '210', '217']
+        DEMAND_BASED_PUNCH_CODES = ['209', '211', '213', '214', '215']
         
         if book_quantity_df is None:
             logger.warning("No book quantity data available")
@@ -196,7 +196,7 @@ def calculate_improved_prediction(prediction_df, book_quantity_df, target_date):
                     improved_predictions[punch_code] = 0
         
         # For other punch codes, use existing ML-based improvement logic
-        ml_punch_codes = ['209', '211', '213', '214', '215']
+        ml_punch_codes = ['202', '203', '206', '210', '217'] 
         
         for punch_code in ml_punch_codes:
             if prediction_df is not None and not prediction_df.empty:

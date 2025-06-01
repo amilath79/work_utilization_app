@@ -69,8 +69,7 @@ def load_workutilizationdata():
     try:
         sql_query = """
         SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
-        FROM WorkUtilizationData
-        WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 208, 210, 217)
+        FROM WorkUtilizationData WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 208, 210, 217) AND Hours <> 0
         ORDER BY Date
         """
         
@@ -338,6 +337,7 @@ def main():
             "Start Date",
             value=next_date,
             min_value=latest_date,
+            disabled=True,
             help="Select the start date for the prediction period"
         )
     
@@ -370,7 +370,8 @@ def main():
             with st.spinner(f"Generating predictions for {num_days} days..."):
                 # Filter models to selected work types
                 filtered_models = {wt: st.session_state.models[wt] for wt in selected_work_types if wt in st.session_state.models}
-                
+                # st.session_state.ts_data.to_excel('ts_data.xlsx')
+                # st.session_state.processed_df.to_excel('processed_df.xlsx')
                 if not filtered_models:
                     st.error("No models available for the selected work types")
                     return
@@ -525,7 +526,7 @@ def main():
 
 
     # Username input
-    username = st.text_input("Your Username", value=get_current_user())
+    username = get_current_user()
 
     # Simple save button
     if st.button("Save Predictions to Database"):

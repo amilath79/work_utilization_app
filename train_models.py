@@ -300,10 +300,9 @@ def train_from_sql(connection_string=None, sql_query=None):
         # Default query if none provided
         if sql_query is None:
             sql_query = """
-            SELECT Date, PunchCode, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
-                FROM WorkUtilizationData 
-                WHERE PunchCode IN (209) 
-                order by Date
+                SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
+                FROM WorkUtilizationData WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 208, 210, 217) AND Hours <> 0
+                ORDER BY Date
             """
         
         logger.info(f"Connecting to database {SQL_DATABASE} on server {SQL_SERVER}")
