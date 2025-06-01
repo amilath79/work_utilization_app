@@ -114,8 +114,8 @@ def engineer_features(df):
             
             # Feature 6: Relative workload compared to typical for this work type
             # How this day's quantity compares to average for this work type
-            data['Relative_Quantity'] = data['Quantity'] / data.groupby('WorkType')['Quantity'].transform('mean').replace(0, 1)
-            
+            # data['Relative_Quantity'] = data['Quantity'] / data.groupby('WorkType')['Quantity'].transform('mean').replace(0, 1)
+            # print(data[['Date', 'Relative_Quantity']])
             # Fill any remaining NaN values
             data = data.fillna(0)
         
@@ -152,14 +152,14 @@ def create_lag_features(data, group_col='WorkType', target_col='NoOfMan', lag_da
     """
     try:
         logger.info(f"Creating lag features for {target_col} grouped by {group_col}")
-        
+
         # Set default values from config if not provided
         if lag_days is None:
             lag_days = LAG_DAYS
         
         if rolling_windows is None:
             rolling_windows = ROLLING_WINDOWS
-        
+
         # Make a copy of the input dataframe
         data_copy = data.copy()
         
@@ -172,7 +172,7 @@ def create_lag_features(data, group_col='WorkType', target_col='NoOfMan', lag_da
         
         # Group by WorkType and Date to get daily aggregates
         existing_metrics = [col for col in productivity_metrics if col in data_copy.columns]
-        
+
         if existing_metrics:
             # Create aggregation dictionary with target column and all available metrics
             agg_dict = {target_col: 'sum'}
@@ -182,7 +182,8 @@ def create_lag_features(data, group_col='WorkType', target_col='NoOfMan', lag_da
             daily_data = data_copy.groupby([group_col, 'Date']).agg(agg_dict).reset_index()
         else:
             daily_data = data_copy.groupby([group_col, 'Date'])[target_col].sum().reset_index()
-        
+
+
         # Add date-derived features
         daily_data['DayOfWeek_feat'] = daily_data['Date'].dt.dayofweek
         daily_data['Month_feat'] = daily_data['Date'].dt.month
@@ -211,7 +212,8 @@ def create_lag_features(data, group_col='WorkType', target_col='NoOfMan', lag_da
             elif metric.endswith('Ratio'):
                 if 1 in lag_days:
                     daily_data[f'{metric}_lag_1'] = daily_data.groupby(group_col)[metric].shift(1)
-        
+
+
         # Create rolling features for target column
         for window in rolling_windows:
             # Standard rolling features for NoOfMan
@@ -261,15 +263,16 @@ def create_lag_features(data, group_col='WorkType', target_col='NoOfMan', lag_da
             
             # Predict workers based on previous day's quantity
             daily_data['Workers_Predicted_from_Quantity'] = daily_data['Quantity_lag_1'] * daily_data['avg_workers_per_unit']
-        
+
+        # daily_data.to_excel('daily_data.xlsx')
         # Drop rows with NaN values (initial rows where lag isn't available)
         rows_before = len(daily_data)
-        daily_data = daily_data.dropna()
+        # daily_data = daily_data.dropna()
         rows_after = len(daily_data)
-        
+
         logger.info(f"Lag features created. Dropped {rows_before - rows_after} rows with NaN values.")
         logger.info(f"Final shape: {daily_data.shape}")
-        
+
         return daily_data
     
     except Exception as e:

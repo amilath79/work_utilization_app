@@ -43,15 +43,15 @@ CHUNK_SIZE = 10000  # Number of rows to process at once for large datasets
 
 # Model settings
 DEFAULT_MODEL_PARAMS = {
-    "n_estimators": 100,
-    "max_depth": 10,
+    "n_estimators": 200,
+    "max_depth": 15,
     "min_samples_split": 2,
     "min_samples_leaf": 1,
     "random_state": 42
 }
 
 # Feature engineering settingsa
-LAG_DAYS = [1, 2, 3, 7, 14, 30, 365]  # Default lag days for feature engineering
+LAG_DAYS = [1, 2, 3, 7, 14, 30]  # Default lag days for feature engineering
 ROLLING_WINDOWS = [7, 14, 30, 90]    # Default rolling windows for feature engineering
  
 # SQL Server settings
@@ -65,3 +65,4 @@ SQL_PASSWORD = None
 # Parquet settings
 PARQUET_COMPRESSION = "snappy"
 PARQUET_ENGINE = "pyarrow"
+

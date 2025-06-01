@@ -202,169 +202,62 @@ def extract_sql_data(server, database, query, username=None, password=None,
         return None
     
 
-def load_demand_forecast_data(server=SQL_SERVER, database=SQL_DATABASE_LIVE, 
-                             trusted_connection=SQL_TRUSTED_CONNECTION,
-                             username=None, password=None, chunk_size=CHUNK_SIZE):
+def load_demand_forecast_data(server=SQL_SERVER, database=SQL_DATABASE, trusted_connection=SQL_TRUSTED_CONNECTION, username=None, password=None, chunk_size=CHUNK_SIZE):
+    logger.info("Loading Data")
     """
-    Load demand forecast data from SQL Server using the specialized query
-    
+    Load demand forecast data from SQL Server.
+
     Parameters:
     -----------
     server : str
-        SQL Server name
+        SQL Server name.
     database : str
-        Database name (defaults to configured SQL_DATABASE)
+        Database name.
     trusted_connection : bool
-        Whether to use Windows authentication
+        Whether to use Windows authentication.
     username : str, optional
-        SQL Server username (if not using trusted connection)
+        SQL Server username (if not using trusted connection).
     password : str, optional
-        SQL Server password (if not using trusted connection)
+        SQL Server password (if not using trusted connection).
     chunk_size : int
-        Number of rows to fetch in each chunk
-        
+        Number of rows to fetch in each chunk.
+
     Returns:
     --------
     pd.DataFrame or None
-        DataFrame containing the forecast data or None if error occurs
+        DataFrame containing the forecast data or None if an error occurs.
     """
-    try:
-        # First try to connect to the primary database to ensure connectivity
-        logger.info(f"Testing connection to primary database {database} before loading forecast data")
-        test_conn = SQLDataConnector.connect_to_sql(
-            server=server,
-            database=database,  # Use the primary database from config
-            username=username,
-            password=password,
-            trusted_connection=trusted_connection
-        )
-        
-        if test_conn is None:
-            logger.error(f"Failed to connect to primary database {database}")
-            return None
-        
-        # Close the test connection
-        test_conn.close()
-        
-        # Use the correct database for the query
-        target_database = database
-        logger.info(f"Loading demand forecast data from {server}/{target_database}")
-        
-        # Define query that gets all quantities up to tomorrow as tomorrow's quantity
-        # and keeps original dates for quantities after tomorrow
-        query = """
-        -- Get tomorrow's date for reference
-        DECLARE @Tomorrow DATE = CAST(GETDATE() + 1 AS DATE);
-
+    query = """
+        DECLARE @StartDate DATE = CAST(GETDATE() AS DATE);
+        DECLARE @EndDate DATE = CAST(GETDATE() + 14 AS DATE);            
         SELECT 
-            -- Use tomorrow's date for all dates up to tomorrow, otherwise use the original date
-            CASE 
-                WHEN R08T1.oppdate <= @Tomorrow THEN @Tomorrow
-                ELSE R08T1.oppdate 
-            END AS PlanDate,
-            COUNT(*) AS nrows,
-            SUM(reqquant - delquant) AS Quantity,
-            pc.Punchcode
-        FROM O08T1
-        JOIN R08T1 ON O08T1.shortr08 = R08T1.shortr08
-        OUTER APPLY
-        (
-            SELECT 
-                CASE
-                    WHEN routeno = 'MÄSSA' THEN '207'
-                    WHEN routeno LIKE ('N1Z%') THEN '209'
-                    WHEN routeno LIKE ('1Z%') THEN '209'
-                    WHEN routeno LIKE ('N2Z%') THEN '209'
-                    WHEN routeno LIKE ('2Z%')  THEN '209'
-                    WHEN routeno IN ('SORT1', 'SORTP1') THEN '209' 
-                    WHEN routeno IN ('BOOZT', 'ÅHLENS', 'AMZN', 'ENS1', 'ENS2', 'EMV', 'EXPRES', 'KLUBB', 'ÖPFAPO', 'ÖPLOCK', 'ÖPSPEC', 'ÖPUTRI', 'PRINTW', 'RLEV') THEN '211'
-                    WHEN routeno IN ('LÄROME', 'SORDER', 'FSMAK', 'ORKLA', 'REAAKB', 'REAUGG') THEN '214'
-                    WHEN routeno IN ('ADLIB', 'BIB', 'BOKUS', 'DIVNÄT', 'BUYERS') THEN '215'
-                    WHEN divcode IN ('LIB', 'NYP', 'STU') THEN '213'
-                    WHEN routeno NOT IN('LÄROME', 'SORDER', 'FSMAK') THEN '201'
-                    ELSE 'undef_pick'
-                END AS Punchcode
-        ) pc
-        WHERE linestat IN (2, 4, 22, 30)
-        GROUP BY 
-            CASE 
-                WHEN R08T1.oppdate <= @Tomorrow THEN @Tomorrow
-                ELSE R08T1.oppdate 
-            END,
-            pc.Punchcode
-        ORDER BY 
-            CASE 
-                WHEN R08T1.oppdate <= @Tomorrow THEN @Tomorrow
-                ELSE R08T1.oppdate 
-            END, 
-            pc.Punchcode
-        """
+            Date AS PlanDate, 
+            (SELECT KPIValue 
+             FROM KPIData k 
+             WHERE k.PunchCode = p.PunchCode AND k.KPIDate = p.Date) * Hours AS Quantity,
+            PunchCode Punchcode
+        FROM PredictionData p
+        WHERE Date BETWEEN @StartDate AND @EndDate;
+    """
+
+    try:
+        logger.info(f"Connecting to {server}/{database} to load forecast data.")
         
-        # Try to connect to the target database
-        try:
-            conn = SQLDataConnector.connect_to_sql(
-                server=server,
-                database=target_database,
-                username=username,
-                password=password,
-                trusted_connection=trusted_connection
-            )
-            
-            if conn is None:
-                logger.error(f"Failed to connect to database {target_database}")
-                return None
-            
-            # Extract data to DataFrame
-            forecast_df = SQLDataConnector.extract_to_df(query, conn, chunk_size)
-            
-            # Close connection
-            conn.close()
-            
-            if forecast_df is not None:
-                logger.info(f"Successfully loaded forecast data from {target_database}. Shape: {forecast_df.shape}")
-            
-            return forecast_df
-            
-        except Exception as e:
-            logger.error(f"Error connecting to {target_database} database: {str(e)}")
-            logger.error(f"Will attempt to use query on primary database {SQL_DATABASE}")
-            
-            # Try executing the query on the primary database as a fallback
-            try:
-                conn = SQLDataConnector.connect_to_sql(
-                    server=server,
-                    database=SQL_DATABASE,  # Use the primary database as fallback
-                    username=username,
-                    password=password,
-                    trusted_connection=trusted_connection
-                )
-                
-                if conn is None:
-                    logger.error(f"Failed to connect to fallback database {SQL_DATABASE}")
-                    return None
-                
-                # We need to modify the query to prepend the database name to table references
-                modified_query = query.replace("FROM O08T1", f"FROM {target_database}.dbo.O08T1")
-                modified_query = modified_query.replace("JOIN R08T1", f"JOIN {target_database}.dbo.R08T1")
-                
-                # Extract data to DataFrame
-                forecast_df = SQLDataConnector.extract_to_df(modified_query, conn, chunk_size)
-                
-                # Close connection
-                conn.close()
-                
-                if forecast_df is not None:
-                    logger.info(f"Successfully loaded forecast data using fallback approach. Shape: {forecast_df.shape}")
-                
-                return forecast_df
-                
-            except Exception as inner_e:
-                logger.error(f"Error using fallback query approach: {str(inner_e)}")
-                logger.error(traceback.format_exc())
-                return None
-        
+        conn = SQLDataConnector.connect_to_sql(server=server, database=database, username=username, password=password, trusted_connection=trusted_connection)
+
+        if conn is None:
+            logger.error(f"Failed to connect to database {database}")
+            return None
+
+        forecast_df = SQLDataConnector.extract_to_df(query, conn, chunk_size)
+        conn.close()
+        if forecast_df is not None:
+            logger.info(f"Successfully loaded forecast data. Shape: {forecast_df.shape}")
+
+        return forecast_df
+
     except Exception as e:
-        logger.error(f"Error loading demand forecast data: {str(e)}")
+        logger.error(f"Error loading forecast data: {e}")
         logger.error(traceback.format_exc())
         return None
 
@@ -636,3 +529,97 @@ def get_saved_predictions(start_date, end_date, work_types=None, server=None, da
             cursor.close()
         if 'conn' in locals() and conn:
             conn.close()
+
+def load_demand_with_kpi_data(server=SQL_SERVER, database=SQL_DATABASE_LIVE, 
+                             trusted_connection=SQL_TRUSTED_CONNECTION,
+                             username=None, password=None, chunk_size=CHUNK_SIZE):
+    """
+    Load demand forecast data with KPI values for next day prediction
+    
+    Returns:
+    --------
+    pd.DataFrame or None
+        DataFrame containing demand data with KPI values
+    """
+    try:
+        logger.info(f"Loading demand data with KPI from {server}/{database}")
+        
+        # Your provided SQL query
+        query = """
+        -- Declare tomorrow's date
+        DECLARE @Tomorrow DATE = CAST(GETDATE() + 1 AS DATE);
+        -- Main query with KPIValue joined in
+        SELECT 
+            IIF(R08T1.oppdate <= @Tomorrow, @Tomorrow, R08T1.oppdate) AS PlanDate,
+            COUNT(*) AS nrows,
+            SUM(reqquant - delquant) AS Quantity,
+            ISNULL(kpi.KPIValue, 0) AS KPIValue,
+            pc.Punchcode
+        FROM fsystemp.dbo.O08T1
+        JOIN fsystemp.dbo.R08T1 
+            ON O08T1.shortr08 = R08T1.shortr08
+        -- PunchCode mapping
+        OUTER APPLY (
+            SELECT 
+                CASE
+                    WHEN routeno = 'MÄSSA' THEN '207'
+                    WHEN routeno LIKE 'N[12]Z%' THEN '209'
+                    WHEN routeno LIKE '[12]Z%' THEN '209'
+                    WHEN routeno IN ('SORT1', 'SORTP1') THEN '209'
+                    WHEN routeno IN ('BOOZT', 'ÅHLENS', 'AMZN', 'ENS1', 'ENS2', 'EMV', 'EXPRES', 'KLUBB', 
+                                     'ÖP', 'ÖPFAPO', 'ÖPLOCK', 'ÖPSPEC', 'ÖPUTRI', 'PRINTW', 'RLEV') THEN '211'
+                    WHEN routeno IN ('LÄROME', 'SORDER', 'FSMAK', 'ORKLA', 'REAAKB', 'REAUGG') THEN '214'
+                    WHEN routeno IN ('ADLIB', 'BIB', 'BOKUS', 'DIVNÄT', 'BUYERS') THEN '215'
+                    WHEN divcode IN ('LIB', 'NYP', 'STU') THEN '213'
+                    WHEN routeno NOT IN ('LÄROME', 'SORDER', 'FSMAK') THEN '211'
+                    ELSE 'undef_pick'
+                END AS Punchcode
+        ) pc
+        -- Join KPIData to fetch KPIValue for matching Punchcode + Date
+        LEFT JOIN ABC.dbo.KPIData kpi
+            ON kpi.PunchCode = pc.Punchcode AND kpi.KPIDate = @Tomorrow
+        WHERE linestat IN (2, 4, 22, 30)
+          AND R08T1.oppdate <= @Tomorrow
+        GROUP BY 
+            IIF(R08T1.oppdate <= @Tomorrow, @Tomorrow, R08T1.oppdate),
+            pc.Punchcode,
+            kpi.KPIValue
+        -- Include KPI-only codes (e.g., 202, 203...) via UNION
+        UNION
+        SELECT 
+            KPIDate AS PlanDate,
+            0 AS nrows,
+            0 AS Quantity,
+            KPIValue,
+            CAST(PunchCode AS VARCHAR) AS Punchcode
+        FROM ABC.dbo.KPIData
+        WHERE PunchCode IN (202, 203, 206, 210, 217)
+          AND KPIDate = @Tomorrow
+        -- Final sorting
+        ORDER BY 
+            PlanDate, 
+            Punchcode;
+        """
+        
+        # Execute query using existing connection method
+        df = extract_sql_data(
+            server=server,
+            database=database,
+            query=query,
+            username=username,
+            password=password,
+            trusted_connection=trusted_connection,
+            chunk_size=chunk_size
+        )
+        
+        if df is not None and not df.empty:
+            df['PlanDate'] = pd.to_datetime(df['PlanDate'])
+            df['Punchcode'] = df['Punchcode'].astype(str)
+            logger.info(f"Successfully loaded demand data with KPI. Shape: {df.shape}")
+        
+        return df
+        
+    except Exception as e:
+        logger.error(f"Error loading demand data with KPI: {str(e)}")
+        logger.error(traceback.format_exc())
+        return None

@@ -472,7 +472,7 @@ def save_kpi_data(kpi_df, start_date, end_date, username, period_type='DAILY'):
 
 def save_financial_year(start_date, end_date, username):
     """
-    Save a financial year record to the database
+    Save/transfer financial year KPI data from KPIData table to KPIFinancialYears table
     
     Parameters:
     -----------
@@ -482,7 +482,6 @@ def save_financial_year(start_date, end_date, username):
         End date of the financial year (April 30)
     username : str
         Username for audit purposes
-    
     Returns:
     --------
     bool
@@ -503,32 +502,52 @@ def save_financial_year(start_date, end_date, username):
         cursor = conn.cursor()
         
         # Create financial year description (e.g. "FY 2025-2026")
-        fy_description = f"FY {start_date.year}-{end_date.year}"
+        fy_description = f"{start_date.year}-{end_date.year}"
         
-        # Call stored procedure to insert/update financial year
-        cursor.execute(
-            "EXEC usp_UpsertKPIFinancialYear @StartDate=?, @EndDate=?, @Description=?, @Username=?, @IsActive=?",
-            start_date, end_date, fy_description, username, 1
-        )
+        # Convert dates to string format and boolean to int to avoid parameter binding issues
+        start_date_str = start_date.strftime('%Y-%m-%d')
+        end_date_str = end_date.strftime('%Y-%m-%d')
+        is_active_int = 1  # Convert boolean to int for BIT parameter
+        # -print(end_date_str, '-', start_date_str)
+        # Call stored procedure to transfer data from KPIData to KPIFinancialYears
+        try:
+            cursor.execute(
+                "EXEC usp_UpsertKPIFinancialYear @StartDate=?, @EndDate=?, @Description=?, @Username=?, @IsActive=?",
+                start_date_str, end_date_str, fy_description, username, is_active_int
+            )
+            logger.info('Success')
+        except Exception as e:
+            logger.error(f"XXXXXXXXXX {str(e)}")
+
         
-        # Get the financial year ID
+        # Get the result
         result = cursor.fetchone()
         if result:
-            fin_year_id = result[0]
-            logger.info(f"Saved financial year with ID: {fin_year_id}")
+            fin_year = result[0]
+            records_transferred = result[1]
+            result_start_date = result[2]
+            result_end_date = result[3]
+            status = result[4]
+            message = result[5]
             
-            conn.commit()
-            return True
+            if status == 'SUCCESS':
+                logger.info(f"Successfully transferred {records_transferred} records for financial year {fin_year}")
+                logger.info(f"Period: {result_start_date} to {result_end_date}")
+                logger.info(f"Message: {message}")
+                return True
+            else:
+                logger.error(f"Error processing financial year: {message}")
+                return False
         else:
-            logger.error("Failed to save financial year")
+            logger.error("No result returned from stored procedure")
             return False
     
     except Exception as e:
         logger.error(f"Error saving financial year: {str(e)}")
         logger.error(traceback.format_exc())
-        if 'conn' in locals() and conn:
-            conn.rollback()
+
         return False
+    
     finally:
         if 'cursor' in locals() and cursor:
             cursor.close()

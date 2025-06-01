@@ -72,7 +72,7 @@ def load_data_from_database():
 def main():
     # Display logo if available
     if os.path.exists(LOGO_PATH):
-        st.image(LOGO_PATH, width=150)
+        st.image(LOGO_PATH, width=50)
     
     st.title("Work Utilization Prediction")
     

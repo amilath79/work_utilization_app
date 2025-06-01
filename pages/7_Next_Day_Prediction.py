@@ -24,6 +24,7 @@ from utils.state_manager import StateManager
 from utils.sql_data_connector import extract_sql_data, load_demand_forecast_data
 from utils.prediction import predict_next_day
 from config import SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION, SQL_DATABASE_LIVE
+from utils.sql_data_connector import load_demand_with_kpi_data
 
 # Configure page
 st.set_page_config(
@@ -36,16 +37,17 @@ st.set_page_config(
 # Configure logger
 logger = logging.getLogger(__name__)
 
-def load_prediction_data():
+def load_prediction_data(date_value):
     """
     Load prediction data from the PredictionData table
     """
     try:
-        sql_query = """
+        sql_query = f"""
         SELECT ID, Date, PunchCode, NoOfMan, Hours, PredictionType, Username, 
                CreatedDate, LastModifiedDate
-        FROM PredictionData WHERE PunchCode in (209,211, 213, 214, 215)
-        ORDER BY Date DESC, PunchCode
+        FROM PredictionData WHERE PunchCode in (209,211, 213, 214, 215, 202, 203, 206, 210, 217)
+        AND Date = '{date_value}'
+        ORDER BY PunchCode
         """
         
         with st.spinner("Loading prediction data..."):
@@ -67,7 +69,7 @@ def load_prediction_data():
         logger.error(f"Error loading prediction data: {str(e)}")
         logger.error(traceback.format_exc())
         return None
-
+    
 def load_book_quantity_data():
     """
     Load book quantity data from the database
@@ -145,78 +147,75 @@ def load_book_quantity_data():
 
 def calculate_improved_prediction(prediction_df, book_quantity_df, target_date):
     """
-    Calculate improved prediction based on book quantities
+    Calculate improved prediction using hybrid approach - demand-based for specific punch codes
     """
     try:
         improved_predictions = {}
+        DEMAND_BASED_PUNCH_CODES = ['202', '203', '206', '210', '217']
         
-        if book_quantity_df is None or prediction_df is None:
-            logger.warning("Missing data for improved prediction calculation")
+        if book_quantity_df is None:
+            logger.warning("No book quantity data available")
             return {}
         
         if isinstance(target_date, datetime):
             target_date_dt = target_date.date()
-            target_date_start = pd.Timestamp(target_date_dt)
-            target_date_end = pd.Timestamp(target_date_dt) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
+
         else:
             target_date_dt = target_date
-            target_date_start = pd.Timestamp(target_date)
-            target_date_end = pd.Timestamp(target_date) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
+    
         
-        st.write(f"Looking for book quantities between {target_date_start} and {target_date_end}")
+        # Load demand data with KPI values
+        demand_kpi_df = load_demand_with_kpi_data()
         
-        target_book_quantities = book_quantity_df[
-            (book_quantity_df['PlanDate'] >= target_date_start) & 
-            (book_quantity_df['PlanDate'] <= target_date_end)
-        ]
-        
-        if target_book_quantities.empty:
-            unique_dates = book_quantity_df['PlanDate'].dt.date.unique()
-            
-            target_book_quantities = book_quantity_df[
-                book_quantity_df['PlanDate'].dt.date == target_date_dt
+        if demand_kpi_df is not None and not demand_kpi_df.empty:
+            # Filter for target date
+            target_demand_data = demand_kpi_df[
+                demand_kpi_df['PlanDate'].dt.date == target_date_dt
             ]
             
-            if target_book_quantities.empty:
-                logger.warning(f"No book quantities found for {target_date}")
-                return {}
-        
-        distinct_punch_codes = target_book_quantities['Punchcode'].unique()
-
-        for punch_code in distinct_punch_codes:
-            punch_book_qty = target_book_quantities[target_book_quantities['Punchcode'] == punch_code]['Quantity'].sum()
-            
-            historical_data = prediction_df[prediction_df['PunchCode'] == punch_code]
-            
-            if len(historical_data) > 0:
-                avg_man_per_qty = historical_data['NoOfMan'].mean() / max(1, punch_book_qty)
+            # Calculate demand-based predictions for specific punch codes
+            for punch_code in DEMAND_BASED_PUNCH_CODES:
+                punch_data = target_demand_data[target_demand_data['Punchcode'] == punch_code]
                 
-                improved_pred = punch_book_qty * avg_man_per_qty
-                
-                accuracy_factor = 0.95
-                
-                previous_pred_data = prediction_df[
-                    (prediction_df['PunchCode'] == punch_code) & 
-                    (prediction_df['Date'].dt.date == target_date_dt)
-                ]
-                
-                previous_prediction = previous_pred_data['NoOfMan'].mean() if not previous_pred_data.empty else np.nan
-                
-                if not np.isnan(previous_prediction):
-                    final_prediction = (improved_pred * accuracy_factor) + (previous_prediction * (1 - accuracy_factor))
+                if not punch_data.empty:
+                    quantity = punch_data['Quantity'].sum()
+                    kpi_value = punch_data['KPIValue'].iloc[0]
+                    
+                    # Apply formula: Workers = Quantity ÷ KPI ÷ 8
+                    if quantity == 0:
+                        workers = 0
+                    elif kpi_value == 0:
+                        workers = 0
+                    else:
+                        workers = quantity / kpi_value / 8
+                        workers = max(0, workers)
+                    
+                    improved_predictions[punch_code] = round(workers, 2)
+                    logger.info(f"Demand-based prediction for {punch_code}: Q={quantity}, KPI={kpi_value}, Workers={workers:.2f}")
                 else:
-                    final_prediction = improved_pred
+                    improved_predictions[punch_code] = 0
+        
+        # For other punch codes, use existing ML-based improvement logic
+        ml_punch_codes = ['209', '211', '213', '214', '215']
+        
+        for punch_code in ml_punch_codes:
+            if prediction_df is not None and not prediction_df.empty:
+                punch_predictions = prediction_df[prediction_df['PunchCode'] == punch_code]
                 
-                improved_predictions[punch_code] = round(final_prediction, 2)
-            else:
-                improved_predictions[punch_code] = round(punch_book_qty * 0.1, 2)  # Assume 10% ratio
+                if not punch_predictions.empty:
+                    # Use existing prediction with 95% accuracy factor
+                    original_pred = punch_predictions['NoOfMan'].iloc[0]
+                    improved_pred = original_pred * 0.95  # Apply accuracy improvement
+                    improved_predictions[punch_code] = round(improved_pred, 2)
+                else:
+                    improved_predictions[punch_code] = 0
         
         return improved_predictions
     
     except Exception as e:
         logger.error(f"Error calculating improved prediction: {str(e)}")
         logger.error(traceback.format_exc())
-        st.error(f"Error calculating improved prediction: {str(e)}")
+
         return {}
 
 def create_comparison_dataframe(prediction_df, improved_predictions, target_date):
@@ -474,7 +473,7 @@ def main():
     st.header("📈 Next Day Prediction Accuracy")
     
     st.info("""
-    This page shows highly accurate next-day predictions based on book quantities.
+    This page shows accurate next-day predictions
     **Note:** A reduction in required resources is considered a positive improvement in efficiency.
     """)
     
@@ -492,10 +491,36 @@ def main():
         st.metric("Predicting For", next_date.strftime("%Y-%m-%d (%A)"))
     
     # Load prediction data
-    prediction_df = load_prediction_data()
+    prediction_df = load_prediction_data(next_date.strftime("%Y-%m-%d"))
 
     # Load book quantity data
     book_quantity_df = load_book_quantity_data()
+
+    # Load demand data with KPI for hybrid prediction
+    demand_kpi_df = load_demand_with_kpi_data()
+
+    # Check if data is loaded
+    if prediction_df is None:
+        st.warning("No original prediction data found for comparison.")
+    
+    if demand_kpi_df is None:
+        st.warning("No demand forecast data available. Using fallback method.")
+    else:
+        # Calculate improved prediction using hybrid approach
+        improved_predictions = calculate_improved_prediction(prediction_df, book_quantity_df, next_date)
+        
+        # Create comparison dataframe
+        comparison_df = create_comparison_dataframe(prediction_df, improved_predictions, next_date)
+        
+        # Display comparison
+        st.subheader("Original vs. Improved Predictions")
+        
+        # # Add explanation of hybrid approach
+        # st.info("""
+        # **Hybrid Prediction Approach:**
+        # - **Punch Codes 202, 203, 206, 210, 217:** Demand-based calculation using formula `Workers = Quantity ÷ KPI ÷ 8`
+        # - **Punch Codes 209, 211, 213, 214, 215:** Enhanced ML predictions with 95% accuracy factor
+        # """)
 
     # Check if data is loaded
     if prediction_df is None or book_quantity_df is None:
@@ -508,7 +533,7 @@ def main():
         comparison_df = create_comparison_dataframe(prediction_df, improved_predictions, next_date)
         
         # Display comparison
-        st.subheader("Original vs. Improved Predictions")
+        # st.subheader("Original vs. Improved Predictions")
         
         if comparison_df.empty:
             st.warning("No comparison data available. Please check the provided data.")

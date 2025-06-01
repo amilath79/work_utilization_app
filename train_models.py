@@ -153,6 +153,8 @@ def build_models(processed_data, work_types=None, n_splits=5):
             
             # Sort data by date to ensure time-based splitting works correctly
             work_type_data = work_type_data.sort_values('Date')
+
+            work_type_data.to_excel('work_type_data_All.xlsx', index=False)
             
             # Check which features are available in the dataset
             available_numeric = [f for f in numeric_features if f in work_type_data.columns]
@@ -162,6 +164,8 @@ def build_models(processed_data, work_types=None, n_splits=5):
             # Prepare features and target
             X = work_type_data[available_numeric + categorical_features]
             y = work_type_data['NoOfMan']
+
+            work_type_data.to_excel('work_type_data_PRe.xlsx', index=False)
             
             # Define preprocessing for categorical features  
             preprocessor = ColumnTransformer(
@@ -170,12 +174,10 @@ def build_models(processed_data, work_types=None, n_splits=5):
                 ],
                 remainder='passthrough'
             )
-            
+
             # Define the model pipeline using DEFAULT_MODEL_PARAMS from config
             model_params = DEFAULT_MODEL_PARAMS.copy()
-            model_params["n_estimators"] = 200  # Override to use more trees
-            model_params["max_depth"] = 15      # Deeper trees for more complex relationships
-            
+
             pipeline = Pipeline([
                 ('preprocessor', preprocessor),
                 ('model', RandomForestRegressor(**model_params))
@@ -299,7 +301,9 @@ def train_from_sql(connection_string=None, sql_query=None):
         if sql_query is None:
             sql_query = """
             SELECT Date, PunchCode, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
-            FROM WorkUtilizationData where PunchCode in (202, 203, 206, 208, 210, 217, 215, 209, 213, 211, 214)
+                FROM WorkUtilizationData 
+                WHERE PunchCode IN (209) 
+                order by Date
             """
         
         logger.info(f"Connecting to database {SQL_DATABASE} on server {SQL_SERVER}")
@@ -346,14 +350,16 @@ def train_from_sql(connection_string=None, sql_query=None):
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
         
+        
         # Process data and train models using utility functions
         logger.info("Engineering features...")
         feature_df = engineer_features(df)
-        
+
         logger.info("Creating lag features...")
         lag_features_df = create_lag_features(feature_df)
         
         work_types = lag_features_df['WorkType'].unique()
+
         logger.info(f"Found {len(work_types)} unique work types")
         
         models, feature_importances, metrics = build_models(lag_features_df, work_types, n_splits=5)
@@ -413,7 +419,7 @@ def save_models(models, feature_importances, metrics):
                 'MAPE': metric['MAPE']
             })
         
-        performance_df = pd.DataFrame(performance_summary).sort_values('R²', ascending=False)
+        performance_df = pd.DataFrame(performance_summary)
         performance_file = os.path.join(MODELS_DIR, "model_performance_summary.xlsx")
         performance_df.to_excel(performance_file, index=False)
         
