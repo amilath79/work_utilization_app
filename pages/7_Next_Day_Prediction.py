@@ -894,34 +894,93 @@ def main():
                         # Sort by punch code
                         quantity_kpi_df = quantity_kpi_df.sort_values('PunchCode')
                         
-                        # Create display dataframe (without raw columns)
-                        display_df = quantity_kpi_df[['PunchCode', 'Quantity', 'Quantity_Type', 'KPI']].copy()
+                        # Create separate dataframes for numeric data only (to avoid Arrow serialization issues)
+                        # Quantity display dataframe
+                        quantity_display_df = quantity_kpi_df[['PunchCode', 'Quantity']].copy()
+                        quantity_transposed = quantity_display_df.set_index('PunchCode').transpose()
                         
-                        # Transpose for horizontal display
-                        display_transposed = display_df.set_index('PunchCode').transpose()
+                        # KPI display dataframe  
+                        kpi_display_df = quantity_kpi_df[['PunchCode', 'KPI']].copy()
+                        kpi_transposed = kpi_display_df.set_index('PunchCode').transpose()
                         
-                        # Create column configuration for transposed dataframe
-                        qty_kpi_column_config = {}
-                        for punch_code in display_transposed.columns:
-                            qty_kpi_column_config[punch_code] = st.column_config.Column(
+                        # Ensure all columns are numeric for Arrow compatibility
+                        for col in quantity_transposed.columns:
+                            quantity_transposed[col] = pd.to_numeric(quantity_transposed[col], errors='coerce')
+                        
+                        for col in kpi_transposed.columns:
+                            kpi_transposed[col] = pd.to_numeric(kpi_transposed[col], errors='coerce')
+                        
+                        # Create column configuration for transposed dataframes
+                        qty_column_config = {}
+                        kpi_column_config = {}
+                        
+                        for punch_code in quantity_transposed.columns:
+                            qty_column_config[punch_code] = st.column_config.NumberColumn(
                                 punch_code,
-                                help=f"Data for punch code {punch_code}"
+                                format="%.0f",
+                                help=f"Quantity for punch code {punch_code}"
+                            )
+                            kpi_column_config[punch_code] = st.column_config.NumberColumn(
+                                punch_code,
+                                format="%.2f",
+                                help=f"KPI for punch code {punch_code}"
                             )
                         
-                        # Display the transposed dataframe
+                        # Display the quantity dataframe
+                        st.write("### Quantity Analysis")
                         st.dataframe(
-                            display_transposed,
+                            quantity_transposed,
                             use_container_width=True,
-                            column_config=qty_kpi_column_config
+                            column_config=qty_column_config
+                        )
+                        
+                        # Display the KPI dataframe
+                        st.write("### KPI Analysis")
+                        st.dataframe(
+                            kpi_transposed,
+                            use_container_width=True,
+                            column_config=kpi_column_config
                         )
                         
                         # Add explanation
                         st.info("""
                         **Quantity Logic:**
-                        - **Punch Codes 206, 213:** Shows No of Rows
-                        - **Other Punch Codes:** Shows Quantity
+                        - **Punch Codes 206, 213:** Shows `nrows` (number of rows/orders)
+                        - **Other Punch Codes:** Shows `quantity` (actual quantity)
+                        
+                        **KPI:** Key Performance Indicator value for each punch code
                         """)
                         
+                        # Create a summary table showing quantity types
+                        st.write("### Quantity Type Reference")
+                        type_reference = quantity_kpi_df[['PunchCode', 'Quantity_Type']].copy()
+                        type_reference_transposed = type_reference.set_index('PunchCode').transpose()
+                        
+                        # Display as a simple table without Arrow serialization
+                        st.table(type_reference_transposed)
+                        
+                        # Optional: Show detailed breakdown
+                        with st.expander("📊 View Detailed Breakdown", expanded=False):
+                            st.write("### Detailed Data")
+                            # Convert to string columns to avoid mixed type issues
+                            detail_df = quantity_kpi_df.copy()
+                            detail_df['Quantity'] = detail_df['Quantity'].astype(str)
+                            detail_df['KPI'] = detail_df['KPI'].astype(str)
+                            detail_df['Raw_nrows'] = detail_df['Raw_nrows'].astype(str)
+                            detail_df['Raw_quantity'] = detail_df['Raw_quantity'].astype(str)
+                            
+                            st.dataframe(
+                                detail_df,
+                                use_container_width=True,
+                                column_config={
+                                    'PunchCode': st.column_config.TextColumn("Punch Code"),
+                                    'Quantity': st.column_config.TextColumn("Display Quantity"),
+                                    'Quantity_Type': st.column_config.TextColumn("Type", help="Whether showing nrows or quantity"),
+                                    'KPI': st.column_config.TextColumn("KPI Value"),
+                                    'Raw_nrows': st.column_config.TextColumn("Raw nrows"),
+                                    'Raw_quantity': st.column_config.TextColumn("Raw quantity")
+                                }
+                            )
                     else:
                         st.warning(f"No quantity/KPI data found for {next_date.strftime('%Y-%m-%d')}")
                 else:
