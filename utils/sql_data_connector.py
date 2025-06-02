@@ -530,7 +530,7 @@ def get_saved_predictions(start_date, end_date, work_types=None, server=None, da
         if 'conn' in locals() and conn:
             conn.close()
 
-def load_demand_with_kpi_data(server=SQL_SERVER, database=SQL_DATABASE_LIVE, 
+def load_demand_with_kpi_data(next_working_day, server=SQL_SERVER, database=SQL_DATABASE_LIVE, 
                              trusted_connection=SQL_TRUSTED_CONNECTION,
                              username=None, password=None, chunk_size=CHUNK_SIZE):
     """
@@ -545,12 +545,11 @@ def load_demand_with_kpi_data(server=SQL_SERVER, database=SQL_DATABASE_LIVE,
         logger.info(f"Loading demand data with KPI from {server}/{database}")
         
         # Your provided SQL query
-        query = """
-        -- Declare tomorrow's date
-        DECLARE @Tomorrow DATE = CAST(GETDATE() + 1 AS DATE);
+        query = f"""
+       DECLARE @NextWorkingDay DATE = '{next_working_day}';
         -- Main query with KPIValue joined in
         SELECT 
-            IIF(R08T1.oppdate <= @Tomorrow, @Tomorrow, R08T1.oppdate) AS PlanDate,
+            IIF(R08T1.oppdate <= @NextWorkingDay, @NextWorkingDay, R08T1.oppdate) AS PlanDate,
             COUNT(*) AS nrows,
             SUM(reqquant - delquant) AS Quantity,
             ISNULL(kpi.KPIValue, 0) AS KPIValue,
@@ -577,11 +576,11 @@ def load_demand_with_kpi_data(server=SQL_SERVER, database=SQL_DATABASE_LIVE,
         ) pc
         -- Join KPIData to fetch KPIValue for matching Punchcode + Date
         LEFT JOIN ABC.dbo.KPIData kpi
-            ON kpi.PunchCode = pc.Punchcode AND kpi.KPIDate = @Tomorrow
+            ON kpi.PunchCode = pc.Punchcode AND kpi.KPIDate =@NextWorkingDay
         WHERE linestat IN (2, 4, 22, 30)
-          AND R08T1.oppdate <= @Tomorrow
+          AND R08T1.oppdate <= @NextWorkingDay
         GROUP BY 
-            IIF(R08T1.oppdate <= @Tomorrow, @Tomorrow, R08T1.oppdate),
+            IIF(R08T1.oppdate <=@NextWorkingDay, @NextWorkingDay, R08T1.oppdate),
             pc.Punchcode,
             kpi.KPIValue
         -- Include KPI-only codes (e.g., 202, 203...) via UNION
@@ -594,7 +593,7 @@ def load_demand_with_kpi_data(server=SQL_SERVER, database=SQL_DATABASE_LIVE,
             CAST(PunchCode AS VARCHAR) AS Punchcode
         FROM ABC.dbo.KPIData
         WHERE PunchCode IN (202, 203, 206, 210, 217)
-          AND KPIDate = @Tomorrow
+          AND KPIDate = @NextWorkingDay
         -- Final sorting
         ORDER BY 
             PlanDate, 

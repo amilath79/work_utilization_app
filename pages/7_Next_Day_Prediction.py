@@ -170,9 +170,9 @@ def calculate_improved_prediction(prediction_df, book_quantity_df, target_date):
         else:
             target_date_dt = target_date
     
-        
+        next_working_day = get_next_working_day(datetime.now().date())
         # Load demand data with KPI values
-        demand_kpi_df = load_demand_with_kpi_data()
+        demand_kpi_df = load_demand_with_kpi_data(next_working_day.strftime('%Y-%m-%d'))
         
         if demand_kpi_df is not None and not demand_kpi_df.empty:
             # Filter for target date
@@ -185,8 +185,12 @@ def calculate_improved_prediction(prediction_df, book_quantity_df, target_date):
                 punch_data = target_demand_data[target_demand_data['Punchcode'] == punch_code]
                 
                 if not punch_data.empty:
-                    quantity = punch_data['Quantity'].sum()
-                    kpi_value = punch_data['KPIValue'].iloc[0]
+                    if punch_code in ['206', '213']:  # Use string comparison
+                        quantity = punch_data['nrows'].sum()
+                        kpi_value = punch_data['KPIValue'].iloc[0]
+                    else:
+                        quantity = punch_data['Quantity'].sum()
+                        kpi_value = punch_data['KPIValue'].iloc[0]
                     
                     # Apply formula: Workers = Quantity ÷ KPI ÷ 8
                     if quantity == 0:
@@ -330,7 +334,7 @@ def send_email(comparison_df, current_date, next_date, total_original, total_imp
     try:
         # Email configuration
         sender_email = "noreply_wfp@forlagssystem.se"
-        receiver_email = "david.skoglund@forlagssystem.se, amila.g@forlagssystem.se"
+        receiver_email = "amila.g@forlagssystem.se" #david.skoglund@forlagssystem.se,
         smtp_server = "forlagssystem-se.mail.protection.outlook.com"
         
         # Create message
@@ -484,11 +488,10 @@ def main():
     **Note:** A reduction in required resources is considered a positive improvement in efficiency.
     """)
     
-    # Current date - use 2025-05-19 as specified
+    # Current date
     current_date = datetime.now().date()
     next_date = get_next_working_day(current_date)
     
-
     if next_date is None:
         st.error("Could not determine next working day. Please check the holiday configuration.")
         return
@@ -509,7 +512,8 @@ def main():
     book_quantity_df = load_book_quantity_data()
 
     # Load demand data with KPI for hybrid prediction
-    demand_kpi_df = load_demand_with_kpi_data()
+    next_working_day = get_next_working_day(datetime.now().date())
+    demand_kpi_df = load_demand_with_kpi_data(next_working_day.strftime('%Y-%m-%d'))
 
     # Check if data is loaded
     if prediction_df is None:
@@ -517,39 +521,16 @@ def main():
     
     if demand_kpi_df is None:
         st.warning("No demand forecast data available. Using fallback method.")
-    else:
-        # Calculate improved prediction using hybrid approach
-        improved_predictions = calculate_improved_prediction(prediction_df, book_quantity_df, next_date)
-        
-        # Create comparison dataframe
-        comparison_df = create_comparison_dataframe(prediction_df, improved_predictions, next_date)
-        
-        # Display comparison
-        st.subheader("Original vs. Improved Predictions")
-        
-        # # Add explanation of hybrid approach
-        # st.info("""
-        # **Hybrid Prediction Approach:**
-        # - **Punch Codes 202, 203, 206, 210, 217:** Demand-based calculation using formula `Workers = Quantity ÷ KPI ÷ 8`
-        # - **Punch Codes 209, 211, 213, 214, 215:** Enhanced ML predictions with 95% accuracy factor
-        # """)
-
-    # Check if data is loaded
-    if prediction_df is None or book_quantity_df is None:
-        st.error("Failed to load required data. Please check database connection.")
-    else:
+    
+    # Calculate improved prediction and comparison dataframe
+    if prediction_df is not None and book_quantity_df is not None:
         # Calculate improved prediction
         improved_predictions = calculate_improved_prediction(prediction_df, book_quantity_df, next_date)
         
         # Create comparison dataframe
         comparison_df = create_comparison_dataframe(prediction_df, improved_predictions, next_date)
         
-        # Display comparison
-        # st.subheader("Original vs. Improved Predictions")
-        
-        if comparison_df.empty:
-            st.warning("No comparison data available. Please check the provided data.")
-        else:
+        if not comparison_df.empty:
             # Fill any remaining None values with 0
             comparison_df = comparison_df.fillna(0)
             
@@ -559,9 +540,9 @@ def main():
                 'Original Prediction': comparison_df['Original Prediction'].sum(),
                 'Improved Prediction': comparison_df['Improved Prediction'].sum(),
                 'Difference': comparison_df['Difference'].sum(),
-                'Difference %': 0,  # Cannot sum percentages meaningfully
+                'Difference %': 0,
                 'Efficiency Gain': comparison_df['Efficiency Gain'].sum(),
-                'Efficiency %': 0  # Cannot sum percentages meaningfully
+                'Efficiency %': 0
             }
             
             # Calculate overall percentage changes for the total row
@@ -575,121 +556,174 @@ def main():
             # Format the dataframe for display
             formatted_df = comparison_df.copy()
             
-            # Highlight the total row with custom styling
-            st.markdown("""
-            <style>
-            .highlight-total {
-                background-color: rgba(255, 215, 0, 0.2);
-                font-weight: bold;
-            }
-            .negative-value {
-                color: red;
-            }
-            .positive-value {
-                color: green;
-            }
-            </style>
-            """, unsafe_allow_html=True)
+            # Transpose the dataframe for horizontal display
+            transposed_df = formatted_df.set_index('PunchCode').transpose()
             
-            # St.dataframe with formatting
-            st.dataframe(
-                formatted_df,
-                use_container_width=True,
-                column_config={
-                    'PunchCode': st.column_config.TextColumn("Punch Code"),
-                    'Original Prediction': st.column_config.NumberColumn(
-                        "Original Prediction", 
-                        format="%.2f"
-                    ),
-                    'Improved Prediction': st.column_config.NumberColumn(
-                        "Improved Prediction (95% Accuracy)", 
-                        format="%.2f"
-                    ),
-                    'Difference': st.column_config.NumberColumn(
-                        "Resource Change", 
+            # Create column configuration for transposed dataframe
+            transposed_column_config = {}
+            for punch_code in transposed_df.columns:
+                if punch_code == 'TOTAL':
+                    transposed_column_config[punch_code] = st.column_config.NumberColumn(
+                        punch_code,
                         format="%.2f",
-                        help="Improved - Original (negative means reduced resources required)"
-                    ),
-                    'Difference %': st.column_config.NumberColumn(
-                        "Change %", 
-                        format="%.2f%%",
-                        help="Percentage change from original prediction"
-                    ),
-                    'Efficiency Gain': st.column_config.NumberColumn(
-                        "Efficiency Gain", 
-                        format="%.2f",
-                        help="Reduction in required resources (positive is better)"
-                    ),
-                    'Efficiency %': st.column_config.NumberColumn(
-                        "Efficiency %", 
-                        format="%.2f%%",
-                        help="Percentage of resources saved"
+                        help="Total across all punch codes"
                     )
-                },
-                hide_index=False
-            )
-            
-            # Calculate overall efficiency metrics
-            total_original = total_row['Original Prediction']
-            total_improved = total_row['Improved Prediction']
-            total_efficiency = total_row['Efficiency Gain']
-            
-            # Display efficiency metrics
-            st.subheader("Workforce Efficiency Summary")
-            efficiency_cols = st.columns(4)
-            
-            with efficiency_cols[0]:
-                st.metric(
-                    "Total Original Resources", 
-                    f"{total_original:.2f}",
-                    help="Total workforce in original prediction"
-                )
-            
-            with efficiency_cols[1]:
-                st.metric(
-                    "Total Improved Resources", 
-                    f"{total_improved:.2f}", 
-                    delta=f"{total_improved - total_original:.2f}",
-                    delta_color="inverse"  # Green for reduction, red for increase
-                )
-            
-            with efficiency_cols[2]:
-                efficiency_pct = (total_efficiency / total_original * 100) if total_original > 0 else 0
-                st.metric(
-                    "Resource Reduction", 
-                    f"{total_efficiency:.2f}", 
-                    f"{efficiency_pct:.2f}%",
-                    help="Total reduction in required workforce"
-                )
-            
-            with efficiency_cols[3]:
-                accuracy_improvement = 7.7  # Static value for demonstration
-                st.metric(
-                    "Accuracy Improvement", 
-                    "95.2%", 
-                    f"+{accuracy_improvement}%",
-                    help="Improvement in prediction accuracy"
-                )
-
-
-            # Full report email button
-            if st.button("Email Prediction Change", type="primary"):
-                with st.spinner("Sending email..."):
-                    # Send the email with the prediction improvements
-                    success = send_email(
-                        comparison_df,
-                        current_date,
-                        next_date,
-                        total_original,
-                        total_improved,
-                        total_efficiency,
-                        efficiency_pct
+                else:
+                    transposed_column_config[punch_code] = st.column_config.NumberColumn(
+                        punch_code,
+                        format="%.2f"
                     )
+            
+            # Create tabs for different views
+            tab1, tab2 = st.tabs(["Prediction Comparison", "Quantity & KPI Analysis"])
+            
+            with tab1:
+                st.subheader("Original vs. Improved Predictions")
+                
+                # Display transposed dataframe
+                st.dataframe(
+                    transposed_df,
+                    use_container_width=True,
+                    column_config=transposed_column_config
+                )
+                
+                # Calculate overall efficiency metrics
+                total_original = total_row['Original Prediction']
+                total_improved = total_row['Improved Prediction']
+                total_efficiency = total_row['Efficiency Gain']
+                
+                # Display efficiency metrics
+                st.subheader("Workforce Efficiency Summary")
+                efficiency_cols = st.columns(4)
+                
+                with efficiency_cols[0]:
+                    st.metric(
+                        "Total Original Resources", 
+                        f"{total_original:.2f}",
+                        help="Total workforce in original prediction"
+                    )
+                
+                with efficiency_cols[1]:
+                    st.metric(
+                        "Total Improved Resources", 
+                        f"{total_improved:.2f}", 
+                        delta=f"{total_improved - total_original:.2f}",
+                        delta_color="inverse"
+                    )
+                
+                with efficiency_cols[2]:
+                    efficiency_pct = (total_efficiency / total_original * 100) if total_original > 0 else 0
+                    st.metric(
+                        "Resource Reduction", 
+                        f"{total_efficiency:.2f}", 
+                        f"{efficiency_pct:.2f}%",
+                        help="Total reduction in required workforce"
+                    )
+                
+                with efficiency_cols[3]:
+                    accuracy_improvement = 7.7
+                    st.metric(
+                        "Accuracy Improvement", 
+                        "95.2%", 
+                        f"+{accuracy_improvement}%",
+                        help="Improvement in prediction accuracy"
+                    )
+                
+                # Email button
+                if st.button("Email Prediction Change", type="primary"):
+                    with st.spinner("Sending email..."):
+                        success = send_email(
+                            comparison_df,
+                            current_date,
+                            next_date,
+                            total_original,
+                            total_improved,
+                            total_efficiency,
+                            efficiency_pct
+                        )
+                        
+                        if success:
+                            st.success("Report created successfully! If email sending failed, the report was saved as an HTML file.")
+                        else:
+                            st.error("Failed to send email and save report. Check logs for details.")
+            
+            with tab2:
+                st.subheader("Quantity and KPI Analysis")
+                
+                if demand_kpi_df is not None and not demand_kpi_df.empty:
+                    # Filter for the next working day
+                    target_demand_data = demand_kpi_df[
+                        demand_kpi_df['PlanDate'].dt.date == next_date
+                    ]
                     
-                    if success:
-                        st.success("Report created successfully! If email sending failed, the report was saved as an HTML file.")
+                    if not target_demand_data.empty:
+                        # Create quantity and KPI dataframe
+                        quantity_kpi_records = []
+                        
+                        for _, row in target_demand_data.iterrows():
+                            punch_code = row['Punchcode']
+                            nrows = row['nrows']
+                            quantity = row['Quantity'] 
+                            kpi_value = row['KPIValue']
+                            
+                            # Apply conditional logic for Quantity display
+                            if punch_code in ['206', '213']:
+                                display_quantity = nrows
+                                quantity_type = 'nrows'
+                            else:
+                                display_quantity = quantity
+                                quantity_type = 'quantity'
+                            
+                            quantity_kpi_records.append({
+                                'PunchCode': punch_code,
+                                'Quantity': display_quantity,
+                                'Quantity_Type': quantity_type,
+                                'KPI': kpi_value,
+                                'Raw_nrows': nrows,
+                                'Raw_quantity': quantity
+                            })
+                        
+                        quantity_kpi_df = pd.DataFrame(quantity_kpi_records)
+                        
+                        # Sort by punch code
+                        quantity_kpi_df = quantity_kpi_df.sort_values('PunchCode')
+                        
+                        # Create display dataframe (without raw columns)
+                        display_df = quantity_kpi_df[['PunchCode', 'Quantity', 'Quantity_Type', 'KPI']].copy()
+                        
+                        # Transpose for horizontal display
+                        display_transposed = display_df.set_index('PunchCode').transpose()
+                        
+                        # Create column configuration for transposed dataframe
+                        qty_kpi_column_config = {}
+                        for punch_code in display_transposed.columns:
+                            qty_kpi_column_config[punch_code] = st.column_config.Column(
+                                punch_code,
+                                help=f"Data for punch code {punch_code}"
+                            )
+                        
+                        # Display the transposed dataframe
+                        st.dataframe(
+                            display_transposed,
+                            use_container_width=True,
+                            column_config=qty_kpi_column_config
+                        )
+                        
+                        # Add explanation
+                        st.info("""
+                        **Quantity Logic:**
+                        - **Punch Codes 206, 213:** Shows No of Rows
+                        - **Other Punch Codes:** Shows Quantity
+                        """)
+                        
                     else:
-                        st.error("Failed to send email and save report. Check logs for details.")
+                        st.warning(f"No quantity/KPI data found for {next_date.strftime('%Y-%m-%d')}")
+                else:
+                    st.warning("Could not load quantity/KPI data")
+        else:
+            st.warning("No comparison data available. Please check the provided data.")
+    else:
+        st.error("Failed to load required data. Please check database connection.")
 
 if __name__ == "__main__":
     main()
