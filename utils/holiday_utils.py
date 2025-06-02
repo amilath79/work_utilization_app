@@ -303,3 +303,78 @@ def add_holiday_features(df, date_col='Date'):
     except Exception as e:
         logger.error(f"Error adding holiday features: {str(e)}")
         return df  # Return original dataframe if there's an error
+    
+
+def is_working_day_for_punch_code(date_to_check, punch_code):
+    """
+    Check if a specific punch code should work on the given date
+    
+    Parameters:
+    -----------
+    date_to_check : datetime.date or datetime.datetime
+        Date to check
+    punch_code : str
+        Punch code to check working rules for
+    
+    Returns:
+    --------
+    tuple
+        (is_working_day, reason_if_not_working)
+    """
+    try:
+        from config import PUNCH_CODE_WORKING_RULES, DEFAULT_PUNCH_CODE_WORKING_DAYS
+        
+        # Convert to date object if it's a datetime
+        if isinstance(date_to_check, datetime):
+            date_obj = date_to_check.date()
+        else:
+            date_obj = date_to_check
+        
+        # Check if it's a Swedish holiday first
+        is_holiday, holiday_name = is_swedish_holiday(date_to_check)
+        if is_holiday:
+            return False, f"Swedish Holiday: {holiday_name}"
+        
+        # Get the day of week (0=Monday, 6=Sunday)
+        day_of_week = date_obj.weekday()
+        
+        # Get working days for this punch code
+        punch_code_str = str(punch_code)
+        working_days = PUNCH_CODE_WORKING_RULES.get(punch_code_str, DEFAULT_PUNCH_CODE_WORKING_DAYS)
+        
+        # Check if this punch code works on this day of week
+        if day_of_week not in working_days:
+            if day_of_week == 5:  # Saturday
+                return False, "Saturday (Non-working for this punch code)"
+            elif day_of_week == 6:  # Sunday
+                return False, "Sunday (Non-working for this punch code)"
+            else:
+                return False, f"Non-working day for punch code {punch_code}"
+        
+        # It's a working day for this punch code
+        return True, None
+        
+    except Exception as e:
+        logger.error(f"Error checking working day for punch code {punch_code} on {date_to_check}: {str(e)}")
+        # Default to non-working day on error
+        return False, "Error checking working day rules"
+
+def is_non_working_day_for_punch_code(date_to_check, punch_code):
+    """
+    Check if the date is a non-working day for a specific punch code
+    (Inverse of is_working_day_for_punch_code for backward compatibility)
+    
+    Parameters:
+    -----------
+    date_to_check : datetime.date or datetime.datetime
+        Date to check
+    punch_code : str
+        Punch code to check
+    
+    Returns:
+    --------
+    tuple
+        (is_non_working_day, reason)
+    """
+    is_working, reason = is_working_day_for_punch_code(date_to_check, punch_code)
+    return not is_working, reason

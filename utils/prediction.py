@@ -10,7 +10,7 @@ import traceback
 from datetime import datetime, timedelta
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 # Update the import statement
-from utils.holiday_utils import is_non_working_day
+from utils.holiday_utils import is_working_day_for_punch_code
 
 # Import the torch_utils module for neural network support
 try:
@@ -181,18 +181,6 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
         
         logger.info(f"Predicting NoOfMan for {next_date.strftime('%Y-%m-%d')}")
         
-       # Check if the prediction date is a non-working day (holiday or Saturday)
-        is_nonworking, reason = is_non_working_day(next_date)
-
-        if is_nonworking:
-            logger.info(f"Date {next_date.strftime('%Y-%m-%d')} is a non-working day: {reason}")
-            logger.info("No work is carried out on this day. Setting all predictions to 0.")
-    
-            # Return zero predictions for all work types
-            zero_predictions = {work_type: 0 for work_type in models.keys()}
-            zero_hours = {work_type: 0 for work_type in models.keys()}
-            return next_date, zero_predictions, zero_hours
-
         # Load neural network models if requested
         nn_models, nn_scalers, nn_metrics = {}, {}, {}
         if use_neural_network:
@@ -214,6 +202,16 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
         hours_predictions = {}
         
         for work_type in models.keys():
+            # Check if this punch code should work on this date
+            is_working, reason = is_working_day_for_punch_code(next_date, work_type)
+            
+            if not is_working:
+                logger.info(f"Date {next_date.strftime('%Y-%m-%d')} is non-working for punch code {work_type}: {reason}")
+                predictions[work_type] = 0
+                hours_predictions[work_type] = 0
+                continue
+            
+            # Rest of the existing prediction logic remains the same...
             # Try neural network prediction first if requested
             if use_neural_network and nn_models and work_type in nn_models:
                 nn_prediction = predict_with_neural_network(df, nn_models, nn_scalers, work_type, date)
@@ -358,7 +356,7 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
         logger.error(f"Error predicting next day: {str(e)}")
         logger.error(traceback.format_exc())
         raise Exception(f"Failed to predict next day: {str(e)}")
-    
+        
 def predict_multiple_days(df, models, num_days=7, use_neural_network=False):
     """
     Predict NoOfMan and Hours for multiple days for each WorkType
@@ -382,50 +380,7 @@ def predict_multiple_days(df, models, num_days=7, use_neural_network=False):
             prediction_date = latest_date + timedelta(days=i+1)  # +1 to start with the next day
             
             try:
-                # Check if the date is a non-working day using the utility function
-                is_nonworking, reason = is_non_working_day(prediction_date)
-                
-                if is_nonworking:
-                    logger.info(f"Date {prediction_date.strftime('%Y-%m-%d')} is a non-working day: {reason}")
-                    logger.info("No work is carried out on this day. Setting all predictions to 0.")
-                    
-                    # Create zero predictions for all work types
-                    zero_predictions = {work_type: 0 for work_type in models.keys()}
-                    zero_hours = {work_type: 0 for work_type in models.keys()}
-                    
-                    # Store predictions and non-working day info
-                    multi_day_predictions[prediction_date] = zero_predictions
-                    multi_day_hours_predictions[prediction_date] = zero_hours
-                    nonworking_info[prediction_date] = reason
-                    
-                    # Add the zero predictions to the dataframe for the next iteration
-                    new_rows = []
-                    for work_type in models.keys():
-                        new_row = {
-                            'Date': prediction_date,
-                            'WorkType': work_type,
-                            'NoOfMan': 0,
-                            'Hours': 0,
-                            
-                            # Add the date features
-                            'DayOfWeek_feat': prediction_date.dayofweek,
-                            'Month_feat': prediction_date.month,
-                            'IsWeekend_feat': 1 if prediction_date.dayofweek == 5 else 0,  # Only Saturday is a weekend
-                            'Year_feat': prediction_date.year,
-                            'Quarter': (prediction_date.month - 1) // 3 + 1,
-                            'DayOfMonth': prediction_date.day,
-                            'WeekOfYear': prediction_date.isocalendar()[1]
-                        }
-                        
-                        # Add necessary lag features for the next iteration
-                        new_rows.append(new_row)
-                    
-                    # Append new rows to the dataframe
-                    if new_rows:
-                        current_df = pd.concat([current_df, pd.DataFrame(new_rows)], ignore_index=True)
-                    continue
-                
-                # Not a non-working day, proceed with normal prediction
+                # Use the same prediction logic but now it handles punch-code specific rules
                 next_date, predictions, hours_predictions = predict_next_day(
                     current_df, 
                     models, 
@@ -440,12 +395,22 @@ def predict_multiple_days(df, models, num_days=7, use_neural_network=False):
                 multi_day_predictions[next_date] = predictions
                 multi_day_hours_predictions[next_date] = hours_predictions
                 
+                # Check which punch codes are not working on this day for info
+                non_working_codes = []
+                for work_type in models.keys():
+                    is_working, reason = is_working_day_for_punch_code(next_date, work_type)
+                    if not is_working:
+                        non_working_codes.append(f"{work_type}: {reason}")
+                
+                if non_working_codes:
+                    nonworking_info[next_date] = "; ".join(non_working_codes)
+                
                 # Add the predictions back to the dataframe for the next iteration
                 new_rows = []
                 for work_type, pred_value in predictions.items():
                     hours_value = hours_predictions.get(work_type, pred_value * 8.0)  # Default to 8 hours if missing
                     
-                    # Use actual prediction values (not zero)
+                    # Use actual prediction values (including zeros for non-working punch codes)
                     new_row = {
                         'Date': next_date,
                         'WorkType': work_type,
@@ -481,7 +446,6 @@ def predict_multiple_days(df, models, num_days=7, use_neural_network=False):
         logger.error(f"Error predicting multiple days: {str(e)}")
         logger.error(traceback.format_exc())
         raise Exception(f"Failed to predict multiple days: {str(e)}")
-
     
 
 def evaluate_predictions(y_true, y_pred):

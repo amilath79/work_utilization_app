@@ -57,9 +57,10 @@ if 'current_predictions' not in st.session_state:
     st.session_state.current_predictions = None
 if 'current_hours_predictions' not in st.session_state:
     st.session_state.current_hours_predictions = None
-
 if 'save_button_clicked' not in st.session_state:
     st.session_state.save_button_clicked = False
+if 'save_success_message' not in st.session_state:
+    st.session_state.save_success_message = None
 
 def set_save_clicked():
     st.session_state.save_button_clicked = True
@@ -290,6 +291,12 @@ def get_current_user():
 def main():
     st.header("Workforce Predictions")
     
+    # Display save success message if it exists
+    if st.session_state.save_success_message:
+        st.success(st.session_state.save_success_message)
+        # Clear the message after displaying it
+        st.session_state.save_success_message = None
+    
     # Check data and models
     if not ensure_data_and_models():
         return
@@ -367,11 +374,13 @@ def main():
         if not selected_work_types:
             st.warning("Please select at least one work type")
         else:
+            # Clear any existing success message when generating new predictions
+            st.session_state.save_success_message = None
+            
             with st.spinner(f"Generating predictions for {num_days} days..."):
                 # Filter models to selected work types
                 filtered_models = {wt: st.session_state.models[wt] for wt in selected_work_types if wt in st.session_state.models}
-                # st.session_state.ts_data.to_excel('ts_data.xlsx')
-                # st.session_state.processed_df.to_excel('processed_df.xlsx')
+                
                 if not filtered_models:
                     st.error("No models available for the selected work types")
                     return
@@ -393,163 +402,173 @@ def main():
                         st.error("Failed to generate predictions")
                         return
                     
-                    # Create a dataframe for display
-                    results_records = []
-                    
-                    for date, pred_dict in predictions.items():
-                        # Check if day is non-working
-                        is_non_working, reason = is_non_working_day(date)
+                    st.success("✅ Predictions generated successfully!")
                         
-                        for work_type, value in pred_dict.items():
-                            # IMPORTANT: Only set to 0 if it's a non-working day
-                            # Otherwise use the actual predicted value
-                            display_value = 0 if is_non_working else value
-                            
-                            results_records.append({
-                                'Date': date,
-                                'Work Type': work_type,
-                                'Predicted Workers': round(display_value),
-                                'Raw Prediction': round(value, 1),  # Show original prediction for debugging
-                                'Day of Week': date.strftime('%A'),
-                                'Is Non-Working Day': "Yes" if is_non_working else "No",
-                                'Reason': reason if is_non_working else ""
-                            })
-                    
-                    results_df = pd.DataFrame(results_records)
-                    
-                    # Display results
-                    model_type_text = "Neural Network" if use_neural else "Random Forest"
-
-                    st.subheader(f"Predictions from {pred_start_date.strftime('%B %d, %Y')} to {pred_end_date.strftime('%B %d, %Y')} using {model_type_text}")
-
-                    # Display debug info
-                    # if st.session_state.debug_info:
-                    #     with st.expander("Debug Information", expanded=True):
-                    #         for info in st.session_state.debug_info:
-                    #             st.write(info)
-                    
-                    # Holiday information
-                    with st.expander("📊 View Holiday Information", expanded=False):
-                        # If there are non-working days in the prediction period, show a warning
-                        non_working_dates = results_df[results_df['Is Non-Working Day'] == "Yes"]['Date'].unique()
-                        if len(non_working_dates) > 0:
-                            st.warning("⚠️ Non-working days detected during the prediction period:")
-                            for non_working_date in non_working_dates:
-                                reason = results_df[results_df['Date'] == non_working_date]['Reason'].iloc[0]
-                                st.info(f"• {non_working_date.strftime('%A, %B %d, %Y')}: {reason} (No work carried out)")
-                    
-                    # Add pivot table for resource planning
-                    st.subheader("Resource Planning View")
-        
-                    # Generate the date range
-                    date_range = pd.date_range(start=pred_start_date, periods=num_days)
-                    
-                    # Create structured data with all selected work types
-                    resource_data = create_resource_plan_table(
-                        predictions, 
-                        hours_predictions, 
-                        selected_work_types,
-                        date_range
-                    )
-                    
-                    # Create daily pivot table with punch codes as columns and metrics as sub-columns
-                    daily_pivot = pd.pivot_table(
-                        resource_data,
-                        values='Value',
-                        index=['Date', 'Day'],
-                        columns=['PunchCode', 'Metric'],
-                        fill_value=0
-                    )
-                    
-                    # Create monthly pivot table
-                    resource_data['Month'] = resource_data['Date'].dt.strftime('%Y-%m')
-                    monthly_pivot = pd.pivot_table(
-                        resource_data,
-                        values='Value',
-                        index='Month',
-                        columns=['PunchCode', 'Metric'],
-                        fill_value=0,
-                        aggfunc='sum'
-                    )
-                    
-                    # Display pivot tables
-                    st.write("### Daily Resource Plan")
-                    st.dataframe(daily_pivot, use_container_width=True)
-                    
-                    st.write("### Monthly Resource Plan")
-                    st.dataframe(monthly_pivot, use_container_width=True)
-        
-                    # Download options
-                    st.subheader("Download Options")
-                    col1, col2, col3 = st.columns(3)
-                    
-                    with col1:
-                        # Download raw predictions
-                        csv_data = results_df.to_csv(index=False)
-                        st.download_button(
-                            label="Download Predictions (CSV)",
-                            data=csv_data,
-                            file_name=f"workforce_predictions_{model_type}_{pred_start_date.strftime('%Y%m%d')}_to_{pred_end_date.strftime('%Y%m%d')}.csv",
-                            mime="text/csv"
-                        )
-                    
-                    with col2:
-                        # Download resource plan
-                        pivot_buffer = io.BytesIO()
-                        daily_pivot.to_excel(pivot_buffer)
-                        pivot_buffer.seek(0)
-        
-                        st.download_button(
-                            label="Download Daily Resource Plan (Excel)",
-                            data=pivot_buffer,
-                            file_name=f"daily_resource_plan_{pred_start_date.strftime('%Y%m%d')}.xlsx",
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                        )
-        
-                    with col3:
-                        # Download monthly plan
-                        pivot_buffer_month = io.BytesIO()
-                        monthly_pivot.to_excel(pivot_buffer_month)
-                        pivot_buffer_month.seek(0)
-        
-                        st.download_button(
-                            label="Download Monthly Resource Plan (Excel)",
-                            data=pivot_buffer_month,
-                            file_name=f"monthly_resource_plan_{pred_start_date.strftime('%Y%m%d')}.xlsx",
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                        )
-                            
                 except Exception as e:
                     st.error(f"Error generating predictions: {str(e)}")
                     logger.error(f"Error generating predictions: {str(e)}")
                     logger.error(traceback.format_exc())
 
+    # Only show predictions and save options if predictions exist
+    if st.session_state.current_predictions:
+        predictions = st.session_state.current_predictions
+        hours_predictions = st.session_state.current_hours_predictions
+        
+        # Create a dataframe for display
+        results_records = []
+        
+        for date, pred_dict in predictions.items():
+            # Check if day is non-working
+            is_non_working, reason = is_non_working_day(date)
+            
+            for work_type, value in pred_dict.items():
+                # IMPORTANT: Only set to 0 if it's a non-working day
+                # Otherwise use the actual predicted value
+                display_value = 0 if is_non_working else value
+                
+                results_records.append({
+                    'Date': date,
+                    'Work Type': work_type,
+                    'Predicted Workers': round(display_value),
+                    'Raw Prediction': round(value, 1),  # Show original prediction for debugging
+                    'Day of Week': date.strftime('%A'),
+                    'Is Non-Working Day': "Yes" if is_non_working else "No",
+                    'Reason': reason if is_non_working else ""
+                })
+        
+        results_df = pd.DataFrame(results_records)
+        
+        # Display results
+        model_type_text = "Neural Network" if use_neural else "Random Forest"
+        
+        # Reconstruct date range for display
+        first_date = min(predictions.keys())
+        last_date = max(predictions.keys())
 
-    # Username input
-    username = get_current_user()
+        st.subheader(f"Predictions from {first_date.strftime('%B %d, %Y')} to {last_date.strftime('%B %d, %Y')} using {model_type_text}")
+        
+        # Holiday information
+        with st.expander("📊 View Holiday Information", expanded=False):
+            # If there are non-working days in the prediction period, show a warning
+            non_working_dates = results_df[results_df['Is Non-Working Day'] == "Yes"]['Date'].unique()
+            if len(non_working_dates) > 0:
+                st.warning("⚠️ Non-working days detected during the prediction period:")
+                for non_working_date in non_working_dates:
+                    reason = results_df[results_df['Date'] == non_working_date]['Reason'].iloc[0]
+                    st.info(f"• {non_working_date.strftime('%A, %B %d, %Y')}: {reason} (No work carried out)")
+        
+        # Add pivot table for resource planning
+        st.subheader("Resource Planning View")
 
-    # Simple save button
-    if st.button("Save Predictions to Database"):
-        if not username:
-            st.error("Please enter your username")
-        elif not st.session_state.current_predictions:
-            st.error("No predictions to save. Generate predictions first.")
-        else:
-            with st.spinner("Saving predictions..."):
-                try:
-                    # Use the simple save function
-                    success = simple_save_predictions(
-                        predictions_dict=st.session_state.current_predictions,
-                        hours_dict=st.session_state.current_hours_predictions,
-                        username=username
-                    )
-                    
-                    if success:
-                        st.success("✅ Predictions saved successfully!")
-                    else:
-                        st.error("Failed to save predictions")
-                except Exception as e:
-                    st.error(f"Error: {str(e)}")
+        # Generate the date range
+        date_range = list(predictions.keys())
+        selected_work_types_from_predictions = list(set(wt for pred_dict in predictions.values() for wt in pred_dict.keys()))
+        
+        # Create structured data with all selected work types
+        resource_data = create_resource_plan_table(
+            predictions, 
+            hours_predictions, 
+            selected_work_types_from_predictions,
+            date_range
+        )
+        
+        # Create daily pivot table with punch codes as columns and metrics as sub-columns
+        daily_pivot = pd.pivot_table(
+            resource_data,
+            values='Value',
+            index=['Date', 'Day'],
+            columns=['PunchCode', 'Metric'],
+            fill_value=0
+        )
+        
+        # Create monthly pivot table
+        resource_data['Month'] = resource_data['Date'].dt.strftime('%Y-%m')
+        monthly_pivot = pd.pivot_table(
+            resource_data,
+            values='Value',
+            index='Month',
+            columns=['PunchCode', 'Metric'],
+            fill_value=0,
+            aggfunc='sum'
+        )
+        
+        # Display pivot tables
+        st.write("### Daily Resource Plan")
+        st.dataframe(daily_pivot, use_container_width=True)
+        
+        st.write("### Monthly Resource Plan")
+        st.dataframe(monthly_pivot, use_container_width=True)
+
+        # # Download options
+        # st.subheader("Download Options")
+        # col1, col2, col3 = st.columns(3)
+        
+        # with col1:
+        #     # Download raw predictions
+        #     csv_data = results_df.to_csv(index=False)
+        #     st.download_button(
+        #         label="Download Predictions (CSV)",
+        #         data=csv_data,
+        #         file_name=f"workforce_predictions_{model_type_text.replace(' ', '_')}_{first_date.strftime('%Y%m%d')}_to_{last_date.strftime('%Y%m%d')}.csv",
+        #         mime="text/csv"
+        #     )
+        
+        # with col2:
+        #     # Download resource plan
+        #     pivot_buffer = io.BytesIO()
+        #     daily_pivot.to_excel(pivot_buffer)
+        #     pivot_buffer.seek(0)
+
+        #     st.download_button(
+        #         label="Download Daily Resource Plan (Excel)",
+        #         data=pivot_buffer,
+        #         file_name=f"daily_resource_plan_{first_date.strftime('%Y%m%d')}.xlsx",
+        #         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        #     )
+
+        # with col3:
+        #     # Download monthly plan
+        #     pivot_buffer_month = io.BytesIO()
+        #     monthly_pivot.to_excel(pivot_buffer_month)
+        #     pivot_buffer_month.seek(0)
+
+        #     st.download_button(
+        #         label="Download Monthly Resource Plan (Excel)",
+        #         data=pivot_buffer_month,
+        #         file_name=f"monthly_resource_plan_{first_date.strftime('%Y%m%d')}.xlsx",
+        #         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        #     )
+
+        # Username input and save button - only show when predictions exist
+        st.subheader("Save Predictions")
+        username = value=get_current_user()
+
+        # Save button
+        if st.button("Save Predictions to Database", type="primary"):
+            if not username:
+                st.error("Please enter your username")
+            else:
+                with st.spinner("Saving predictions..."):
+                    try:
+                        # Use the simple save function
+                        success = simple_save_predictions(
+                            predictions_dict=st.session_state.current_predictions,
+                            hours_dict=st.session_state.current_hours_predictions,
+                            username=username
+                        )
+                        
+                        if success:
+                            # Store success message in session state
+                            st.session_state.save_success_message = "✅ Predictions saved successfully!"
+                            # Clear predictions from session state to hide the dataframe
+                            st.session_state.current_predictions = None
+                            st.session_state.current_hours_predictions = None
+                            # Force a rerun to update the display
+                            st.rerun()
+                        else:
+                            st.error("Failed to save predictions")
+                    except Exception as e:
+                        st.error(f"Error: {str(e)}")
 
 if __name__ == "__main__":
     main()

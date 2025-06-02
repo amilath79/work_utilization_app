@@ -66,3 +66,24 @@ SQL_PASSWORD = None
 PARQUET_COMPRESSION = "snappy"
 PARQUET_ENGINE = "pyarrow"
 
+# Business Rules Configuration for Punch Code Working Days
+PUNCH_CODE_WORKING_RULES = {
+    # Define which punch codes work on which days
+    # 0=Monday, 1=Tuesday, 2=Wednesday, 3=Thursday, 4=Friday, 5=Saturday, 6=Sunday
+    
+    # Regular punch codes - work Monday to Friday only
+    '202': [0, 1, 2, 3, 4],           # Mon-Fri
+    '203': [0, 1, 2, 3, 4],           # Mon-Fri  
+    '206': [0, 1, 2, 3, 4, 6],        # Mon-Fri + Sunday (special case)
+    '208': [0, 1, 2, 3, 4],           # Mon-Fri
+    '209': [0, 1, 2, 3, 4],           # Mon-Fri
+    '210': [0, 1, 2, 3, 4],           # Mon-Fri
+    '211': [0, 1, 2, 3, 4],           # Mon-Fri
+    '213': [0, 1, 2, 3, 4],           # Mon-Fri
+    '214': [0, 1, 2, 3, 4],           # Mon-Fri
+    '215': [0, 1, 2, 3, 4],           # Mon-Fri
+    '217': [0, 1, 2, 3, 4],           # Mon-Fri
+}
+
+# Default working days for unknown punch codes (Mon-Fri)
+DEFAULT_PUNCH_CODE_WORKING_DAYS = [0, 1, 2, 3, 4]
