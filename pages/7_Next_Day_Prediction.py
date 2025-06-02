@@ -477,7 +477,8 @@ def send_email(comparison_df, current_date, next_date, total_original, total_imp
         transposed_comparison = comparison_df.set_index('PunchCode').transpose()
         
         # Load quantity/KPI data for email
-        demand_kpi_df = load_demand_with_kpi_data()
+        next_working_day = get_next_working_day(datetime.now().date())
+        demand_kpi_df = load_demand_with_kpi_data(next_working_day.strftime('%Y-%m-%d'))
         quantity_kpi_section = ""
         
         if demand_kpi_df is not None and not demand_kpi_df.empty:
