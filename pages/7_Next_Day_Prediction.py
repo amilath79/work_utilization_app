@@ -25,6 +25,7 @@ from utils.sql_data_connector import extract_sql_data, load_demand_forecast_data
 from utils.prediction import predict_next_day
 from config import SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION, SQL_DATABASE_LIVE
 from utils.sql_data_connector import load_demand_with_kpi_data
+from utils.demand_scheduler import DemandScheduler, shift_demand_forward, get_next_working_day
 
 # Configure page
 st.set_page_config(
@@ -72,18 +73,24 @@ def load_prediction_data(date_value):
     
 def load_book_quantity_data():
     """
-    Load book quantity data from the database
+    Load book quantity data from the database for next working day
     Using direct SQL query instead of demand forecast loader
     """
     try:
-        sql_query = """
-        -- Get tomorrow's date for reference
-        DECLARE @Tomorrow DATE = CAST(GETDATE() + 1 AS DATE);
+        # Get next working day
+        next_working_day = get_next_working_day(datetime.now().date())
+        if next_working_day is None:
+            logger.error("Could not determine next working day")
+            return None
+            
+        sql_query = f"""
+        -- Get next working day for reference
+        DECLARE @NextWorkingDay DATE = '{next_working_day.strftime('%Y-%m-%d')}';
 
         SELECT 
             -- Use tomorrow's date for all dates up to tomorrow, otherwise use the original date
             CASE 
-                WHEN R08T1.oppdate <= @Tomorrow THEN @Tomorrow
+                WHEN R08T1.oppdate <= @NextWorkingDay THEN @NextWorkingDay
                 ELSE R08T1.oppdate 
             END AS PlanDate,
             COUNT(*) AS nrows,
@@ -112,19 +119,19 @@ def load_book_quantity_data():
         WHERE linestat IN (2, 4, 22, 30)
         GROUP BY 
             CASE 
-                WHEN R08T1.oppdate <= @Tomorrow THEN @Tomorrow
+                WHEN R08T1.oppdate <= @NextWorkingDay THEN @NextWorkingDay
                 ELSE R08T1.oppdate 
             END,
             pc.Punchcode
         ORDER BY 
             CASE 
-                WHEN R08T1.oppdate <= @Tomorrow THEN @Tomorrow
+                WHEN R08T1.oppdate <= @NextWorkingDay THEN @NextWorkingDay
                 ELSE R08T1.oppdate 
             END, 
             pc.Punchcode
         """
         
-        with st.spinner("Loading book quantity data..."):
+        with st.spinner("Loading book quantity data for next working day..."):
             df = extract_sql_data(
                 server=SQL_SERVER,
                 database=SQL_DATABASE_LIVE,
@@ -470,16 +477,21 @@ def save_report_to_file(html_content, next_date):
         return False
 
 def main():
-    st.header("📈 Next Day Prediction Accuracy")
+    st.header("📈 Next Working Day Prediction Accuracy")
     
     st.info("""
-    This page shows accurate next-day predictions
+    This page shows accurate next working day predictions
     **Note:** A reduction in required resources is considered a positive improvement in efficiency.
     """)
     
     # Current date - use 2025-05-19 as specified
     current_date = datetime.now().date()
-    next_date = current_date + timedelta(days=1)
+    next_date = get_next_working_day(current_date)
+    
+
+    if next_date is None:
+        st.error("Could not determine next working day. Please check the holiday configuration.")
+        return
     
     # Display current context
     st.subheader(f"Prediction Context")
