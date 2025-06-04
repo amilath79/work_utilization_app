@@ -51,8 +51,11 @@ DEFAULT_MODEL_PARAMS = {
 }
 
 # Feature engineering settingsa
-LAG_DAYS = [1, 2, 3, 7, 14, 30]  # Default lag days for feature engineering
-ROLLING_WINDOWS = [7, 14, 30, 90]    # Default rolling windows for feature engineering
+# LAG_DAYS = [1, 2, 3, 7, 14, 30]  # Default lag days for feature engineering
+# ROLLING_WINDOWS = [7, 14, 30, 90]    # Default rolling windows for feature engineering
+
+LAG_DAYS = [1, 2, 7, 28, 365]  # 28 for true monthly cycle
+ROLLING_WINDOWS = [7, 21, 30, 90]  # 21 for 3-week patterns
  
 # SQL Server settings
 SQL_SERVER = "192.168.1.43"
@@ -87,3 +90,161 @@ PUNCH_CODE_WORKING_RULES = {
 
 # Default working days for unknown punch codes (Mon-Fri)
 DEFAULT_PUNCH_CODE_WORKING_DAYS = [0, 1, 2, 3, 4]
+
+
+# ==========================================
+# TIERED FEATURE CONFIGURATION SYSTEM
+# ==========================================
+
+# Feature tier controls (can be turned on/off)
+FEATURE_TIERS = {
+    'BASIC': True,        # Essential features - always recommended
+    'INTERMEDIATE': False, # Enhanced features for better accuracy  
+    'ADVANCED': False      # Sophisticated features for maximum performance
+}
+
+# ==========================================
+# BASIC FEATURES (Tier 1) - Essential
+# ==========================================
+BASIC_FEATURES = {
+    # Core date features
+    'DATE_FEATURES': {
+        'categorical': ['DayOfWeek_feat', 'Month_feat'],
+        'numeric': ['IsWeekend_feat']
+    },
+    
+    # Essential lag features - most recent patterns
+    'LAG_FEATURES': {
+        'NoOfMan': [1, 7],  # Yesterday and same day last week
+    },
+    
+    # Basic trend indicators
+    'ROLLING_FEATURES': {
+        'NoOfMan': {
+            'windows': [7],  # Weekly averages
+            'functions': ['mean']
+        }
+    }
+}
+
+# ==========================================
+# INTERMEDIATE FEATURES (Tier 2) - Enhanced
+# ==========================================
+INTERMEDIATE_FEATURES = {
+    # Extended date features
+    'DATE_FEATURES': {
+        'categorical': ['Quarter'],
+        'numeric': ['Year_feat', 'DayOfMonth', 'WeekOfYear']
+    },
+    
+    # More comprehensive lag patterns
+    'LAG_FEATURES': {
+        'NoOfMan': [2, 3, 14, 30],  # Short to medium term patterns
+    },
+    
+    # Enhanced rolling statistics
+    'ROLLING_FEATURES': {
+        'NoOfMan': {
+            'windows': [14, 30],  # Bi-weekly and monthly patterns
+            'functions': ['mean'],
+            'extended_stats': {  # Additional stats for first window only
+                'window': 7,
+                'functions': ['max', 'min', 'std']
+            }
+        }
+    },
+    
+    # Pattern recognition features
+    'PATTERN_FEATURES': [
+        'NoOfMan_same_dow_lag',    # Same day of week pattern
+        'NoOfMan_same_dom_lag',    # Same day of month pattern
+    ],
+    
+    # Trend features
+    'TREND_FEATURES': [
+        ('NoOfMan_7day_trend', 'NoOfMan', 1, 7),   # Week-over-week trend
+        ('NoOfMan_1day_trend', 'NoOfMan', 1, 2),   # Day-over-day trend
+    ]
+}
+
+# ==========================================
+# ADVANCED FEATURES (Tier 3) - Sophisticated
+# ==========================================
+ADVANCED_FEATURES = {
+    # Extended date intelligence
+    'DATE_FEATURES': {
+        'categorical': [],
+        'numeric': ['DayOfYear']
+    },
+    
+    # Long-term patterns
+    'LAG_FEATURES': {
+        'NoOfMan': [90, 365],  # Seasonal and yearly patterns
+    },
+    
+    # Extended rolling windows
+    'ROLLING_FEATURES': {
+        'NoOfMan': {
+            'windows': [90],  # Quarterly patterns
+            'functions': ['mean']
+        }
+    },
+    
+    # Productivity metrics (if data available)
+    'PRODUCTIVITY_FEATURES': {
+        'LAG_FEATURES': {
+            'Quantity': [1, 7, 30],
+            'Hours': [1, 7],
+            'SystemHours': [1, 7],
+            'ResourceKPI': [1, 7],
+            'SystemKPI': [1, 7]
+        },
+        'ROLLING_FEATURES': {
+            'Quantity': {
+                'windows': [7, 30],
+                'functions': ['mean']
+            },
+            'Hours': {
+                'windows': [7],
+                'functions': ['mean']
+            }
+        },
+        'DERIVED_FEATURES': [
+            'Hours_SystemHours_Ratio',
+            'Quantity_per_Worker', 
+            'Hours_per_Quantity',
+            'SystemHours_per_Quantity',
+            'Combined_KPI',
+            'Workers_Predicted_from_Quantity'
+        ],
+        'PATTERN_FEATURES': [
+            'Quantity_same_dow_lag'
+        ],
+        'TREND_FEATURES': [
+            ('Quantity_7day_trend', 'Quantity', 1, 7),
+            ('Hours_7day_trend', 'Hours', 1, 7)
+        ]
+    },
+    
+    # Business logic features
+    'BUSINESS_FEATURES': [
+        'Workload_Intensity',      # High/Medium/Low workload indicator
+        'Seasonal_Factor',         # Seasonal adjustment factor
+        'Capacity_Utilization',    # How close to maximum capacity
+    ]
+}
+
+# ==========================================
+# FEATURE AVAILABILITY DETECTION
+# ==========================================
+FEATURE_AVAILABILITY = {
+    # Data columns required for productivity features
+    'PRODUCTIVITY_REQUIRED_COLUMNS': ['Quantity', 'Hours', 'SystemHours', 'ResourceKPI', 'SystemKPI'],
+    
+    # Minimum data requirements
+    'MIN_DATA_REQUIREMENTS': {
+        'BASIC': 14,        # Need at least 2 weeks of data
+        'INTERMEDIATE': 45, # Need at least 6 weeks of data  
+        'ADVANCED': 180     # Need at least 6 months of data
+    }
+}

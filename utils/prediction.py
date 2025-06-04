@@ -20,13 +20,51 @@ except ImportError:
     TORCH_AVAILABLE = False
 
 # Import from configuration
-from config import MODELS_DIR
+from config import (
+    MODELS_DIR, DATA_DIR, LAG_DAYS, ROLLING_WINDOWS,  # ✅ Uses config
+    CHUNK_SIZE, DEFAULT_MODEL_PARAMS,
+    SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION,
+    SQL_USERNAME, SQL_PASSWORD
+)
+# Configure logger
+logger = logging.getLogger(__name__)
 
 # Import holiday utils
 from utils.holiday_utils import is_swedish_holiday
 
-# Configure logger
-logger = logging.getLogger(__name__)
+def _precompute_feature_lists():
+    """Pre-compute feature lists from tier configuration at module load time"""
+    from utils.feature_builder import get_feature_lists_for_data
+    
+    feature_cache = {}
+    
+    # Get comprehensive feature lists based on tier configuration
+    numeric_features, categorical_features = get_feature_lists_for_data()
+    
+    # Cache different combinations
+    feature_cache['remainder'] = numeric_features
+    feature_cache['default'] = categorical_features + numeric_features
+    feature_cache['categorical'] = categorical_features
+    feature_cache['numeric'] = numeric_features
+    
+    # Fallback features (basic tier only)
+    fallback_features = ['DayOfWeek_feat', 'Month_feat', 'IsWeekend_feat']
+    for lag in [1, 2, 3, 7]:  # Basic lags
+        fallback_features.append(f'NoOfMan_lag_{lag}')
+    fallback_features.append('NoOfMan_rolling_mean_7')
+    
+    feature_cache['fallback'] = fallback_features
+    
+    # Log feature summary
+    logger.info(f"Feature cache built: {len(numeric_features)} numeric, {len(categorical_features)} categorical features")
+    
+    return feature_cache
+
+# Pre-compute at module load
+_FEATURE_CACHE = _precompute_feature_lists()
+
+
+
 
 def calculate_hours_prediction(df, work_type, no_of_man_prediction, date=None):
     """
@@ -150,20 +188,65 @@ def predict_with_neural_network(df, nn_models, nn_scalers, work_type, date=None,
         work_type_data = work_type_data.sort_values('Date', ascending=False)
         recent_data = work_type_data.head(sequence_length)
         
-        # Extract features we want to use (must match what was used in training)
-        features = ['NoOfMan', 'NoOfMan_lag_1', 'NoOfMan_lag_7', 
-                    'NoOfMan_rolling_mean_7', 'DayOfWeek_feat', 'Month_feat', 
-                    'IsWeekend_feat']
+        # ✅ FULLY DYNAMIC FEATURE GENERATION
+        features = ['NoOfMan', 'DayOfWeek_feat', 'Month_feat', 'IsWeekend_feat']
         
-        sequence = recent_data[features].values
+        # Add ALL available lag features from config
+        for lag in LAG_DAYS:
+            lag_feature = f'NoOfMan_lag_{lag}'
+            features.append(lag_feature)
+        
+        # Add ALL available rolling features from config  
+        for window in ROLLING_WINDOWS:
+            rolling_feature = f'NoOfMan_rolling_mean_{window}'
+            features.append(rolling_feature)
+        
+        # Filter to only include features that actually exist in the data
+        available_features = [f for f in features if f in recent_data.columns]
+        
+        # ✅ VALIDATION: Check if we have minimum required features
+        if len(available_features) < 4:  # At minimum need NoOfMan + 3 date features
+            logger.warning(f"Not enough features available for neural prediction for WorkType: {work_type}. "
+                         f"Available: {available_features}")
+            return None
+        
+        # ✅ LOG WHAT FEATURES ARE BEING USED
+        logger.info(f"Neural network using {len(available_features)} features for {work_type}: {available_features}")
+        
+        # ✅ EXTRACT SEQUENCE USING AVAILABLE FEATURES
+        try:
+            sequence = recent_data[available_features].values
+        except KeyError as e:
+            logger.error(f"Error extracting features for neural network: {str(e)}")
+            return None
+        
+        # ✅ VALIDATE SEQUENCE SHAPE
+        if sequence.shape[1] != len(available_features):
+            logger.warning(f"Sequence shape mismatch for {work_type}. Expected {len(available_features)} features, "
+                         f"got {sequence.shape[1]}")
+            return None
         
         # Ensure sequence is in chronological order (oldest to newest)
         sequence = sequence[::-1]
         
-        # Use the utility function to make prediction
-        prediction = predict_with_torch_model(model, scaler, sequence, sequence_length)
+        # ✅ DYNAMIC INPUT SIZE CHECK
+        expected_input_size = sequence.shape[1]
         
-        return prediction
+        # Check if model expects this input size (optional validation)
+        try:
+            # This is a rough check - you might need to adjust based on your model architecture
+            test_input = torch.tensor(sequence.reshape(1, sequence_length, -1), dtype=torch.float32)
+            
+            # Use the utility function to make prediction
+            prediction = predict_with_torch_model(model, scaler, sequence, sequence_length)
+            
+            logger.info(f"Neural network prediction successful for {work_type}: {prediction:.3f}")
+            return prediction
+            
+        except Exception as model_error:
+            logger.error(f"Model prediction error for {work_type}: {str(model_error)}")
+            logger.error(f"Sequence shape: {sequence.shape}, Features used: {available_features}")
+            return None
     
     except Exception as e:
         logger.error(f"Error predicting with neural network: {str(e)}")
@@ -210,8 +293,8 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
                 predictions[work_type] = 0
                 hours_predictions[work_type] = 0
                 continue
-            
-            # Rest of the existing prediction logic remains the same...
+
+
             # Try neural network prediction first if requested
             if use_neural_network and nn_models and work_type in nn_models:
                 nn_prediction = predict_with_neural_network(df, nn_models, nn_scalers, work_type, date)
@@ -232,7 +315,7 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
                 
             # Get the most recent values for lag features
             lag_features = {}
-            for lag in [1, 2, 3, 7, 14, 30, 365]:
+            for lag in LAG_DAYS:
                 try:
                     lag_date = latest_date - timedelta(days=lag)
                     lag_records = work_type_data[work_type_data['Date'] == lag_date]
@@ -243,7 +326,7 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
                     lag_features[f'NoOfMan_lag_{lag}'] = 0
             
             # Calculate rolling statistics
-            for window in [7, 14, 30, 90]:  # Added 90-day window
+            for window in ROLLING_WINDOWS:
                 try:
                     recent_data = work_type_data[work_type_data['Date'] > latest_date - timedelta(days=window)]
                     values = recent_data['NoOfMan'].values
@@ -253,14 +336,14 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
                     lag_features[f'NoOfMan_rolling_mean_{window}'] = rolling_mean
                     
                     # Calculate other rolling statistics if needed by the model
-                    if window == 7:  # Only for 7-day window to avoid feature explosion
+                    if ROLLING_WINDOWS and window == ROLLING_WINDOWS[0]:  # Only for first window to avoid feature explosion
                         lag_features[f'NoOfMan_rolling_max_{window}'] = values.max() if len(values) > 0 else 0
                         lag_features[f'NoOfMan_rolling_min_{window}'] = values.min() if len(values) > 0 else 0
                         lag_features[f'NoOfMan_rolling_std_{window}'] = values.std() if len(values) > 1 else 0
                 except Exception as roll_err:
                     logger.warning(f"Error calculating rolling stats for window {window}: {str(roll_err)}")
                     lag_features[f'NoOfMan_rolling_mean_{window}'] = 0
-                    if window == 7:
+                    if ROLLING_WINDOWS and window == ROLLING_WINDOWS[0]:
                         lag_features[f'NoOfMan_rolling_max_{window}'] = 0
                         lag_features[f'NoOfMan_rolling_min_{window}'] = 0
                         lag_features[f'NoOfMan_rolling_std_{window}'] = 0
@@ -291,11 +374,15 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
             
             # Add trend indicators
             try:
-                lag_features['NoOfMan_7day_trend'] = lag_features['NoOfMan_lag_1'] - lag_features['NoOfMan_lag_7']
-                lag_features['NoOfMan_1day_trend'] = lag_features['NoOfMan_lag_1'] - lag_features['NoOfMan_lag_2']
+                if 1 in LAG_DAYS and 7 in LAG_DAYS:
+                    lag_features['NoOfMan_7day_trend'] = lag_features['NoOfMan_lag_1'] - lag_features['NoOfMan_lag_7']
+                if 1 in LAG_DAYS and 2 in LAG_DAYS:
+                    lag_features['NoOfMan_1day_trend'] = lag_features['NoOfMan_lag_1'] - lag_features['NoOfMan_lag_2']
             except:
-                lag_features['NoOfMan_7day_trend'] = 0
-                lag_features['NoOfMan_1day_trend'] = 0
+                if 1 in LAG_DAYS and 7 in LAG_DAYS:
+                    lag_features['NoOfMan_7day_trend'] = 0
+                if 1 in LAG_DAYS and 2 in LAG_DAYS:
+                    lag_features['NoOfMan_1day_trend'] = 0
             
             # Combine features
             all_features = {**next_day_features, **lag_features}
@@ -312,29 +399,8 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
             
             # Make prediction
             try:
-                # Ensure all required productivity columns exist in the dataframe
-                productivity_columns = [
-                    'Quantity_1day_trend', 'Quantity_7day_trend', 'Quantity_lag_7', 
-                    'Hours_SystemHours_Ratio_lag_1', 'SystemHours_per_Quantity', 
-                    'Combined_KPI_lag_1', 'Quantity_lag_1', 'ResourceKPI_lag_1', 
-                    'Relative_Quantity', 'Quantity_rolling_mean_7', 'SystemKPI_lag_1', 
-                    'Quantity_per_Worker', 'Workers_Predicted_from_Quantity', 
-                    'Hours_per_Quantity', 'Quantity_same_dow_lag',
-                    'NoOfMan_rolling_mean_14', 'NoOfMan_rolling_mean_30',
-                    'NoOfMan_rolling_mean_90', 'NoOfMan_lag_14', 'NoOfMan_lag_30', 
-                    'NoOfMan_lag_365', 'Combined_KPI_rolling_mean_7',
-                    'ResourceKPI_rolling_mean_7', 'SystemKPI_rolling_mean_7',
-                    'Hours_per_Quantity_lag_1', 'SystemHours_per_Quantity_lag_1',
-                    'Quantity_per_Worker_lag_1', 'Relative_Quantity_lag_1'
-                ]
-                
-                # Add any missing columns to X_pred with value 0
-                for col in productivity_columns:
-                    if col not in X_pred.columns:
-                        X_pred[col] = 0.0
-                        logger.info(f"Added missing column '{col}' for WorkType {work_type}")
-                
-                # Proceed with prediction now that all columns are present
+                # X_pred already contains all required features from _get_required_features()
+                # No need to add additional features - just predict directly
                 prediction = model.predict(X_pred)[0]
                 
                 # Ensure prediction is not negative
@@ -344,6 +410,7 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
                 hours_predictions[work_type] = calculate_hours_prediction(df, work_type, prediction, next_date)
                 
                 logger.info(f"RandomForest predicted {prediction:.2f} workers for WorkType {work_type}")
+                
             except Exception as e:
                 logger.error(f"Error predicting for WorkType {work_type}: {str(e)}")
                 logger.error(traceback.format_exc())
@@ -490,59 +557,37 @@ def evaluate_predictions(y_true, y_pred):
             'R²': float('nan'),
             'MAPE': float('nan')
         }
+    
 
 def _get_required_features(model):
-    """Helper function to get feature names required by the model"""
+    """Helper function to get feature names required by the model - now uses pre-computed lists"""
     try:
         # If it's a pipeline, get the feature names from the model
         if hasattr(model, 'steps'):
-            # Try to get feature names directly from the RandomForest model
+            # Try to get feature names directly from the model (e.g., RandomForest, etc.)
             if hasattr(model.named_steps['model'], 'feature_names_in_'):
                 return list(model.named_steps['model'].feature_names_in_)
             
-            # Otherwise extract from preprocessor
+            # Otherwise, extract from preprocessor
             preprocessor = model.named_steps.get('preprocessor')
             if preprocessor:
-                # Get the categorical features from the preprocessor
                 cat_cols = []
+
                 if hasattr(preprocessor, 'transformers_'):
                     for name, transformer, cols in preprocessor.transformers_:
                         if name == 'cat' and hasattr(transformer, 'categories_'):
-                            for i, category_list in enumerate(transformer.categories_):
-                                original_col = cols[i]
-                                cat_cols.append(original_col)
+                            for i, _ in enumerate(transformer.categories_):
+                                if i < len(cols):
+                                    cat_cols.append(cols[i])
                 
-                # The numeric features are passed through
-                remainder_cols = [
-                    'NoOfMan_lag_1', 'NoOfMan_lag_2', 'NoOfMan_lag_3', 'NoOfMan_lag_7',
-                    'NoOfMan_lag_14', 'NoOfMan_lag_30', 'NoOfMan_lag_365',
-                    'NoOfMan_rolling_mean_7', 'NoOfMan_rolling_mean_14', 'NoOfMan_rolling_mean_30',
-                    'NoOfMan_rolling_max_7', 'NoOfMan_rolling_min_7', 'NoOfMan_rolling_std_7',
-                    'NoOfMan_same_dow_lag', 'NoOfMan_same_dom_lag',
-                    'NoOfMan_7day_trend', 'NoOfMan_1day_trend',
-                    'IsWeekend_feat', 'NoOfMan_rolling_mean_90'
-                ]
-                
-                return cat_cols + remainder_cols
-        
-        # Default set of features if we can't determine them from the model
-        return [
-            'DayOfWeek_feat', 'Month_feat', 'IsWeekend_feat',
-            'NoOfMan_lag_1', 'NoOfMan_lag_2', 'NoOfMan_lag_3', 'NoOfMan_lag_7',
-            'NoOfMan_rolling_mean_7', 'NoOfMan_rolling_mean_14', 'NoOfMan_rolling_mean_30',
-            'NoOfMan_rolling_max_7', 'NoOfMan_rolling_min_7', 'NoOfMan_rolling_std_7',
-            'NoOfMan_same_dow_lag', 'NoOfMan_same_dom_lag',
-            'NoOfMan_7day_trend', 'NoOfMan_1day_trend', 
-            'IsWeekend_feat', 'NoOfMan_rolling_mean_90'
-        ]
-    
+                # Use pre-computed remainder columns
+                return cat_cols + _FEATURE_CACHE.get('remainder', [])
+
+        # Use pre-computed default features
+        return _FEATURE_CACHE.get('default', [])
+
     except Exception as e:
         logger.error(f"Error getting required features: {str(e)}")
         logger.error(traceback.format_exc())
-        
-        # Return comprehensive set of features
-        return [
-            'DayOfWeek_feat', 'Month_feat', 'IsWeekend_feat',
-            'NoOfMan_lag_1', 'NoOfMan_lag_2', 'NoOfMan_lag_3', 'NoOfMan_lag_7',
-            'NoOfMan_rolling_mean_7'
-        ]
+        # Use pre-computed fallback features
+        return _FEATURE_CACHE.get('fallback', [])

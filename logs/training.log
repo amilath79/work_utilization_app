@@ -8966,3 +8966,1674 @@ pandas.errors.DatabaseError: Execution failed on sql '
 2025-06-02 10:18:30,829 - train_models - INFO - Data loaded successfully. Total rows: 15359
 2025-06-02 10:18:30,829 - train_models - INFO - Converting Date column to datetime format
 2025-06-02 10:18:30,841 - train_models - INFO - Engineering features...
+2025-06-04 10:37:11,313 - train_models - INFO - Starting the model training process
+2025-06-04 10:37:11,314 - train_models - INFO - Training from SQL database (command line argument)
+2025-06-04 10:37:11,321 - train_models - INFO - Connecting to database ABC on server 192.168.1.43
+2025-06-04 10:37:11,618 - train_models - INFO - Executing SQL query: 
+               SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
+                FROM WorkUtilizationData WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 210, 217) AND SystemHours <> 0
+                AND Hours <> 0 and Quantity > 0
+                AND Date > '2023-01-01'
+                ORDER BY Date
+            
+2025-06-04 10:37:12,465 - train_models - INFO - Read chunk of 6241 rows
+2025-06-04 10:37:12,487 - train_models - INFO - Data loaded successfully. Total rows: 6241
+2025-06-04 10:37:12,488 - train_models - INFO - Converting Date column to datetime format
+2025-06-04 10:37:12,508 - train_models - INFO - Engineering features...
+2025-06-04 10:37:13,317 - utils.feature_engineering - INFO - Engineering features
+2025-06-04 10:37:13,370 - utils.feature_engineering - INFO - Feature engineering completed. Added 14 new features.
+2025-06-04 10:37:13,375 - train_models - INFO - Creating lag features...
+2025-06-04 10:37:13,385 - utils.feature_engineering - INFO - Creating lag features for NoOfMan grouped by WorkType
+2025-06-04 10:37:13,565 - utils.feature_engineering - INFO - Lag features created. Dropped 0 rows with NaN values.
+2025-06-04 10:37:13,566 - utils.feature_engineering - INFO - Final shape: (6241, 70)
+2025-06-04 10:37:13,571 - train_models - INFO - Found 10 unique work types
+2025-06-04 10:37:13,572 - train_models - INFO - Building models for 10 work types
+2025-06-04 10:37:13,572 - train_models - INFO - Numeric features: ['NoOfMan_lag_1', 'NoOfMan_lag_2', 'NoOfMan_lag_3', 'NoOfMan_lag_7', 'NoOfMan_rolling_mean_7', 'IsWeekend_feat', 'NoOfMan_rolling_max_7', 'NoOfMan_rolling_min_7', 'NoOfMan_rolling_std_7', 'NoOfMan_same_dow_lag', 'NoOfMan_same_dom_lag', 'NoOfMan_7day_trend', 'NoOfMan_1day_trend', 'Quantity_lag_1', 'Quantity_lag_7', 'Quantity_rolling_mean_7', 'Quantity_per_Worker', 'Relative_Quantity', 'Quantity_same_dow_lag', 'ResourceKPI_lag_1', 'SystemKPI_lag_1', 'Combined_KPI_lag_1', 'Hours_SystemHours_Ratio_lag_1', 'Hours_per_Quantity', 'SystemHours_per_Quantity', 'Workers_Predicted_from_Quantity', 'Quantity_7day_trend', 'Quantity_1day_trend']
+2025-06-04 10:37:13,573 - train_models - INFO - Categorical features: ['DayOfWeek_feat', 'Month_feat', 'Quarter', 'Year_feat']
+2025-06-04 10:37:13,573 - train_models - INFO - Building model for WorkType: 202
+2025-06-04 10:37:15,207 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:37:26,991 - train_models - INFO - Model for 202 - MAE: 0.2757, RMSE: 0.3676, R²: 0.7743, MAPE: 11.62%
+2025-06-04 10:37:26,992 - train_models - INFO - Top 10 most important features for 202:
+2025-06-04 10:37:26,993 - train_models - INFO -   NoOfMan_7day_trend: 0.2557
+2025-06-04 10:37:26,993 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.2535
+2025-06-04 10:37:26,994 - train_models - INFO -   NoOfMan_1day_trend: 0.1123
+2025-06-04 10:37:26,994 - train_models - INFO -   NoOfMan_lag_7: 0.0924
+2025-06-04 10:37:26,995 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0841
+2025-06-04 10:37:26,996 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0836
+2025-06-04 10:37:26,996 - train_models - INFO -   NoOfMan_lag_1: 0.0514
+2025-06-04 10:37:26,997 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0062
+2025-06-04 10:37:26,998 - train_models - INFO -   Quantity_rolling_mean_7: 0.0046
+2025-06-04 10:37:26,998 - train_models - INFO -   Quantity_lag_7: 0.0046
+2025-06-04 10:37:26,999 - train_models - INFO - Cross-validation details for 202:
+2025-06-04 10:37:27,000 - train_models - INFO -   Fold 1: MAE=0.3798, RMSE=0.4780, R²=0.5438, MAPE=16.20%
+2025-06-04 10:37:27,001 - train_models - INFO -   Fold 2: MAE=0.2575, RMSE=0.3283, R²=0.7820, MAPE=12.67%
+2025-06-04 10:37:27,002 - train_models - INFO -   Fold 3: MAE=0.2294, RMSE=0.3413, R²=0.8266, MAPE=8.77%
+2025-06-04 10:37:27,002 - train_models - INFO -   Fold 4: MAE=0.2812, RMSE=0.3915, R²=0.8411, MAPE=9.29%
+2025-06-04 10:37:27,003 - train_models - INFO -   Fold 5: MAE=0.2307, RMSE=0.2987, R²=0.8779, MAPE=11.18%
+2025-06-04 10:37:27,004 - train_models - INFO - Building model for WorkType: 203
+2025-06-04 10:37:27,967 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:37:41,924 - train_models - INFO - Model for 203 - MAE: 0.3644, RMSE: 0.4748, R²: 0.7949, MAPE: 8.41%
+2025-06-04 10:37:41,924 - train_models - INFO - Top 10 most important features for 203:
+2025-06-04 10:37:41,925 - train_models - INFO -   NoOfMan_7day_trend: 0.3260
+2025-06-04 10:37:41,925 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1480
+2025-06-04 10:37:41,925 - train_models - INFO -   NoOfMan_rolling_min_7: 0.1398
+2025-06-04 10:37:41,926 - train_models - INFO -   NoOfMan_1day_trend: 0.0973
+2025-06-04 10:37:41,926 - train_models - INFO -   NoOfMan_lag_7: 0.0964
+2025-06-04 10:37:41,926 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0836
+2025-06-04 10:37:41,927 - train_models - INFO -   NoOfMan_lag_1: 0.0470
+2025-06-04 10:37:41,927 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0057
+2025-06-04 10:37:41,927 - train_models - INFO -   NoOfMan_same_dom_lag: 0.0050
+2025-06-04 10:37:41,928 - train_models - INFO -   NoOfMan_lag_2: 0.0041
+2025-06-04 10:37:41,928 - train_models - INFO - Cross-validation details for 203:
+2025-06-04 10:37:41,928 - train_models - INFO -   Fold 1: MAE=0.6025, RMSE=0.7625, R²=0.6362, MAPE=12.55%
+2025-06-04 10:37:41,928 - train_models - INFO -   Fold 2: MAE=0.3886, RMSE=0.5346, R²=0.7524, MAPE=9.43%
+2025-06-04 10:37:41,929 - train_models - INFO -   Fold 3: MAE=0.3397, RMSE=0.4408, R²=0.8248, MAPE=8.63%
+2025-06-04 10:37:41,929 - train_models - INFO -   Fold 4: MAE=0.2391, RMSE=0.2788, R²=0.9065, MAPE=5.06%
+2025-06-04 10:37:41,929 - train_models - INFO -   Fold 5: MAE=0.2519, RMSE=0.3572, R²=0.8547, MAPE=6.36%
+2025-06-04 10:37:41,930 - train_models - INFO - Building model for WorkType: 206
+2025-06-04 10:37:43,135 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:38:06,299 - train_models - INFO - Model for 206 - MAE: 1.7758, RMSE: 2.6924, R²: 0.8807, MAPE: 9.78%
+2025-06-04 10:38:06,300 - train_models - INFO - Top 10 most important features for 206:
+2025-06-04 10:38:06,301 - train_models - INFO -   NoOfMan_same_dow_lag: 0.3662
+2025-06-04 10:38:06,301 - train_models - INFO -   NoOfMan_1day_trend: 0.1584
+2025-06-04 10:38:06,302 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.0925
+2025-06-04 10:38:06,302 - train_models - INFO -   DayOfWeek_feat_6: 0.0819
+2025-06-04 10:38:06,303 - train_models - INFO -   NoOfMan_lag_1: 0.0626
+2025-06-04 10:38:06,304 - train_models - INFO -   NoOfMan_7day_trend: 0.0569
+2025-06-04 10:38:06,304 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0495
+2025-06-04 10:38:06,304 - train_models - INFO -   Quantity_same_dow_lag: 0.0343
+2025-06-04 10:38:06,305 - train_models - INFO -   Quantity_rolling_mean_7: 0.0272
+2025-06-04 10:38:06,305 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0144
+2025-06-04 10:38:06,306 - train_models - INFO - Cross-validation details for 206:
+2025-06-04 10:38:06,306 - train_models - INFO -   Fold 1: MAE=1.7013, RMSE=2.3113, R²=0.8947, MAPE=9.61%
+2025-06-04 10:38:06,307 - train_models - INFO -   Fold 2: MAE=1.9251, RMSE=3.0593, R²=0.8406, MAPE=12.25%
+2025-06-04 10:38:06,307 - train_models - INFO -   Fold 3: MAE=1.3181, RMSE=1.9351, R²=0.9200, MAPE=9.58%
+2025-06-04 10:38:06,308 - train_models - INFO -   Fold 4: MAE=2.7519, RMSE=4.2940, R²=0.8247, MAPE=10.90%
+2025-06-04 10:38:06,309 - train_models - INFO -   Fold 5: MAE=1.1826, RMSE=1.8622, R²=0.9237, MAPE=6.56%
+2025-06-04 10:38:06,309 - train_models - INFO - Building model for WorkType: 209
+2025-06-04 10:38:07,952 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:38:28,368 - train_models - INFO - Model for 209 - MAE: 1.4695, RMSE: 2.2203, R²: 0.7049, MAPE: 17.71%
+2025-06-04 10:38:28,369 - train_models - INFO - Top 10 most important features for 209:
+2025-06-04 10:38:28,369 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.3174
+2025-06-04 10:38:28,370 - train_models - INFO -   NoOfMan_7day_trend: 0.2158
+2025-06-04 10:38:28,370 - train_models - INFO -   Quantity_rolling_mean_7: 0.1038
+2025-06-04 10:38:28,370 - train_models - INFO -   NoOfMan_1day_trend: 0.0951
+2025-06-04 10:38:28,371 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0672
+2025-06-04 10:38:28,371 - train_models - INFO -   NoOfMan_lag_7: 0.0258
+2025-06-04 10:38:28,372 - train_models - INFO -   Quantity_7day_trend: 0.0234
+2025-06-04 10:38:28,372 - train_models - INFO -   NoOfMan_lag_1: 0.0233
+2025-06-04 10:38:28,372 - train_models - INFO -   Quantity_1day_trend: 0.0173
+2025-06-04 10:38:28,373 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0156
+2025-06-04 10:38:28,373 - train_models - INFO - Cross-validation details for 209:
+2025-06-04 10:38:28,373 - train_models - INFO -   Fold 1: MAE=1.4325, RMSE=1.9239, R²=0.6122, MAPE=16.94%
+2025-06-04 10:38:28,374 - train_models - INFO -   Fold 2: MAE=2.4427, RMSE=4.1656, R²=0.5025, MAPE=22.14%
+2025-06-04 10:38:28,374 - train_models - INFO -   Fold 3: MAE=0.9461, RMSE=1.2846, R²=0.8128, MAPE=13.49%
+2025-06-04 10:38:28,375 - train_models - INFO -   Fold 4: MAE=1.7000, RMSE=2.4283, R²=0.7867, MAPE=23.99%
+2025-06-04 10:38:28,375 - train_models - INFO -   Fold 5: MAE=0.8265, RMSE=1.2993, R²=0.8103, MAPE=11.99%
+2025-06-04 10:38:28,375 - train_models - INFO - Building model for WorkType: 210
+2025-06-04 10:38:29,436 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:38:48,525 - train_models - INFO - Model for 210 - MAE: 1.2969, RMSE: 1.9467, R²: 0.7110, MAPE: 28.99%
+2025-06-04 10:38:48,525 - train_models - INFO - Top 10 most important features for 210:
+2025-06-04 10:38:48,526 - train_models - INFO -   NoOfMan_same_dow_lag: 0.2731
+2025-06-04 10:38:48,526 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1349
+2025-06-04 10:38:48,526 - train_models - INFO -   NoOfMan_7day_trend: 0.1069
+2025-06-04 10:38:48,527 - train_models - INFO -   DayOfWeek_feat_6: 0.0752
+2025-06-04 10:38:48,527 - train_models - INFO -   NoOfMan_1day_trend: 0.0752
+2025-06-04 10:38:48,528 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0561
+2025-06-04 10:38:48,529 - train_models - INFO -   Quantity_1day_trend: 0.0395
+2025-06-04 10:38:48,529 - train_models - INFO -   Quantity_7day_trend: 0.0327
+2025-06-04 10:38:48,530 - train_models - INFO -   NoOfMan_lag_7: 0.0318
+2025-06-04 10:38:48,530 - train_models - INFO -   NoOfMan_lag_1: 0.0282
+2025-06-04 10:38:48,531 - train_models - INFO - Cross-validation details for 210:
+2025-06-04 10:38:48,531 - train_models - INFO -   Fold 1: MAE=1.2040, RMSE=1.7355, R²=0.5859, MAPE=12.93%
+2025-06-04 10:38:48,532 - train_models - INFO -   Fold 2: MAE=1.5773, RMSE=2.2524, R²=0.7005, MAPE=37.02%
+2025-06-04 10:38:48,532 - train_models - INFO -   Fold 3: MAE=1.1404, RMSE=1.6451, R²=0.7904, MAPE=43.98%
+2025-06-04 10:38:48,533 - train_models - INFO -   Fold 4: MAE=1.6124, RMSE=2.4648, R²=0.7649, MAPE=27.20%
+2025-06-04 10:38:48,533 - train_models - INFO -   Fold 5: MAE=0.9504, RMSE=1.6359, R²=0.7132, MAPE=23.84%
+2025-06-04 10:38:48,534 - train_models - INFO - Building model for WorkType: 211
+2025-06-04 10:38:50,262 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:39:12,804 - train_models - INFO - Model for 211 - MAE: 1.0129, RMSE: 1.4077, R²: 0.7352, MAPE: 17.51%
+2025-06-04 10:39:12,804 - train_models - INFO - Top 10 most important features for 211:
+2025-06-04 10:39:12,805 - train_models - INFO -   NoOfMan_1day_trend: 0.2081
+2025-06-04 10:39:12,805 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1950
+2025-06-04 10:39:12,805 - train_models - INFO -   NoOfMan_7day_trend: 0.1789
+2025-06-04 10:39:12,806 - train_models - INFO -   DayOfWeek_feat_6: 0.1364
+2025-06-04 10:39:12,806 - train_models - INFO -   NoOfMan_rolling_max_7: 0.1227
+2025-06-04 10:39:12,806 - train_models - INFO -   NoOfMan_lag_1: 0.0458
+2025-06-04 10:39:12,807 - train_models - INFO -   NoOfMan_lag_7: 0.0268
+2025-06-04 10:39:12,807 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0134
+2025-06-04 10:39:12,807 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0120
+2025-06-04 10:39:12,808 - train_models - INFO -   Quantity_lag_7: 0.0060
+2025-06-04 10:39:12,808 - train_models - INFO - Cross-validation details for 211:
+2025-06-04 10:39:12,808 - train_models - INFO -   Fold 1: MAE=1.1981, RMSE=1.5578, R²=0.6444, MAPE=12.97%
+2025-06-04 10:39:12,809 - train_models - INFO -   Fold 2: MAE=1.3921, RMSE=2.2514, R²=0.7053, MAPE=19.83%
+2025-06-04 10:39:12,809 - train_models - INFO -   Fold 3: MAE=1.1313, RMSE=1.3678, R²=0.5256, MAPE=27.76%
+2025-06-04 10:39:12,810 - train_models - INFO -   Fold 4: MAE=0.7740, RMSE=0.9776, R²=0.9070, MAPE=9.87%
+2025-06-04 10:39:12,810 - train_models - INFO -   Fold 5: MAE=0.5689, RMSE=0.8838, R²=0.8934, MAPE=17.13%
+2025-06-04 10:39:12,810 - train_models - INFO - Building model for WorkType: 213
+2025-06-04 10:39:13,905 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:39:29,944 - train_models - INFO - Model for 213 - MAE: 0.6391, RMSE: 0.8542, R²: 0.6608, MAPE: 20.43%
+2025-06-04 10:39:29,945 - train_models - INFO - Top 10 most important features for 213:
+2025-06-04 10:39:29,945 - train_models - INFO -   NoOfMan_7day_trend: 0.3111
+2025-06-04 10:39:29,945 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.3107
+2025-06-04 10:39:29,945 - train_models - INFO -   NoOfMan_1day_trend: 0.1147
+2025-06-04 10:39:29,946 - train_models - INFO -   NoOfMan_lag_1: 0.0396
+2025-06-04 10:39:29,946 - train_models - INFO -   Quantity_1day_trend: 0.0363
+2025-06-04 10:39:29,946 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0329
+2025-06-04 10:39:29,947 - train_models - INFO -   NoOfMan_lag_7: 0.0299
+2025-06-04 10:39:29,947 - train_models - INFO -   Quantity_7day_trend: 0.0234
+2025-06-04 10:39:29,947 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0192
+2025-06-04 10:39:29,947 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0122
+2025-06-04 10:39:29,948 - train_models - INFO - Cross-validation details for 213:
+2025-06-04 10:39:29,948 - train_models - INFO -   Fold 1: MAE=1.4552, RMSE=1.9452, R²=-0.0658, MAPE=36.72%
+2025-06-04 10:39:29,948 - train_models - INFO -   Fold 2: MAE=0.4801, RMSE=0.6083, R²=0.8196, MAPE=19.74%
+2025-06-04 10:39:29,949 - train_models - INFO -   Fold 3: MAE=0.4600, RMSE=0.6938, R²=0.8362, MAPE=20.58%
+2025-06-04 10:39:29,949 - train_models - INFO -   Fold 4: MAE=0.5397, RMSE=0.6756, R²=0.8221, MAPE=14.47%
+2025-06-04 10:39:29,949 - train_models - INFO -   Fold 5: MAE=0.2605, RMSE=0.3480, R²=0.8919, MAPE=10.66%
+2025-06-04 10:39:29,950 - train_models - INFO - Building model for WorkType: 214
+2025-06-04 10:39:31,088 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:39:46,404 - train_models - INFO - Model for 214 - MAE: 0.9350, RMSE: 1.3071, R²: 0.5655, MAPE: 17.96%
+2025-06-04 10:39:46,405 - train_models - INFO - Top 10 most important features for 214:
+2025-06-04 10:39:46,405 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.5358
+2025-06-04 10:39:46,405 - train_models - INFO -   NoOfMan_7day_trend: 0.1303
+2025-06-04 10:39:46,406 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0936
+2025-06-04 10:39:46,406 - train_models - INFO -   NoOfMan_1day_trend: 0.0754
+2025-06-04 10:39:46,406 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0279
+2025-06-04 10:39:46,407 - train_models - INFO -   NoOfMan_lag_7: 0.0261
+2025-06-04 10:39:46,407 - train_models - INFO -   NoOfMan_lag_1: 0.0251
+2025-06-04 10:39:46,407 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0123
+2025-06-04 10:39:46,408 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0114
+2025-06-04 10:39:46,408 - train_models - INFO -   DayOfWeek_feat_6: 0.0092
+2025-06-04 10:39:46,408 - train_models - INFO - Cross-validation details for 214:
+2025-06-04 10:39:46,409 - train_models - INFO -   Fold 1: MAE=1.4748, RMSE=1.7929, R²=-0.2129, MAPE=23.19%
+2025-06-04 10:39:46,409 - train_models - INFO -   Fold 2: MAE=0.8719, RMSE=1.2268, R²=0.7327, MAPE=15.81%
+2025-06-04 10:39:46,409 - train_models - INFO -   Fold 3: MAE=0.8148, RMSE=1.3558, R²=0.7903, MAPE=18.04%
+2025-06-04 10:39:46,409 - train_models - INFO -   Fold 4: MAE=1.0794, RMSE=1.5727, R²=0.6599, MAPE=22.63%
+2025-06-04 10:39:46,410 - train_models - INFO -   Fold 5: MAE=0.4340, RMSE=0.5875, R²=0.8574, MAPE=10.13%
+2025-06-04 10:39:46,410 - train_models - INFO - Building model for WorkType: 215
+2025-06-04 10:39:47,512 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:40:05,093 - train_models - INFO - Model for 215 - MAE: 0.8960, RMSE: 1.3572, R²: 0.7939, MAPE: 19.40%
+2025-06-04 10:40:05,094 - train_models - INFO - Top 10 most important features for 215:
+2025-06-04 10:40:05,094 - train_models - INFO -   DayOfWeek_feat_6: 0.2222
+2025-06-04 10:40:05,094 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1930
+2025-06-04 10:40:05,095 - train_models - INFO -   NoOfMan_7day_trend: 0.1337
+2025-06-04 10:40:05,095 - train_models - INFO -   NoOfMan_1day_trend: 0.0940
+2025-06-04 10:40:05,095 - train_models - INFO -   Quantity_rolling_mean_7: 0.0669
+2025-06-04 10:40:05,096 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0539
+2025-06-04 10:40:05,096 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0537
+2025-06-04 10:40:05,096 - train_models - INFO -   NoOfMan_lag_1: 0.0239
+2025-06-04 10:40:05,097 - train_models - INFO -   NoOfMan_lag_7: 0.0213
+2025-06-04 10:40:05,097 - train_models - INFO -   Quantity_same_dow_lag: 0.0186
+2025-06-04 10:40:05,097 - train_models - INFO - Cross-validation details for 215:
+2025-06-04 10:40:05,098 - train_models - INFO -   Fold 1: MAE=0.7512, RMSE=0.9457, R²=0.8081, MAPE=15.88%
+2025-06-04 10:40:05,098 - train_models - INFO -   Fold 2: MAE=1.1751, RMSE=1.9845, R²=0.7437, MAPE=22.29%
+2025-06-04 10:40:05,098 - train_models - INFO -   Fold 3: MAE=0.6940, RMSE=0.9430, R²=0.8029, MAPE=25.43%
+2025-06-04 10:40:05,098 - train_models - INFO -   Fold 4: MAE=1.0490, RMSE=1.7207, R²=0.7856, MAPE=11.05%
+2025-06-04 10:40:05,099 - train_models - INFO -   Fold 5: MAE=0.8106, RMSE=1.1924, R²=0.8292, MAPE=22.35%
+2025-06-04 10:40:05,099 - train_models - INFO - Building model for WorkType: 217
+2025-06-04 10:40:06,087 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:40:19,723 - train_models - INFO - Model for 217 - MAE: 0.5961, RMSE: 0.7765, R²: 0.8410, MAPE: 26.48%
+2025-06-04 10:40:19,724 - train_models - INFO - Top 10 most important features for 217:
+2025-06-04 10:40:19,724 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.4840
+2025-06-04 10:40:19,724 - train_models - INFO -   NoOfMan_7day_trend: 0.2246
+2025-06-04 10:40:19,725 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0860
+2025-06-04 10:40:19,725 - train_models - INFO -   NoOfMan_1day_trend: 0.0468
+2025-06-04 10:40:19,725 - train_models - INFO -   NoOfMan_lag_7: 0.0442
+2025-06-04 10:40:19,726 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0291
+2025-06-04 10:40:19,726 - train_models - INFO -   NoOfMan_lag_1: 0.0219
+2025-06-04 10:40:19,726 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0076
+2025-06-04 10:40:19,727 - train_models - INFO -   Quantity_rolling_mean_7: 0.0045
+2025-06-04 10:40:19,727 - train_models - INFO -   Quantity_lag_7: 0.0045
+2025-06-04 10:40:19,727 - train_models - INFO - Cross-validation details for 217:
+2025-06-04 10:40:19,727 - train_models - INFO -   Fold 1: MAE=0.8285, RMSE=0.9752, R²=0.7121, MAPE=52.21%
+2025-06-04 10:40:19,728 - train_models - INFO -   Fold 2: MAE=0.6699, RMSE=0.8763, R²=0.8463, MAPE=20.13%
+2025-06-04 10:40:19,728 - train_models - INFO -   Fold 3: MAE=0.5029, RMSE=0.6957, R²=0.8652, MAPE=23.55%
+2025-06-04 10:40:19,728 - train_models - INFO -   Fold 4: MAE=0.3502, RMSE=0.4605, R²=0.9214, MAPE=13.17%
+2025-06-04 10:40:19,729 - train_models - INFO -   Fold 5: MAE=0.6291, RMSE=0.8747, R²=0.8599, MAPE=23.34%
+2025-06-04 10:40:19,730 - train_models - INFO - Saving 10 models to C:/forlogssystems/Models
+2025-06-04 10:40:20,116 - train_models - ERROR - Error saving models: [Errno 13] Permission denied: 'C:/forlogssystems/Models\\model_performance_summary.xlsx'
+2025-06-04 10:40:20,439 - train_models - ERROR - Traceback (most recent call last):
+  File "C:\forlogssystems\work_utilization_app\train_models.py", line 425, in save_models
+    performance_df.to_excel(performance_file, index=False)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\pandas\util\_decorators.py", line 333, in wrapper
+    return func(*args, **kwargs)
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\pandas\core\generic.py", line 2417, in to_excel
+    formatter.write(
+    ~~~~~~~~~~~~~~~^
+        excel_writer,
+        ^^^^^^^^^^^^^
+    ...<6 lines>...
+        engine_kwargs=engine_kwargs,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\pandas\io\formats\excel.py", line 943, in write
+    writer = ExcelWriter(
+        writer,
+    ...<2 lines>...
+        engine_kwargs=engine_kwargs,
+    )
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\pandas\io\excel\_openpyxl.py", line 61, in __init__
+    super().__init__(
+    ~~~~~~~~~~~~~~~~^
+        path,
+        ^^^^^
+    ...<3 lines>...
+        engine_kwargs=engine_kwargs,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\pandas\io\excel\_base.py", line 1246, in __init__
+    self._handles = get_handle(
+                    ~~~~~~~~~~^
+        path, mode, storage_options=storage_options, is_text=False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\pandas\io\common.py", line 882, in get_handle
+    handle = open(handle, ioargs.mode)
+PermissionError: [Errno 13] Permission denied: 'C:/forlogssystems/Models\\model_performance_summary.xlsx'
+
+2025-06-04 10:40:20,443 - train_models - INFO - Model training completed successfully
+2025-06-04 10:40:52,626 - train_models - INFO - Starting the model training process
+2025-06-04 10:40:52,626 - train_models - INFO - Training from SQL database (command line argument)
+2025-06-04 10:40:52,634 - train_models - INFO - Connecting to database ABC on server 192.168.1.43
+2025-06-04 10:40:52,820 - train_models - INFO - Executing SQL query: 
+               SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
+                FROM WorkUtilizationData WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 210, 217) AND SystemHours <> 0
+                AND Hours <> 0 and Quantity > 0
+                AND Date > '2023-01-01'
+                ORDER BY Date
+            
+2025-06-04 10:40:53,440 - train_models - INFO - Read chunk of 6241 rows
+2025-06-04 10:40:53,480 - train_models - INFO - Data loaded successfully. Total rows: 6241
+2025-06-04 10:40:53,480 - train_models - INFO - Converting Date column to datetime format
+2025-06-04 10:40:53,499 - train_models - INFO - Engineering features...
+2025-06-04 10:40:54,310 - utils.feature_engineering - INFO - Engineering features
+2025-06-04 10:40:54,373 - utils.feature_engineering - INFO - Feature engineering completed. Added 14 new features.
+2025-06-04 10:40:54,379 - train_models - INFO - Creating lag features...
+2025-06-04 10:40:54,397 - utils.feature_engineering - INFO - Creating lag features for NoOfMan grouped by WorkType
+2025-06-04 10:40:54,563 - utils.feature_engineering - INFO - Lag features created. Dropped 0 rows with NaN values.
+2025-06-04 10:40:54,563 - utils.feature_engineering - INFO - Final shape: (6241, 70)
+2025-06-04 10:40:54,570 - train_models - INFO - Found 10 unique work types
+2025-06-04 10:40:54,571 - train_models - INFO - Building models for 10 work types
+2025-06-04 10:40:54,571 - train_models - INFO - Numeric features: ['NoOfMan_lag_1', 'NoOfMan_lag_2', 'NoOfMan_lag_3', 'NoOfMan_lag_7', 'NoOfMan_rolling_mean_7', 'IsWeekend_feat', 'NoOfMan_rolling_max_7', 'NoOfMan_rolling_min_7', 'NoOfMan_rolling_std_7', 'NoOfMan_same_dow_lag', 'NoOfMan_same_dom_lag', 'NoOfMan_7day_trend', 'NoOfMan_1day_trend', 'Quantity_lag_1', 'Quantity_lag_7', 'Quantity_rolling_mean_7', 'Quantity_per_Worker', 'Relative_Quantity', 'Quantity_same_dow_lag', 'ResourceKPI_lag_1', 'SystemKPI_lag_1', 'Combined_KPI_lag_1', 'Hours_SystemHours_Ratio_lag_1', 'Hours_per_Quantity', 'SystemHours_per_Quantity', 'Workers_Predicted_from_Quantity', 'Quantity_7day_trend', 'Quantity_1day_trend']
+2025-06-04 10:40:54,571 - train_models - INFO - Categorical features: ['DayOfWeek_feat', 'Month_feat', 'Quarter', 'Year_feat']
+2025-06-04 10:40:54,571 - train_models - INFO - Building model for WorkType: 202
+2025-06-04 10:40:56,130 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:41:09,187 - train_models - INFO - Model for 202 - MAE: 0.2757, RMSE: 0.3676, R²: 0.7743, MAPE: 11.62%
+2025-06-04 10:41:09,188 - train_models - INFO - Top 10 most important features for 202:
+2025-06-04 10:41:09,188 - train_models - INFO -   NoOfMan_7day_trend: 0.2557
+2025-06-04 10:41:09,188 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.2535
+2025-06-04 10:41:09,188 - train_models - INFO -   NoOfMan_1day_trend: 0.1123
+2025-06-04 10:41:09,189 - train_models - INFO -   NoOfMan_lag_7: 0.0924
+2025-06-04 10:41:09,189 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0841
+2025-06-04 10:41:09,189 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0836
+2025-06-04 10:41:09,190 - train_models - INFO -   NoOfMan_lag_1: 0.0514
+2025-06-04 10:41:09,190 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0062
+2025-06-04 10:41:09,190 - train_models - INFO -   Quantity_rolling_mean_7: 0.0046
+2025-06-04 10:41:09,190 - train_models - INFO -   Quantity_lag_7: 0.0046
+2025-06-04 10:41:09,191 - train_models - INFO - Cross-validation details for 202:
+2025-06-04 10:41:09,191 - train_models - INFO -   Fold 1: MAE=0.3798, RMSE=0.4780, R²=0.5438, MAPE=16.20%
+2025-06-04 10:41:09,191 - train_models - INFO -   Fold 2: MAE=0.2575, RMSE=0.3283, R²=0.7820, MAPE=12.67%
+2025-06-04 10:41:09,191 - train_models - INFO -   Fold 3: MAE=0.2294, RMSE=0.3413, R²=0.8266, MAPE=8.77%
+2025-06-04 10:41:09,192 - train_models - INFO -   Fold 4: MAE=0.2812, RMSE=0.3915, R²=0.8411, MAPE=9.29%
+2025-06-04 10:41:09,192 - train_models - INFO -   Fold 5: MAE=0.2307, RMSE=0.2987, R²=0.8779, MAPE=11.18%
+2025-06-04 10:41:09,192 - train_models - INFO - Building model for WorkType: 203
+2025-06-04 10:41:10,227 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:41:24,845 - train_models - INFO - Model for 203 - MAE: 0.3644, RMSE: 0.4748, R²: 0.7949, MAPE: 8.41%
+2025-06-04 10:41:24,845 - train_models - INFO - Top 10 most important features for 203:
+2025-06-04 10:41:24,845 - train_models - INFO -   NoOfMan_7day_trend: 0.3260
+2025-06-04 10:41:24,846 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1480
+2025-06-04 10:41:24,846 - train_models - INFO -   NoOfMan_rolling_min_7: 0.1398
+2025-06-04 10:41:24,846 - train_models - INFO -   NoOfMan_1day_trend: 0.0973
+2025-06-04 10:41:24,847 - train_models - INFO -   NoOfMan_lag_7: 0.0964
+2025-06-04 10:41:24,847 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0836
+2025-06-04 10:41:24,847 - train_models - INFO -   NoOfMan_lag_1: 0.0470
+2025-06-04 10:41:24,848 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0057
+2025-06-04 10:41:24,848 - train_models - INFO -   NoOfMan_same_dom_lag: 0.0050
+2025-06-04 10:41:24,848 - train_models - INFO -   NoOfMan_lag_2: 0.0041
+2025-06-04 10:41:24,849 - train_models - INFO - Cross-validation details for 203:
+2025-06-04 10:41:24,849 - train_models - INFO -   Fold 1: MAE=0.6025, RMSE=0.7625, R²=0.6362, MAPE=12.55%
+2025-06-04 10:41:24,849 - train_models - INFO -   Fold 2: MAE=0.3886, RMSE=0.5346, R²=0.7524, MAPE=9.43%
+2025-06-04 10:41:24,850 - train_models - INFO -   Fold 3: MAE=0.3397, RMSE=0.4408, R²=0.8248, MAPE=8.63%
+2025-06-04 10:41:24,850 - train_models - INFO -   Fold 4: MAE=0.2391, RMSE=0.2788, R²=0.9065, MAPE=5.06%
+2025-06-04 10:41:24,850 - train_models - INFO -   Fold 5: MAE=0.2519, RMSE=0.3572, R²=0.8547, MAPE=6.36%
+2025-06-04 10:41:24,850 - train_models - INFO - Building model for WorkType: 206
+2025-06-04 10:41:25,991 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:41:45,770 - train_models - INFO - Model for 206 - MAE: 1.7758, RMSE: 2.6924, R²: 0.8807, MAPE: 9.78%
+2025-06-04 10:41:45,770 - train_models - INFO - Top 10 most important features for 206:
+2025-06-04 10:41:45,770 - train_models - INFO -   NoOfMan_same_dow_lag: 0.3662
+2025-06-04 10:41:45,771 - train_models - INFO -   NoOfMan_1day_trend: 0.1584
+2025-06-04 10:41:45,771 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.0925
+2025-06-04 10:41:45,771 - train_models - INFO -   DayOfWeek_feat_6: 0.0819
+2025-06-04 10:41:45,772 - train_models - INFO -   NoOfMan_lag_1: 0.0626
+2025-06-04 10:41:45,772 - train_models - INFO -   NoOfMan_7day_trend: 0.0569
+2025-06-04 10:41:45,772 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0495
+2025-06-04 10:41:45,773 - train_models - INFO -   Quantity_same_dow_lag: 0.0343
+2025-06-04 10:41:45,773 - train_models - INFO -   Quantity_rolling_mean_7: 0.0272
+2025-06-04 10:41:45,773 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0144
+2025-06-04 10:41:45,774 - train_models - INFO - Cross-validation details for 206:
+2025-06-04 10:41:45,774 - train_models - INFO -   Fold 1: MAE=1.7013, RMSE=2.3113, R²=0.8947, MAPE=9.61%
+2025-06-04 10:41:45,774 - train_models - INFO -   Fold 2: MAE=1.9251, RMSE=3.0593, R²=0.8406, MAPE=12.25%
+2025-06-04 10:41:45,775 - train_models - INFO -   Fold 3: MAE=1.3181, RMSE=1.9351, R²=0.9200, MAPE=9.58%
+2025-06-04 10:41:45,775 - train_models - INFO -   Fold 4: MAE=2.7519, RMSE=4.2940, R²=0.8247, MAPE=10.90%
+2025-06-04 10:41:45,775 - train_models - INFO -   Fold 5: MAE=1.1826, RMSE=1.8622, R²=0.9237, MAPE=6.56%
+2025-06-04 10:41:45,776 - train_models - INFO - Building model for WorkType: 209
+2025-06-04 10:41:46,830 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:42:02,225 - train_models - INFO - Model for 209 - MAE: 1.4695, RMSE: 2.2203, R²: 0.7049, MAPE: 17.71%
+2025-06-04 10:42:02,225 - train_models - INFO - Top 10 most important features for 209:
+2025-06-04 10:42:02,226 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.3174
+2025-06-04 10:42:02,226 - train_models - INFO -   NoOfMan_7day_trend: 0.2158
+2025-06-04 10:42:02,226 - train_models - INFO -   Quantity_rolling_mean_7: 0.1038
+2025-06-04 10:42:02,226 - train_models - INFO -   NoOfMan_1day_trend: 0.0951
+2025-06-04 10:42:02,227 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0672
+2025-06-04 10:42:02,227 - train_models - INFO -   NoOfMan_lag_7: 0.0258
+2025-06-04 10:42:02,227 - train_models - INFO -   Quantity_7day_trend: 0.0234
+2025-06-04 10:42:02,228 - train_models - INFO -   NoOfMan_lag_1: 0.0233
+2025-06-04 10:42:02,228 - train_models - INFO -   Quantity_1day_trend: 0.0173
+2025-06-04 10:42:02,228 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0156
+2025-06-04 10:42:02,229 - train_models - INFO - Cross-validation details for 209:
+2025-06-04 10:42:02,229 - train_models - INFO -   Fold 1: MAE=1.4325, RMSE=1.9239, R²=0.6122, MAPE=16.94%
+2025-06-04 10:42:02,229 - train_models - INFO -   Fold 2: MAE=2.4427, RMSE=4.1656, R²=0.5025, MAPE=22.14%
+2025-06-04 10:42:02,230 - train_models - INFO -   Fold 3: MAE=0.9461, RMSE=1.2846, R²=0.8128, MAPE=13.49%
+2025-06-04 10:42:02,230 - train_models - INFO -   Fold 4: MAE=1.7000, RMSE=2.4283, R²=0.7867, MAPE=23.99%
+2025-06-04 10:42:02,230 - train_models - INFO -   Fold 5: MAE=0.8265, RMSE=1.2993, R²=0.8103, MAPE=11.99%
+2025-06-04 10:42:02,231 - train_models - INFO - Building model for WorkType: 210
+2025-06-04 10:42:03,419 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:42:20,189 - train_models - INFO - Model for 210 - MAE: 1.2969, RMSE: 1.9467, R²: 0.7110, MAPE: 28.99%
+2025-06-04 10:42:20,190 - train_models - INFO - Top 10 most important features for 210:
+2025-06-04 10:42:20,190 - train_models - INFO -   NoOfMan_same_dow_lag: 0.2731
+2025-06-04 10:42:20,190 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1349
+2025-06-04 10:42:20,191 - train_models - INFO -   NoOfMan_7day_trend: 0.1069
+2025-06-04 10:42:20,191 - train_models - INFO -   DayOfWeek_feat_6: 0.0752
+2025-06-04 10:42:20,191 - train_models - INFO -   NoOfMan_1day_trend: 0.0752
+2025-06-04 10:42:20,192 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0561
+2025-06-04 10:42:20,192 - train_models - INFO -   Quantity_1day_trend: 0.0395
+2025-06-04 10:42:20,192 - train_models - INFO -   Quantity_7day_trend: 0.0327
+2025-06-04 10:42:20,193 - train_models - INFO -   NoOfMan_lag_7: 0.0318
+2025-06-04 10:42:20,193 - train_models - INFO -   NoOfMan_lag_1: 0.0282
+2025-06-04 10:42:20,193 - train_models - INFO - Cross-validation details for 210:
+2025-06-04 10:42:20,193 - train_models - INFO -   Fold 1: MAE=1.2040, RMSE=1.7355, R²=0.5859, MAPE=12.93%
+2025-06-04 10:42:20,194 - train_models - INFO -   Fold 2: MAE=1.5773, RMSE=2.2524, R²=0.7005, MAPE=37.02%
+2025-06-04 10:42:20,194 - train_models - INFO -   Fold 3: MAE=1.1404, RMSE=1.6451, R²=0.7904, MAPE=43.98%
+2025-06-04 10:42:20,194 - train_models - INFO -   Fold 4: MAE=1.6124, RMSE=2.4648, R²=0.7649, MAPE=27.20%
+2025-06-04 10:42:20,195 - train_models - INFO -   Fold 5: MAE=0.9504, RMSE=1.6359, R²=0.7132, MAPE=23.84%
+2025-06-04 10:42:20,195 - train_models - INFO - Building model for WorkType: 211
+2025-06-04 10:42:21,244 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:42:38,198 - train_models - INFO - Model for 211 - MAE: 1.0129, RMSE: 1.4077, R²: 0.7352, MAPE: 17.51%
+2025-06-04 10:42:38,198 - train_models - INFO - Top 10 most important features for 211:
+2025-06-04 10:42:38,199 - train_models - INFO -   NoOfMan_1day_trend: 0.2081
+2025-06-04 10:42:38,199 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1950
+2025-06-04 10:42:38,199 - train_models - INFO -   NoOfMan_7day_trend: 0.1789
+2025-06-04 10:42:38,199 - train_models - INFO -   DayOfWeek_feat_6: 0.1364
+2025-06-04 10:42:38,200 - train_models - INFO -   NoOfMan_rolling_max_7: 0.1227
+2025-06-04 10:42:38,200 - train_models - INFO -   NoOfMan_lag_1: 0.0458
+2025-06-04 10:42:38,200 - train_models - INFO -   NoOfMan_lag_7: 0.0268
+2025-06-04 10:42:38,201 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0134
+2025-06-04 10:42:38,201 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0120
+2025-06-04 10:42:38,201 - train_models - INFO -   Quantity_lag_7: 0.0060
+2025-06-04 10:42:38,202 - train_models - INFO - Cross-validation details for 211:
+2025-06-04 10:42:38,202 - train_models - INFO -   Fold 1: MAE=1.1981, RMSE=1.5578, R²=0.6444, MAPE=12.97%
+2025-06-04 10:42:38,202 - train_models - INFO -   Fold 2: MAE=1.3921, RMSE=2.2514, R²=0.7053, MAPE=19.83%
+2025-06-04 10:42:38,202 - train_models - INFO -   Fold 3: MAE=1.1313, RMSE=1.3678, R²=0.5256, MAPE=27.76%
+2025-06-04 10:42:38,203 - train_models - INFO -   Fold 4: MAE=0.7740, RMSE=0.9776, R²=0.9070, MAPE=9.87%
+2025-06-04 10:42:38,203 - train_models - INFO -   Fold 5: MAE=0.5689, RMSE=0.8838, R²=0.8934, MAPE=17.13%
+2025-06-04 10:42:38,203 - train_models - INFO - Building model for WorkType: 213
+2025-06-04 10:42:39,204 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:42:54,989 - train_models - INFO - Model for 213 - MAE: 0.6391, RMSE: 0.8542, R²: 0.6608, MAPE: 20.43%
+2025-06-04 10:42:54,990 - train_models - INFO - Top 10 most important features for 213:
+2025-06-04 10:42:54,991 - train_models - INFO -   NoOfMan_7day_trend: 0.3111
+2025-06-04 10:42:54,991 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.3107
+2025-06-04 10:42:54,991 - train_models - INFO -   NoOfMan_1day_trend: 0.1147
+2025-06-04 10:42:54,992 - train_models - INFO -   NoOfMan_lag_1: 0.0396
+2025-06-04 10:42:54,992 - train_models - INFO -   Quantity_1day_trend: 0.0363
+2025-06-04 10:42:54,993 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0329
+2025-06-04 10:42:54,993 - train_models - INFO -   NoOfMan_lag_7: 0.0299
+2025-06-04 10:42:54,993 - train_models - INFO -   Quantity_7day_trend: 0.0234
+2025-06-04 10:42:54,994 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0192
+2025-06-04 10:42:54,994 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0122
+2025-06-04 10:42:54,995 - train_models - INFO - Cross-validation details for 213:
+2025-06-04 10:42:54,995 - train_models - INFO -   Fold 1: MAE=1.4552, RMSE=1.9452, R²=-0.0658, MAPE=36.72%
+2025-06-04 10:42:54,995 - train_models - INFO -   Fold 2: MAE=0.4801, RMSE=0.6083, R²=0.8196, MAPE=19.74%
+2025-06-04 10:42:54,996 - train_models - INFO -   Fold 3: MAE=0.4600, RMSE=0.6938, R²=0.8362, MAPE=20.58%
+2025-06-04 10:42:54,997 - train_models - INFO -   Fold 4: MAE=0.5397, RMSE=0.6756, R²=0.8221, MAPE=14.47%
+2025-06-04 10:42:54,997 - train_models - INFO -   Fold 5: MAE=0.2605, RMSE=0.3480, R²=0.8919, MAPE=10.66%
+2025-06-04 10:42:54,998 - train_models - INFO - Building model for WorkType: 214
+2025-06-04 10:42:56,102 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:43:11,018 - train_models - INFO - Model for 214 - MAE: 0.9350, RMSE: 1.3071, R²: 0.5655, MAPE: 17.96%
+2025-06-04 10:43:11,019 - train_models - INFO - Top 10 most important features for 214:
+2025-06-04 10:43:11,019 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.5358
+2025-06-04 10:43:11,020 - train_models - INFO -   NoOfMan_7day_trend: 0.1303
+2025-06-04 10:43:11,020 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0936
+2025-06-04 10:43:11,020 - train_models - INFO -   NoOfMan_1day_trend: 0.0754
+2025-06-04 10:43:11,020 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0279
+2025-06-04 10:43:11,021 - train_models - INFO -   NoOfMan_lag_7: 0.0261
+2025-06-04 10:43:11,021 - train_models - INFO -   NoOfMan_lag_1: 0.0251
+2025-06-04 10:43:11,021 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0123
+2025-06-04 10:43:11,022 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0114
+2025-06-04 10:43:11,022 - train_models - INFO -   DayOfWeek_feat_6: 0.0092
+2025-06-04 10:43:11,022 - train_models - INFO - Cross-validation details for 214:
+2025-06-04 10:43:11,022 - train_models - INFO -   Fold 1: MAE=1.4748, RMSE=1.7929, R²=-0.2129, MAPE=23.19%
+2025-06-04 10:43:11,023 - train_models - INFO -   Fold 2: MAE=0.8719, RMSE=1.2268, R²=0.7327, MAPE=15.81%
+2025-06-04 10:43:11,023 - train_models - INFO -   Fold 3: MAE=0.8148, RMSE=1.3558, R²=0.7903, MAPE=18.04%
+2025-06-04 10:43:11,023 - train_models - INFO -   Fold 4: MAE=1.0794, RMSE=1.5727, R²=0.6599, MAPE=22.63%
+2025-06-04 10:43:11,023 - train_models - INFO -   Fold 5: MAE=0.4340, RMSE=0.5875, R²=0.8574, MAPE=10.13%
+2025-06-04 10:43:11,024 - train_models - INFO - Building model for WorkType: 215
+2025-06-04 10:43:12,142 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:43:30,100 - train_models - INFO - Model for 215 - MAE: 0.8960, RMSE: 1.3572, R²: 0.7939, MAPE: 19.40%
+2025-06-04 10:43:30,100 - train_models - INFO - Top 10 most important features for 215:
+2025-06-04 10:43:30,101 - train_models - INFO -   DayOfWeek_feat_6: 0.2222
+2025-06-04 10:43:30,101 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1930
+2025-06-04 10:43:30,101 - train_models - INFO -   NoOfMan_7day_trend: 0.1337
+2025-06-04 10:43:30,102 - train_models - INFO -   NoOfMan_1day_trend: 0.0940
+2025-06-04 10:43:30,102 - train_models - INFO -   Quantity_rolling_mean_7: 0.0669
+2025-06-04 10:43:30,102 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0539
+2025-06-04 10:43:30,103 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0537
+2025-06-04 10:43:30,103 - train_models - INFO -   NoOfMan_lag_1: 0.0239
+2025-06-04 10:43:30,103 - train_models - INFO -   NoOfMan_lag_7: 0.0213
+2025-06-04 10:43:30,104 - train_models - INFO -   Quantity_same_dow_lag: 0.0186
+2025-06-04 10:43:30,104 - train_models - INFO - Cross-validation details for 215:
+2025-06-04 10:43:30,104 - train_models - INFO -   Fold 1: MAE=0.7512, RMSE=0.9457, R²=0.8081, MAPE=15.88%
+2025-06-04 10:43:30,105 - train_models - INFO -   Fold 2: MAE=1.1751, RMSE=1.9845, R²=0.7437, MAPE=22.29%
+2025-06-04 10:43:30,105 - train_models - INFO -   Fold 3: MAE=0.6940, RMSE=0.9430, R²=0.8029, MAPE=25.43%
+2025-06-04 10:43:30,105 - train_models - INFO -   Fold 4: MAE=1.0490, RMSE=1.7207, R²=0.7856, MAPE=11.05%
+2025-06-04 10:43:30,106 - train_models - INFO -   Fold 5: MAE=0.8106, RMSE=1.1924, R²=0.8292, MAPE=22.35%
+2025-06-04 10:43:30,106 - train_models - INFO - Building model for WorkType: 217
+2025-06-04 10:43:31,067 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:43:45,000 - train_models - INFO - Model for 217 - MAE: 0.5961, RMSE: 0.7765, R²: 0.8410, MAPE: 26.48%
+2025-06-04 10:43:45,001 - train_models - INFO - Top 10 most important features for 217:
+2025-06-04 10:43:45,001 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.4840
+2025-06-04 10:43:45,002 - train_models - INFO -   NoOfMan_7day_trend: 0.2246
+2025-06-04 10:43:45,002 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0860
+2025-06-04 10:43:45,003 - train_models - INFO -   NoOfMan_1day_trend: 0.0468
+2025-06-04 10:43:45,003 - train_models - INFO -   NoOfMan_lag_7: 0.0442
+2025-06-04 10:43:45,003 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0291
+2025-06-04 10:43:45,004 - train_models - INFO -   NoOfMan_lag_1: 0.0219
+2025-06-04 10:43:45,004 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0076
+2025-06-04 10:43:45,004 - train_models - INFO -   Quantity_rolling_mean_7: 0.0045
+2025-06-04 10:43:45,005 - train_models - INFO -   Quantity_lag_7: 0.0045
+2025-06-04 10:43:45,005 - train_models - INFO - Cross-validation details for 217:
+2025-06-04 10:43:45,005 - train_models - INFO -   Fold 1: MAE=0.8285, RMSE=0.9752, R²=0.7121, MAPE=52.21%
+2025-06-04 10:43:45,006 - train_models - INFO -   Fold 2: MAE=0.6699, RMSE=0.8763, R²=0.8463, MAPE=20.13%
+2025-06-04 10:43:45,006 - train_models - INFO -   Fold 3: MAE=0.5029, RMSE=0.6957, R²=0.8652, MAPE=23.55%
+2025-06-04 10:43:45,006 - train_models - INFO -   Fold 4: MAE=0.3502, RMSE=0.4605, R²=0.9214, MAPE=13.17%
+2025-06-04 10:43:45,007 - train_models - INFO -   Fold 5: MAE=0.6291, RMSE=0.8747, R²=0.8599, MAPE=23.34%
+2025-06-04 10:43:45,008 - train_models - INFO - Saving 10 models to C:/forlogssystems/Models
+2025-06-04 10:43:45,450 - train_models - INFO - Model files saved successfully
+2025-06-04 10:43:45,450 - train_models - INFO - Performance summary saved to C:/forlogssystems/Models\model_performance_summary.xlsx
+2025-06-04 10:43:45,452 - train_models - INFO - Model training completed successfully
+2025-06-04 10:44:59,982 - train_models - INFO - Starting the model training process
+2025-06-04 10:44:59,982 - train_models - INFO - Training from SQL database (command line argument)
+2025-06-04 10:44:59,989 - train_models - INFO - Connecting to database ABC on server 192.168.1.43
+2025-06-04 10:45:00,139 - train_models - INFO - Executing SQL query: 
+               SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
+                FROM WorkUtilizationData WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 210, 217) AND SystemHours <> 0
+                AND Hours <> 0 and Quantity > 0
+                AND Date > '2020-01-01'
+                ORDER BY Date
+            
+2025-06-04 10:45:01,207 - train_models - INFO - Read chunk of 10000 rows
+2025-06-04 10:45:01,294 - train_models - INFO - Read chunk of 4010 rows
+2025-06-04 10:45:01,319 - train_models - INFO - Data loaded successfully. Total rows: 14010
+2025-06-04 10:45:01,320 - train_models - INFO - Converting Date column to datetime format
+2025-06-04 10:45:01,368 - train_models - INFO - Engineering features...
+2025-06-04 10:45:01,888 - utils.feature_engineering - INFO - Engineering features
+2025-06-04 10:45:01,916 - utils.feature_engineering - INFO - Feature engineering completed. Added 14 new features.
+2025-06-04 10:45:01,923 - train_models - INFO - Creating lag features...
+2025-06-04 10:45:01,933 - utils.feature_engineering - INFO - Creating lag features for NoOfMan grouped by WorkType
+2025-06-04 10:45:02,144 - utils.feature_engineering - INFO - Lag features created. Dropped 0 rows with NaN values.
+2025-06-04 10:45:02,145 - utils.feature_engineering - INFO - Final shape: (14010, 70)
+2025-06-04 10:45:02,158 - train_models - INFO - Found 10 unique work types
+2025-06-04 10:45:02,158 - train_models - INFO - Building models for 10 work types
+2025-06-04 10:45:02,158 - train_models - INFO - Numeric features: ['NoOfMan_lag_1', 'NoOfMan_lag_2', 'NoOfMan_lag_3', 'NoOfMan_lag_7', 'NoOfMan_rolling_mean_7', 'IsWeekend_feat', 'NoOfMan_rolling_max_7', 'NoOfMan_rolling_min_7', 'NoOfMan_rolling_std_7', 'NoOfMan_same_dow_lag', 'NoOfMan_same_dom_lag', 'NoOfMan_7day_trend', 'NoOfMan_1day_trend', 'Quantity_lag_1', 'Quantity_lag_7', 'Quantity_rolling_mean_7', 'Quantity_per_Worker', 'Relative_Quantity', 'Quantity_same_dow_lag', 'ResourceKPI_lag_1', 'SystemKPI_lag_1', 'Combined_KPI_lag_1', 'Hours_SystemHours_Ratio_lag_1', 'Hours_per_Quantity', 'SystemHours_per_Quantity', 'Workers_Predicted_from_Quantity', 'Quantity_7day_trend', 'Quantity_1day_trend']
+2025-06-04 10:45:02,159 - train_models - INFO - Categorical features: ['DayOfWeek_feat', 'Month_feat', 'Quarter', 'Year_feat']
+2025-06-04 10:45:02,159 - train_models - INFO - Building model for WorkType: 202
+2025-06-04 10:45:04,607 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:45:35,773 - train_models - INFO - Model for 202 - MAE: 0.2229, RMSE: 0.3299, R²: 0.7714, MAPE: 10.48%
+2025-06-04 10:45:35,773 - train_models - INFO - Top 10 most important features for 202:
+2025-06-04 10:45:35,774 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.3783
+2025-06-04 10:45:35,774 - train_models - INFO -   NoOfMan_7day_trend: 0.1765
+2025-06-04 10:45:35,774 - train_models - INFO -   NoOfMan_1day_trend: 0.1478
+2025-06-04 10:45:35,775 - train_models - INFO -   NoOfMan_lag_1: 0.0889
+2025-06-04 10:45:35,775 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0661
+2025-06-04 10:45:35,775 - train_models - INFO -   NoOfMan_lag_7: 0.0593
+2025-06-04 10:45:35,776 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0441
+2025-06-04 10:45:35,776 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0045
+2025-06-04 10:45:35,776 - train_models - INFO -   Quantity_rolling_mean_7: 0.0024
+2025-06-04 10:45:35,776 - train_models - INFO -   Quantity_1day_trend: 0.0022
+2025-06-04 10:45:35,777 - train_models - INFO - Cross-validation details for 202:
+2025-06-04 10:45:35,777 - train_models - INFO -   Fold 1: MAE=0.2576, RMSE=0.4312, R²=0.4673, MAPE=13.34%
+2025-06-04 10:45:35,777 - train_models - INFO -   Fold 2: MAE=0.1795, RMSE=0.2531, R²=0.8425, MAPE=9.65%
+2025-06-04 10:45:35,778 - train_models - INFO -   Fold 3: MAE=0.2531, RMSE=0.3834, R²=0.7904, MAPE=12.35%
+2025-06-04 10:45:35,778 - train_models - INFO -   Fold 4: MAE=0.1841, RMSE=0.2338, R²=0.8907, MAPE=8.38%
+2025-06-04 10:45:35,778 - train_models - INFO -   Fold 5: MAE=0.2400, RMSE=0.3481, R²=0.8659, MAPE=8.66%
+2025-06-04 10:45:35,779 - train_models - INFO - Building model for WorkType: 203
+2025-06-04 10:45:38,184 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:46:12,843 - train_models - INFO - Model for 203 - MAE: 0.2343, RMSE: 0.3439, R²: 0.8956, MAPE: 5.06%
+2025-06-04 10:46:12,844 - train_models - INFO - Top 10 most important features for 203:
+2025-06-04 10:46:12,844 - train_models - INFO -   NoOfMan_7day_trend: 0.3292
+2025-06-04 10:46:12,844 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1933
+2025-06-04 10:46:12,845 - train_models - INFO -   NoOfMan_rolling_max_7: 0.1197
+2025-06-04 10:46:12,845 - train_models - INFO -   NoOfMan_1day_trend: 0.0993
+2025-06-04 10:46:12,845 - train_models - INFO -   NoOfMan_lag_7: 0.0881
+2025-06-04 10:46:12,846 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0736
+2025-06-04 10:46:12,846 - train_models - INFO -   NoOfMan_lag_1: 0.0569
+2025-06-04 10:46:12,846 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0046
+2025-06-04 10:46:12,847 - train_models - INFO -   Quantity_same_dow_lag: 0.0026
+2025-06-04 10:46:12,847 - train_models - INFO -   NoOfMan_lag_3: 0.0026
+2025-06-04 10:46:12,847 - train_models - INFO - Cross-validation details for 203:
+2025-06-04 10:46:12,847 - train_models - INFO -   Fold 1: MAE=0.2800, RMSE=0.3831, R²=0.8395, MAPE=6.01%
+2025-06-04 10:46:12,848 - train_models - INFO -   Fold 2: MAE=0.3162, RMSE=0.5086, R²=0.8442, MAPE=5.88%
+2025-06-04 10:46:12,848 - train_models - INFO -   Fold 3: MAE=0.2328, RMSE=0.3268, R²=0.9162, MAPE=4.92%
+2025-06-04 10:46:12,848 - train_models - INFO -   Fold 4: MAE=0.1651, RMSE=0.2487, R²=0.9428, MAPE=3.86%
+2025-06-04 10:46:12,849 - train_models - INFO -   Fold 5: MAE=0.1775, RMSE=0.2523, R²=0.9351, MAPE=4.61%
+2025-06-04 10:46:12,849 - train_models - INFO - Building model for WorkType: 206
+2025-06-04 10:46:15,723 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:47:01,243 - train_models - INFO - Model for 206 - MAE: 1.5442, RMSE: 2.4875, R²: 0.9072, MAPE: 8.85%
+2025-06-04 10:47:01,244 - train_models - INFO - Top 10 most important features for 206:
+2025-06-04 10:47:01,244 - train_models - INFO -   NoOfMan_same_dow_lag: 0.4899
+2025-06-04 10:47:01,244 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1514
+2025-06-04 10:47:01,245 - train_models - INFO -   DayOfWeek_feat_6: 0.0861
+2025-06-04 10:47:01,245 - train_models - INFO -   NoOfMan_1day_trend: 0.0803
+2025-06-04 10:47:01,245 - train_models - INFO -   NoOfMan_7day_trend: 0.0509
+2025-06-04 10:47:01,246 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0352
+2025-06-04 10:47:01,246 - train_models - INFO -   NoOfMan_lag_1: 0.0294
+2025-06-04 10:47:01,246 - train_models - INFO -   Quantity_rolling_mean_7: 0.0161
+2025-06-04 10:47:01,247 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0099
+2025-06-04 10:47:01,247 - train_models - INFO -   Quantity_same_dow_lag: 0.0080
+2025-06-04 10:47:01,247 - train_models - INFO - Cross-validation details for 206:
+2025-06-04 10:47:01,248 - train_models - INFO -   Fold 1: MAE=2.1727, RMSE=3.2760, R²=0.8552, MAPE=10.77%
+2025-06-04 10:47:01,248 - train_models - INFO -   Fold 2: MAE=1.6716, RMSE=2.4473, R²=0.9164, MAPE=8.54%
+2025-06-04 10:47:01,248 - train_models - INFO -   Fold 3: MAE=1.5889, RMSE=2.9625, R²=0.8683, MAPE=11.04%
+2025-06-04 10:47:01,249 - train_models - INFO -   Fold 4: MAE=0.9986, RMSE=1.4919, R²=0.9586, MAPE=7.07%
+2025-06-04 10:47:01,249 - train_models - INFO -   Fold 5: MAE=1.2890, RMSE=2.2597, R²=0.9376, MAPE=6.86%
+2025-06-04 10:47:01,249 - train_models - INFO - Building model for WorkType: 209
+2025-06-04 10:47:03,599 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:47:40,123 - train_models - INFO - Model for 209 - MAE: 0.9220, RMSE: 1.5358, R²: 0.8666, MAPE: 12.66%
+2025-06-04 10:47:40,124 - train_models - INFO - Top 10 most important features for 209:
+2025-06-04 10:47:40,124 - train_models - INFO -   NoOfMan_7day_trend: 0.4262
+2025-06-04 10:47:40,124 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1845
+2025-06-04 10:47:40,125 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0988
+2025-06-04 10:47:40,125 - train_models - INFO -   NoOfMan_1day_trend: 0.0666
+2025-06-04 10:47:40,125 - train_models - INFO -   Quantity_rolling_mean_7: 0.0482
+2025-06-04 10:47:40,125 - train_models - INFO -   NoOfMan_lag_7: 0.0472
+2025-06-04 10:47:40,126 - train_models - INFO -   NoOfMan_lag_1: 0.0292
+2025-06-04 10:47:40,126 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0211
+2025-06-04 10:47:40,126 - train_models - INFO -   Quantity_1day_trend: 0.0136
+2025-06-04 10:47:40,127 - train_models - INFO -   Quantity_7day_trend: 0.0106
+2025-06-04 10:47:40,127 - train_models - INFO - Cross-validation details for 209:
+2025-06-04 10:47:40,127 - train_models - INFO -   Fold 1: MAE=1.0064, RMSE=1.6293, R²=0.8160, MAPE=15.14%
+2025-06-04 10:47:40,128 - train_models - INFO -   Fold 2: MAE=0.9758, RMSE=1.7341, R²=0.8429, MAPE=11.87%
+2025-06-04 10:47:40,128 - train_models - INFO -   Fold 3: MAE=0.7456, RMSE=1.0052, R²=0.9273, MAPE=11.77%
+2025-06-04 10:47:40,128 - train_models - INFO -   Fold 4: MAE=0.9270, RMSE=1.6882, R²=0.8612, MAPE=11.24%
+2025-06-04 10:47:40,129 - train_models - INFO -   Fold 5: MAE=0.9552, RMSE=1.6219, R²=0.8859, MAPE=13.29%
+2025-06-04 10:47:40,129 - train_models - INFO - Building model for WorkType: 210
+2025-06-04 10:47:42,800 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:48:22,182 - train_models - INFO - Model for 210 - MAE: 0.9189, RMSE: 1.3737, R²: 0.8469, MAPE: 20.24%
+2025-06-04 10:48:22,183 - train_models - INFO - Top 10 most important features for 210:
+2025-06-04 10:48:22,183 - train_models - INFO -   NoOfMan_same_dow_lag: 0.2759
+2025-06-04 10:48:22,183 - train_models - INFO -   NoOfMan_7day_trend: 0.2052
+2025-06-04 10:48:22,183 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1556
+2025-06-04 10:48:22,184 - train_models - INFO -   NoOfMan_1day_trend: 0.0593
+2025-06-04 10:48:22,184 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0517
+2025-06-04 10:48:22,184 - train_models - INFO -   NoOfMan_lag_7: 0.0371
+2025-06-04 10:48:22,184 - train_models - INFO -   NoOfMan_lag_1: 0.0293
+2025-06-04 10:48:22,185 - train_models - INFO -   DayOfWeek_feat_6: 0.0264
+2025-06-04 10:48:22,185 - train_models - INFO -   Quantity_1day_trend: 0.0229
+2025-06-04 10:48:22,185 - train_models - INFO -   Quantity_7day_trend: 0.0220
+2025-06-04 10:48:22,185 - train_models - INFO - Cross-validation details for 210:
+2025-06-04 10:48:22,186 - train_models - INFO -   Fold 1: MAE=0.7800, RMSE=1.0523, R²=0.8591, MAPE=16.12%
+2025-06-04 10:48:22,186 - train_models - INFO -   Fold 2: MAE=0.7762, RMSE=1.2159, R²=0.8652, MAPE=11.17%
+2025-06-04 10:48:22,186 - train_models - INFO -   Fold 3: MAE=0.7622, RMSE=1.0721, R²=0.8958, MAPE=10.33%
+2025-06-04 10:48:22,187 - train_models - INFO -   Fold 4: MAE=1.1406, RMSE=1.6543, R²=0.8063, MAPE=37.79%
+2025-06-04 10:48:22,187 - train_models - INFO -   Fold 5: MAE=1.1358, RMSE=1.8737, R²=0.8081, MAPE=25.79%
+2025-06-04 10:48:22,187 - train_models - INFO - Building model for WorkType: 211
+2025-06-04 10:48:24,751 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:49:07,198 - train_models - INFO - Model for 211 - MAE: 0.6207, RMSE: 0.9640, R²: 0.9077, MAPE: 10.55%
+2025-06-04 10:49:07,198 - train_models - INFO - Top 10 most important features for 211:
+2025-06-04 10:49:07,199 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.3378
+2025-06-04 10:49:07,199 - train_models - INFO -   NoOfMan_1day_trend: 0.1839
+2025-06-04 10:49:07,199 - train_models - INFO -   NoOfMan_7day_trend: 0.1623
+2025-06-04 10:49:07,200 - train_models - INFO -   DayOfWeek_feat_6: 0.0829
+2025-06-04 10:49:07,200 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0665
+2025-06-04 10:49:07,200 - train_models - INFO -   NoOfMan_lag_1: 0.0546
+2025-06-04 10:49:07,201 - train_models - INFO -   NoOfMan_lag_7: 0.0365
+2025-06-04 10:49:07,201 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0197
+2025-06-04 10:49:07,201 - train_models - INFO -   Quantity_same_dow_lag: 0.0099
+2025-06-04 10:49:07,201 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0044
+2025-06-04 10:49:07,202 - train_models - INFO - Cross-validation details for 211:
+2025-06-04 10:49:07,202 - train_models - INFO -   Fold 1: MAE=0.7869, RMSE=1.2848, R²=0.8185, MAPE=12.75%
+2025-06-04 10:49:07,202 - train_models - INFO -   Fold 2: MAE=0.7546, RMSE=1.1883, R²=0.8898, MAPE=9.42%
+2025-06-04 10:49:07,203 - train_models - INFO -   Fold 3: MAE=0.5021, RMSE=0.8040, R²=0.9337, MAPE=8.71%
+2025-06-04 10:49:07,203 - train_models - INFO -   Fold 4: MAE=0.5702, RMSE=0.8443, R²=0.9445, MAPE=11.77%
+2025-06-04 10:49:07,203 - train_models - INFO -   Fold 5: MAE=0.4895, RMSE=0.6986, R²=0.9521, MAPE=10.08%
+2025-06-04 10:49:07,204 - train_models - INFO - Building model for WorkType: 213
+2025-06-04 10:49:09,709 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:49:47,774 - train_models - INFO - Model for 213 - MAE: 0.4055, RMSE: 0.5908, R²: 0.8758, MAPE: 17.53%
+2025-06-04 10:49:47,775 - train_models - INFO - Top 10 most important features for 213:
+2025-06-04 10:49:47,775 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.4451
+2025-06-04 10:49:47,775 - train_models - INFO -   NoOfMan_7day_trend: 0.2281
+2025-06-04 10:49:47,776 - train_models - INFO -   NoOfMan_1day_trend: 0.1352
+2025-06-04 10:49:47,776 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0465
+2025-06-04 10:49:47,776 - train_models - INFO -   NoOfMan_lag_1: 0.0447
+2025-06-04 10:49:47,777 - train_models - INFO -   NoOfMan_lag_7: 0.0293
+2025-06-04 10:49:47,777 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0262
+2025-06-04 10:49:47,777 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0054
+2025-06-04 10:49:47,778 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0031
+2025-06-04 10:49:47,778 - train_models - INFO -   Quantity_1day_trend: 0.0031
+2025-06-04 10:49:47,778 - train_models - INFO - Cross-validation details for 213:
+2025-06-04 10:49:47,779 - train_models - INFO -   Fold 1: MAE=0.6565, RMSE=0.9082, R²=0.8015, MAPE=28.48%
+2025-06-04 10:49:47,779 - train_models - INFO -   Fold 2: MAE=0.3939, RMSE=0.5173, R²=0.8950, MAPE=20.63%
+2025-06-04 10:49:47,779 - train_models - INFO -   Fold 3: MAE=0.3676, RMSE=0.6233, R²=0.8399, MAPE=17.14%
+2025-06-04 10:49:47,780 - train_models - INFO -   Fold 4: MAE=0.2676, RMSE=0.3909, R²=0.9393, MAPE=9.96%
+2025-06-04 10:49:47,780 - train_models - INFO -   Fold 5: MAE=0.3421, RMSE=0.5144, R²=0.9031, MAPE=11.44%
+2025-06-04 10:49:47,780 - train_models - INFO - Building model for WorkType: 214
+2025-06-04 10:49:50,396 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:50:28,035 - train_models - INFO - Model for 214 - MAE: 0.4981, RMSE: 0.7609, R²: 0.8800, MAPE: 11.01%
+2025-06-04 10:50:28,035 - train_models - INFO - Top 10 most important features for 214:
+2025-06-04 10:50:28,036 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.5064
+2025-06-04 10:50:28,036 - train_models - INFO -   NoOfMan_7day_trend: 0.1831
+2025-06-04 10:50:28,036 - train_models - INFO -   NoOfMan_1day_trend: 0.0846
+2025-06-04 10:50:28,037 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0667
+2025-06-04 10:50:28,037 - train_models - INFO -   NoOfMan_lag_7: 0.0471
+2025-06-04 10:50:28,037 - train_models - INFO -   NoOfMan_lag_1: 0.0386
+2025-06-04 10:50:28,038 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0154
+2025-06-04 10:50:28,038 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0100
+2025-06-04 10:50:28,038 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0067
+2025-06-04 10:50:28,039 - train_models - INFO -   NoOfMan_lag_2: 0.0041
+2025-06-04 10:50:28,039 - train_models - INFO - Cross-validation details for 214:
+2025-06-04 10:50:28,039 - train_models - INFO -   Fold 1: MAE=0.5934, RMSE=0.7755, R²=0.8409, MAPE=14.92%
+2025-06-04 10:50:28,040 - train_models - INFO -   Fold 2: MAE=0.4116, RMSE=0.5611, R²=0.9087, MAPE=9.57%
+2025-06-04 10:50:28,040 - train_models - INFO -   Fold 3: MAE=0.3226, RMSE=0.4430, R²=0.9399, MAPE=9.55%
+2025-06-04 10:50:28,040 - train_models - INFO -   Fold 4: MAE=0.5005, RMSE=0.9532, R²=0.8517, MAPE=8.96%
+2025-06-04 10:50:28,040 - train_models - INFO -   Fold 5: MAE=0.6624, RMSE=1.0718, R²=0.8588, MAPE=12.05%
+2025-06-04 10:50:28,041 - train_models - INFO - Building model for WorkType: 215
+2025-06-04 10:50:30,858 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:51:15,446 - train_models - INFO - Model for 215 - MAE: 0.6748, RMSE: 1.0287, R²: 0.9023, MAPE: 14.78%
+2025-06-04 10:51:15,447 - train_models - INFO - Top 10 most important features for 215:
+2025-06-04 10:51:15,447 - train_models - INFO -   DayOfWeek_feat_6: 0.1944
+2025-06-04 10:51:15,448 - train_models - INFO -   NoOfMan_7day_trend: 0.1698
+2025-06-04 10:51:15,448 - train_models - INFO -   NoOfMan_1day_trend: 0.1436
+2025-06-04 10:51:15,448 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1342
+2025-06-04 10:51:15,449 - train_models - INFO -   NoOfMan_same_dow_lag: 0.1043
+2025-06-04 10:51:15,449 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0770
+2025-06-04 10:51:15,449 - train_models - INFO -   Quantity_rolling_mean_7: 0.0330
+2025-06-04 10:51:15,450 - train_models - INFO -   NoOfMan_lag_1: 0.0319
+2025-06-04 10:51:15,450 - train_models - INFO -   NoOfMan_lag_7: 0.0220
+2025-06-04 10:51:15,450 - train_models - INFO -   Quantity_7day_trend: 0.0128
+2025-06-04 10:51:15,451 - train_models - INFO - Cross-validation details for 215:
+2025-06-04 10:51:15,451 - train_models - INFO -   Fold 1: MAE=0.7818, RMSE=1.0442, R²=0.8787, MAPE=20.26%
+2025-06-04 10:51:15,451 - train_models - INFO -   Fold 2: MAE=0.8015, RMSE=1.1338, R²=0.8976, MAPE=16.43%
+2025-06-04 10:51:15,452 - train_models - INFO -   Fold 3: MAE=0.6772, RMSE=1.1154, R²=0.8914, MAPE=12.44%
+2025-06-04 10:51:15,452 - train_models - INFO -   Fold 4: MAE=0.5535, RMSE=0.8557, R²=0.9280, MAPE=14.30%
+2025-06-04 10:51:15,453 - train_models - INFO -   Fold 5: MAE=0.5598, RMSE=0.9944, R²=0.9156, MAPE=10.49%
+2025-06-04 10:51:15,453 - train_models - INFO - Building model for WorkType: 217
+2025-06-04 10:51:17,799 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:51:50,702 - train_models - INFO - Model for 217 - MAE: 0.4236, RMSE: 0.6231, R²: 0.8936, MAPE: 16.75%
+2025-06-04 10:51:50,703 - train_models - INFO - Top 10 most important features for 217:
+2025-06-04 10:51:50,703 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.5453
+2025-06-04 10:51:50,704 - train_models - INFO -   NoOfMan_7day_trend: 0.1477
+2025-06-04 10:51:50,704 - train_models - INFO -   NoOfMan_rolling_max_7: 0.1398
+2025-06-04 10:51:50,705 - train_models - INFO -   NoOfMan_1day_trend: 0.0429
+2025-06-04 10:51:50,705 - train_models - INFO -   NoOfMan_lag_7: 0.0332
+2025-06-04 10:51:50,705 - train_models - INFO -   NoOfMan_lag_1: 0.0290
+2025-06-04 10:51:50,706 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0229
+2025-06-04 10:51:50,706 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0065
+2025-06-04 10:51:50,706 - train_models - INFO -   SystemHours_per_Quantity: 0.0038
+2025-06-04 10:51:50,706 - train_models - INFO -   NoOfMan_lag_3: 0.0022
+2025-06-04 10:51:50,707 - train_models - INFO - Cross-validation details for 217:
+2025-06-04 10:51:50,707 - train_models - INFO -   Fold 1: MAE=0.5038, RMSE=0.6754, R²=0.8707, MAPE=21.27%
+2025-06-04 10:51:50,707 - train_models - INFO -   Fold 2: MAE=0.4083, RMSE=0.5142, R²=0.8955, MAPE=20.05%
+2025-06-04 10:51:50,708 - train_models - INFO -   Fold 3: MAE=0.4350, RMSE=0.7214, R²=0.8782, MAPE=14.64%
+2025-06-04 10:51:50,708 - train_models - INFO -   Fold 4: MAE=0.3682, RMSE=0.5062, R²=0.9441, MAPE=13.39%
+2025-06-04 10:51:50,708 - train_models - INFO -   Fold 5: MAE=0.4029, RMSE=0.6981, R²=0.8795, MAPE=14.41%
+2025-06-04 10:51:50,709 - train_models - INFO - Saving 10 models to C:/forlogssystems/Models
+2025-06-04 10:51:51,267 - train_models - INFO - Model files saved successfully
+2025-06-04 10:51:51,267 - train_models - INFO - Performance summary saved to C:/forlogssystems/Models\model_performance_summary.xlsx
+2025-06-04 10:51:51,271 - train_models - INFO - Model training completed successfully
+2025-06-04 10:52:43,859 - train_models - INFO - Starting the model training process
+2025-06-04 10:52:43,859 - train_models - INFO - Training from SQL database (command line argument)
+2025-06-04 10:52:43,864 - train_models - INFO - Connecting to database ABC on server 192.168.1.43
+2025-06-04 10:52:44,034 - train_models - INFO - Executing SQL query: 
+               SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
+                FROM WorkUtilizationData WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 210, 217) AND SystemHours <> 0
+                AND Hours <> 0 and Quantity > 0
+                ORDER BY Date
+            
+2025-06-04 10:52:44,932 - train_models - INFO - Read chunk of 10000 rows
+2025-06-04 10:52:45,125 - train_models - INFO - Read chunk of 5326 rows
+2025-06-04 10:52:45,148 - train_models - INFO - Data loaded successfully. Total rows: 15326
+2025-06-04 10:52:45,149 - train_models - INFO - Converting Date column to datetime format
+2025-06-04 10:52:45,177 - train_models - INFO - Engineering features...
+2025-06-04 10:52:45,792 - utils.feature_engineering - INFO - Engineering features
+2025-06-04 10:52:45,842 - utils.feature_engineering - INFO - Feature engineering completed. Added 14 new features.
+2025-06-04 10:52:45,852 - train_models - INFO - Creating lag features...
+2025-06-04 10:52:45,872 - utils.feature_engineering - INFO - Creating lag features for NoOfMan grouped by WorkType
+2025-06-04 10:52:46,107 - utils.feature_engineering - INFO - Lag features created. Dropped 0 rows with NaN values.
+2025-06-04 10:52:46,107 - utils.feature_engineering - INFO - Final shape: (15326, 70)
+2025-06-04 10:52:46,124 - train_models - INFO - Found 10 unique work types
+2025-06-04 10:52:46,125 - train_models - INFO - Building models for 10 work types
+2025-06-04 10:52:46,125 - train_models - INFO - Numeric features: ['NoOfMan_lag_1', 'NoOfMan_lag_2', 'NoOfMan_lag_3', 'NoOfMan_lag_7', 'NoOfMan_rolling_mean_7', 'IsWeekend_feat', 'NoOfMan_rolling_max_7', 'NoOfMan_rolling_min_7', 'NoOfMan_rolling_std_7', 'NoOfMan_same_dow_lag', 'NoOfMan_same_dom_lag', 'NoOfMan_7day_trend', 'NoOfMan_1day_trend', 'Quantity_lag_1', 'Quantity_lag_7', 'Quantity_rolling_mean_7', 'Quantity_per_Worker', 'Relative_Quantity', 'Quantity_same_dow_lag', 'ResourceKPI_lag_1', 'SystemKPI_lag_1', 'Combined_KPI_lag_1', 'Hours_SystemHours_Ratio_lag_1', 'Hours_per_Quantity', 'SystemHours_per_Quantity', 'Workers_Predicted_from_Quantity', 'Quantity_7day_trend', 'Quantity_1day_trend']
+2025-06-04 10:52:46,125 - train_models - INFO - Categorical features: ['DayOfWeek_feat', 'Month_feat', 'Quarter', 'Year_feat']
+2025-06-04 10:52:46,126 - train_models - INFO - Building model for WorkType: 202
+2025-06-04 10:52:49,417 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:53:26,492 - train_models - INFO - Model for 202 - MAE: 0.2121, RMSE: 0.3305, R²: 0.7462, MAPE: 10.12%
+2025-06-04 10:53:26,492 - train_models - INFO - Top 10 most important features for 202:
+2025-06-04 10:53:26,493 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.3965
+2025-06-04 10:53:26,493 - train_models - INFO -   NoOfMan_7day_trend: 0.1981
+2025-06-04 10:53:26,493 - train_models - INFO -   NoOfMan_1day_trend: 0.1273
+2025-06-04 10:53:26,494 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0676
+2025-06-04 10:53:26,494 - train_models - INFO -   NoOfMan_lag_1: 0.0674
+2025-06-04 10:53:26,494 - train_models - INFO -   NoOfMan_lag_7: 0.0659
+2025-06-04 10:53:26,494 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0386
+2025-06-04 10:53:26,495 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0045
+2025-06-04 10:53:26,495 - train_models - INFO -   Quantity_rolling_mean_7: 0.0021
+2025-06-04 10:53:26,495 - train_models - INFO -   Quantity_lag_7: 0.0021
+2025-06-04 10:53:26,496 - train_models - INFO - Cross-validation details for 202:
+2025-06-04 10:53:26,497 - train_models - INFO -   Fold 1: MAE=0.2222, RMSE=0.4181, R²=0.3874, MAPE=11.30%
+2025-06-04 10:53:26,497 - train_models - INFO -   Fold 2: MAE=0.2016, RMSE=0.3019, R²=0.7901, MAPE=11.19%
+2025-06-04 10:53:26,499 - train_models - INFO -   Fold 3: MAE=0.2276, RMSE=0.3600, R²=0.7983, MAPE=11.70%
+2025-06-04 10:53:26,502 - train_models - INFO -   Fold 4: MAE=0.1745, RMSE=0.2277, R²=0.8945, MAPE=8.04%
+2025-06-04 10:53:26,510 - train_models - INFO -   Fold 5: MAE=0.2347, RMSE=0.3450, R²=0.8606, MAPE=8.38%
+2025-06-04 10:53:26,511 - train_models - INFO - Building model for WorkType: 203
+2025-06-04 10:53:29,424 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:54:10,803 - train_models - INFO - Model for 203 - MAE: 0.2242, RMSE: 0.3229, R²: 0.9147, MAPE: 4.69%
+2025-06-04 10:54:10,804 - train_models - INFO - Top 10 most important features for 203:
+2025-06-04 10:54:10,804 - train_models - INFO -   NoOfMan_7day_trend: 0.3049
+2025-06-04 10:54:10,804 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.2341
+2025-06-04 10:54:10,805 - train_models - INFO -   NoOfMan_rolling_max_7: 0.1217
+2025-06-04 10:54:10,805 - train_models - INFO -   NoOfMan_1day_trend: 0.0916
+2025-06-04 10:54:10,806 - train_models - INFO -   NoOfMan_lag_7: 0.0841
+2025-06-04 10:54:10,806 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0720
+2025-06-04 10:54:10,806 - train_models - INFO -   NoOfMan_lag_1: 0.0531
+2025-06-04 10:54:10,807 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0052
+2025-06-04 10:54:10,807 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0028
+2025-06-04 10:54:10,807 - train_models - INFO -   NoOfMan_lag_2: 0.0026
+2025-06-04 10:54:10,808 - train_models - INFO - Cross-validation details for 203:
+2025-06-04 10:54:10,808 - train_models - INFO -   Fold 1: MAE=0.2863, RMSE=0.3951, R²=0.8770, MAPE=5.74%
+2025-06-04 10:54:10,809 - train_models - INFO -   Fold 2: MAE=0.2562, RMSE=0.3466, R²=0.9125, MAPE=5.04%
+2025-06-04 10:54:10,809 - train_models - INFO -   Fold 3: MAE=0.2273, RMSE=0.3641, R²=0.9001, MAPE=4.25%
+2025-06-04 10:54:10,809 - train_models - INFO -   Fold 4: MAE=0.1799, RMSE=0.2720, R²=0.9400, MAPE=4.25%
+2025-06-04 10:54:10,810 - train_models - INFO -   Fold 5: MAE=0.1711, RMSE=0.2369, R²=0.9440, MAPE=4.19%
+2025-06-04 10:54:10,810 - train_models - INFO - Building model for WorkType: 206
+2025-06-04 10:54:14,934 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:55:33,683 - train_models - INFO - Model for 206 - MAE: 1.4057, RMSE: 2.1460, R²: 0.9309, MAPE: 8.05%
+2025-06-04 10:55:33,683 - train_models - INFO - Top 10 most important features for 206:
+2025-06-04 10:55:33,684 - train_models - INFO -   NoOfMan_same_dow_lag: 0.5184
+2025-06-04 10:55:33,684 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1536
+2025-06-04 10:55:33,684 - train_models - INFO -   DayOfWeek_feat_6: 0.0712
+2025-06-04 10:55:33,685 - train_models - INFO -   NoOfMan_1day_trend: 0.0702
+2025-06-04 10:55:33,685 - train_models - INFO -   NoOfMan_7day_trend: 0.0527
+2025-06-04 10:55:33,685 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0367
+2025-06-04 10:55:33,686 - train_models - INFO -   NoOfMan_lag_1: 0.0269
+2025-06-04 10:55:33,686 - train_models - INFO -   Quantity_rolling_mean_7: 0.0088
+2025-06-04 10:55:33,686 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0072
+2025-06-04 10:55:33,687 - train_models - INFO -   NoOfMan_lag_7: 0.0070
+2025-06-04 10:55:33,687 - train_models - INFO - Cross-validation details for 206:
+2025-06-04 10:55:33,687 - train_models - INFO -   Fold 1: MAE=1.7286, RMSE=2.3812, R²=0.9229, MAPE=9.91%
+2025-06-04 10:55:33,688 - train_models - INFO -   Fold 2: MAE=1.6104, RMSE=2.3076, R²=0.9245, MAPE=8.90%
+2025-06-04 10:55:33,688 - train_models - INFO -   Fold 3: MAE=1.5339, RMSE=2.6543, R²=0.8944, MAPE=8.86%
+2025-06-04 10:55:33,688 - train_models - INFO -   Fold 4: MAE=0.9707, RMSE=1.4758, R²=0.9589, MAPE=6.40%
+2025-06-04 10:55:33,689 - train_models - INFO -   Fold 5: MAE=1.1851, RMSE=1.9113, R²=0.9540, MAPE=6.17%
+2025-06-04 10:55:33,689 - train_models - INFO - Building model for WorkType: 209
+2025-06-04 10:55:36,843 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:56:30,344 - train_models - INFO - Model for 209 - MAE: 0.8914, RMSE: 1.3908, R²: 0.8881, MAPE: 12.40%
+2025-06-04 10:56:30,345 - train_models - INFO - Top 10 most important features for 209:
+2025-06-04 10:56:30,345 - train_models - INFO -   NoOfMan_7day_trend: 0.4015
+2025-06-04 10:56:30,345 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.2200
+2025-06-04 10:56:30,346 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0985
+2025-06-04 10:56:30,346 - train_models - INFO -   NoOfMan_1day_trend: 0.0666
+2025-06-04 10:56:30,346 - train_models - INFO -   NoOfMan_lag_7: 0.0501
+2025-06-04 10:56:30,347 - train_models - INFO -   Quantity_rolling_mean_7: 0.0481
+2025-06-04 10:56:30,347 - train_models - INFO -   NoOfMan_lag_1: 0.0253
+2025-06-04 10:56:30,347 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0192
+2025-06-04 10:56:30,348 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0089
+2025-06-04 10:56:30,348 - train_models - INFO -   Quantity_7day_trend: 0.0088
+2025-06-04 10:56:30,348 - train_models - INFO - Cross-validation details for 209:
+2025-06-04 10:56:30,349 - train_models - INFO -   Fold 1: MAE=1.0077, RMSE=1.4725, R²=0.8551, MAPE=13.84%
+2025-06-04 10:56:30,349 - train_models - INFO -   Fold 2: MAE=1.0231, RMSE=1.7583, R²=0.8406, MAPE=15.03%
+2025-06-04 10:56:30,349 - train_models - INFO -   Fold 3: MAE=0.6608, RMSE=0.8807, R²=0.9392, MAPE=10.53%
+2025-06-04 10:56:30,349 - train_models - INFO -   Fold 4: MAE=0.8517, RMSE=1.3990, R²=0.9003, MAPE=11.23%
+2025-06-04 10:56:30,350 - train_models - INFO -   Fold 5: MAE=0.9135, RMSE=1.4435, R²=0.9052, MAPE=11.37%
+2025-06-04 10:56:30,350 - train_models - INFO - Building model for WorkType: 210
+2025-06-04 10:56:34,125 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:57:28,907 - train_models - INFO - Model for 210 - MAE: 0.8222, RMSE: 1.1880, R²: 0.8881, MAPE: 17.56%
+2025-06-04 10:57:28,908 - train_models - INFO - Top 10 most important features for 210:
+2025-06-04 10:57:28,908 - train_models - INFO -   NoOfMan_7day_trend: 0.2583
+2025-06-04 10:57:28,908 - train_models - INFO -   NoOfMan_same_dow_lag: 0.1966
+2025-06-04 10:57:28,909 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1765
+2025-06-04 10:57:28,909 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0657
+2025-06-04 10:57:28,909 - train_models - INFO -   NoOfMan_1day_trend: 0.0639
+2025-06-04 10:57:28,910 - train_models - INFO -   NoOfMan_lag_7: 0.0376
+2025-06-04 10:57:28,910 - train_models - INFO -   Quantity_1day_trend: 0.0322
+2025-06-04 10:57:28,910 - train_models - INFO -   NoOfMan_lag_1: 0.0321
+2025-06-04 10:57:28,911 - train_models - INFO -   DayOfWeek_feat_6: 0.0257
+2025-06-04 10:57:28,911 - train_models - INFO -   Quantity_7day_trend: 0.0185
+2025-06-04 10:57:28,911 - train_models - INFO - Cross-validation details for 210:
+2025-06-04 10:57:28,912 - train_models - INFO -   Fold 1: MAE=0.8420, RMSE=1.1683, R²=0.8776, MAPE=13.96%
+2025-06-04 10:57:28,912 - train_models - INFO -   Fold 2: MAE=0.7272, RMSE=1.0372, R²=0.9014, MAPE=12.35%
+2025-06-04 10:57:28,913 - train_models - INFO -   Fold 3: MAE=0.6305, RMSE=0.8758, R²=0.9264, MAPE=8.81%
+2025-06-04 10:57:28,913 - train_models - INFO -   Fold 4: MAE=0.9211, RMSE=1.2740, R²=0.8757, MAPE=27.00%
+2025-06-04 10:57:28,913 - train_models - INFO -   Fold 5: MAE=0.9903, RMSE=1.5846, R²=0.8595, MAPE=25.67%
+2025-06-04 10:57:28,913 - train_models - INFO - Building model for WorkType: 211
+2025-06-04 10:57:32,322 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:58:29,861 - train_models - INFO - Model for 211 - MAE: 0.6443, RMSE: 0.9984, R²: 0.9099, MAPE: 11.02%
+2025-06-04 10:58:29,861 - train_models - INFO - Top 10 most important features for 211:
+2025-06-04 10:58:29,862 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.3618
+2025-06-04 10:58:29,863 - train_models - INFO -   NoOfMan_1day_trend: 0.1848
+2025-06-04 10:58:29,864 - train_models - INFO -   NoOfMan_7day_trend: 0.1830
+2025-06-04 10:58:29,864 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0695
+2025-06-04 10:58:29,865 - train_models - INFO -   NoOfMan_lag_1: 0.0453
+2025-06-04 10:58:29,866 - train_models - INFO -   NoOfMan_lag_7: 0.0362
+2025-06-04 10:58:29,866 - train_models - INFO -   DayOfWeek_feat_6: 0.0334
+2025-06-04 10:58:29,867 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0257
+2025-06-04 10:58:29,868 - train_models - INFO -   Quantity_same_dow_lag: 0.0125
+2025-06-04 10:58:29,869 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0054
+2025-06-04 10:58:29,869 - train_models - INFO - Cross-validation details for 211:
+2025-06-04 10:58:29,870 - train_models - INFO -   Fold 1: MAE=1.0888, RMSE=1.6864, R²=0.8022, MAPE=16.39%
+2025-06-04 10:58:29,871 - train_models - INFO -   Fold 2: MAE=0.6007, RMSE=0.9716, R²=0.9118, MAPE=9.81%
+2025-06-04 10:58:29,871 - train_models - INFO -   Fold 3: MAE=0.4720, RMSE=0.7228, R²=0.9546, MAPE=8.59%
+2025-06-04 10:58:29,872 - train_models - INFO -   Fold 4: MAE=0.5685, RMSE=0.8997, R²=0.9323, MAPE=10.66%
+2025-06-04 10:58:29,873 - train_models - INFO -   Fold 5: MAE=0.4916, RMSE=0.7115, R²=0.9483, MAPE=9.65%
+2025-06-04 10:58:29,873 - train_models - INFO - Building model for WorkType: 213
+2025-06-04 10:58:33,390 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 10:59:26,249 - train_models - INFO - Model for 213 - MAE: 0.3896, RMSE: 0.5826, R²: 0.8893, MAPE: 15.57%
+2025-06-04 10:59:26,249 - train_models - INFO - Top 10 most important features for 213:
+2025-06-04 10:59:26,250 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.4412
+2025-06-04 10:59:26,250 - train_models - INFO -   NoOfMan_7day_trend: 0.2149
+2025-06-04 10:59:26,250 - train_models - INFO -   NoOfMan_1day_trend: 0.1394
+2025-06-04 10:59:26,251 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0524
+2025-06-04 10:59:26,251 - train_models - INFO -   NoOfMan_lag_1: 0.0454
+2025-06-04 10:59:26,252 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0307
+2025-06-04 10:59:26,253 - train_models - INFO -   NoOfMan_lag_7: 0.0288
+2025-06-04 10:59:26,253 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0062
+2025-06-04 10:59:26,253 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0055
+2025-06-04 10:59:26,254 - train_models - INFO -   NoOfMan_lag_2: 0.0037
+2025-06-04 10:59:26,254 - train_models - INFO - Cross-validation details for 213:
+2025-06-04 10:59:26,254 - train_models - INFO -   Fold 1: MAE=0.5177, RMSE=0.7689, R²=0.8616, MAPE=15.02%
+2025-06-04 10:59:26,255 - train_models - INFO -   Fold 2: MAE=0.4453, RMSE=0.6093, R²=0.8726, MAPE=23.95%
+2025-06-04 10:59:26,255 - train_models - INFO -   Fold 3: MAE=0.3303, RMSE=0.5635, R²=0.8823, MAPE=14.96%
+2025-06-04 10:59:26,256 - train_models - INFO -   Fold 4: MAE=0.3310, RMSE=0.4831, R²=0.9113, MAPE=13.05%
+2025-06-04 10:59:26,256 - train_models - INFO -   Fold 5: MAE=0.3238, RMSE=0.4883, R²=0.9189, MAPE=10.86%
+2025-06-04 10:59:26,257 - train_models - INFO - Building model for WorkType: 214
+2025-06-04 10:59:29,851 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 11:00:23,364 - train_models - INFO - Model for 214 - MAE: 0.4606, RMSE: 0.6960, R²: 0.8892, MAPE: 10.30%
+2025-06-04 11:00:23,365 - train_models - INFO - Top 10 most important features for 214:
+2025-06-04 11:00:23,365 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.5059
+2025-06-04 11:00:23,366 - train_models - INFO -   NoOfMan_7day_trend: 0.1861
+2025-06-04 11:00:23,366 - train_models - INFO -   NoOfMan_1day_trend: 0.0837
+2025-06-04 11:00:23,367 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0655
+2025-06-04 11:00:23,367 - train_models - INFO -   NoOfMan_lag_7: 0.0540
+2025-06-04 11:00:23,368 - train_models - INFO -   NoOfMan_lag_1: 0.0418
+2025-06-04 11:00:23,368 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0115
+2025-06-04 11:00:23,369 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0071
+2025-06-04 11:00:23,369 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0068
+2025-06-04 11:00:23,370 - train_models - INFO -   NoOfMan_lag_2: 0.0035
+2025-06-04 11:00:23,371 - train_models - INFO - Cross-validation details for 214:
+2025-06-04 11:00:23,372 - train_models - INFO -   Fold 1: MAE=0.5008, RMSE=0.6928, R²=0.8328, MAPE=13.58%
+2025-06-04 11:00:23,373 - train_models - INFO -   Fold 2: MAE=0.4204, RMSE=0.5340, R²=0.9206, MAPE=10.02%
+2025-06-04 11:00:23,374 - train_models - INFO -   Fold 3: MAE=0.3151, RMSE=0.4373, R²=0.9479, MAPE=9.00%
+2025-06-04 11:00:23,374 - train_models - INFO -   Fold 4: MAE=0.3053, RMSE=0.5442, R²=0.9311, MAPE=5.49%
+2025-06-04 11:00:23,375 - train_models - INFO -   Fold 5: MAE=0.7616, RMSE=1.2717, R²=0.8138, MAPE=13.41%
+2025-06-04 11:00:23,375 - train_models - INFO - Building model for WorkType: 215
+2025-06-04 11:00:27,643 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 11:01:35,292 - train_models - INFO - Model for 215 - MAE: 0.6809, RMSE: 1.0595, R²: 0.8966, MAPE: 15.72%
+2025-06-04 11:01:35,293 - train_models - INFO - Top 10 most important features for 215:
+2025-06-04 11:01:35,293 - train_models - INFO -   NoOfMan_7day_trend: 0.1741
+2025-06-04 11:01:35,294 - train_models - INFO -   NoOfMan_same_dow_lag: 0.1717
+2025-06-04 11:01:35,294 - train_models - INFO -   DayOfWeek_feat_6: 0.1659
+2025-06-04 11:01:35,295 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1419
+2025-06-04 11:01:35,295 - train_models - INFO -   NoOfMan_1day_trend: 0.1236
+2025-06-04 11:01:35,296 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0666
+2025-06-04 11:01:35,296 - train_models - INFO -   NoOfMan_lag_1: 0.0333
+2025-06-04 11:01:35,297 - train_models - INFO -   NoOfMan_lag_7: 0.0301
+2025-06-04 11:01:35,297 - train_models - INFO -   Quantity_7day_trend: 0.0113
+2025-06-04 11:01:35,298 - train_models - INFO -   Quantity_1day_trend: 0.0098
+2025-06-04 11:01:35,298 - train_models - INFO - Cross-validation details for 215:
+2025-06-04 11:01:35,299 - train_models - INFO -   Fold 1: MAE=0.9833, RMSE=1.5269, R²=0.8062, MAPE=26.21%
+2025-06-04 11:01:35,299 - train_models - INFO -   Fold 2: MAE=0.6939, RMSE=1.0014, R²=0.9137, MAPE=16.78%
+2025-06-04 11:01:35,300 - train_models - INFO -   Fold 3: MAE=0.6709, RMSE=1.0383, R²=0.9043, MAPE=11.72%
+2025-06-04 11:01:35,300 - train_models - INFO -   Fold 4: MAE=0.5287, RMSE=0.8017, R²=0.9335, MAPE=13.18%
+2025-06-04 11:01:35,301 - train_models - INFO -   Fold 5: MAE=0.5277, RMSE=0.9295, R²=0.9255, MAPE=10.70%
+2025-06-04 11:01:35,301 - train_models - INFO - Building model for WorkType: 217
+2025-06-04 11:01:38,781 - train_models - INFO - Using 27 numeric features and 4 categorical features
+2025-06-04 11:02:32,670 - train_models - INFO - Model for 217 - MAE: 0.4042, RMSE: 0.5430, R²: 0.9135, MAPE: 17.24%
+2025-06-04 11:02:32,671 - train_models - INFO - Top 10 most important features for 217:
+2025-06-04 11:02:32,671 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.5670
+2025-06-04 11:02:32,672 - train_models - INFO -   NoOfMan_7day_trend: 0.1232
+2025-06-04 11:02:32,672 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0854
+2025-06-04 11:02:32,673 - train_models - INFO -   NoOfMan_lag_1: 0.0694
+2025-06-04 11:02:32,673 - train_models - INFO -   NoOfMan_1day_trend: 0.0641
+2025-06-04 11:02:32,674 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0365
+2025-06-04 11:02:32,674 - train_models - INFO -   NoOfMan_lag_7: 0.0256
+2025-06-04 11:02:32,675 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0045
+2025-06-04 11:02:32,675 - train_models - INFO -   NoOfMan_lag_3: 0.0020
+2025-06-04 11:02:32,675 - train_models - INFO -   NoOfMan_same_dom_lag: 0.0018
+2025-06-04 11:02:32,676 - train_models - INFO - Cross-validation details for 217:
+2025-06-04 11:02:32,676 - train_models - INFO -   Fold 1: MAE=0.5626, RMSE=0.6839, R²=0.8372, MAPE=25.36%
+2025-06-04 11:02:32,677 - train_models - INFO -   Fold 2: MAE=0.4247, RMSE=0.5508, R²=0.9077, MAPE=21.23%
+2025-06-04 11:02:32,677 - train_models - INFO -   Fold 3: MAE=0.3640, RMSE=0.4860, R²=0.9439, MAPE=13.25%
+2025-06-04 11:02:32,678 - train_models - INFO -   Fold 4: MAE=0.3043, RMSE=0.3904, R²=0.9674, MAPE=12.79%
+2025-06-04 11:02:32,678 - train_models - INFO -   Fold 5: MAE=0.3654, RMSE=0.6038, R²=0.9115, MAPE=13.56%
+2025-06-04 11:02:32,679 - train_models - INFO - Saving 10 models to C:/forlogssystems/Models
+2025-06-04 11:02:33,812 - train_models - INFO - Model files saved successfully
+2025-06-04 11:02:33,812 - train_models - INFO - Performance summary saved to C:/forlogssystems/Models\model_performance_summary.xlsx
+2025-06-04 11:02:33,818 - train_models - INFO - Model training completed successfully
+2025-06-04 13:06:13,929 - train_models - INFO - Starting the model training process
+2025-06-04 13:06:13,931 - train_models - INFO - Training from SQL database (command line argument)
+2025-06-04 13:06:13,939 - train_models - INFO - Connecting to database ABC on server 192.168.1.43
+2025-06-04 13:06:14,097 - train_models - INFO - Executing SQL query: 
+                SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
+                FROM WorkUtilizationData 
+                WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 210, 217) 
+                AND Hours > 0 
+                AND NoOfMan > 0 
+                AND SystemHours > 0 
+                AND Quantity > 0
+                ORDER BY Date
+            
+2025-06-04 13:06:14,907 - train_models - INFO - Read chunk of 10000 rows
+2025-06-04 13:06:14,985 - train_models - INFO - Read chunk of 5326 rows
+2025-06-04 13:06:15,006 - train_models - INFO - Data loaded successfully. Total rows: 15326
+2025-06-04 13:06:15,007 - train_models - INFO - Converting Date column to datetime format
+2025-06-04 13:06:15,046 - train_models - INFO - Engineering features...
+2025-06-04 13:06:16,285 - utils.feature_engineering - INFO - Engineering features
+2025-06-04 13:06:16,343 - utils.feature_engineering - INFO - Feature engineering completed. Added 14 new features.
+2025-06-04 13:06:16,351 - train_models - INFO - Creating lag features...
+2025-06-04 13:06:16,371 - utils.feature_engineering - INFO - Creating lag features for NoOfMan grouped by WorkType
+2025-06-04 13:06:16,753 - utils.feature_engineering - INFO - Lag features created. Dropped 0 rows with NaN values.
+2025-06-04 13:06:16,754 - utils.feature_engineering - INFO - Final shape: (15326, 69)
+2025-06-04 13:06:16,774 - train_models - INFO - Found 10 unique work types
+2025-06-04 13:06:16,775 - train_models - INFO - Building models for 10 work types
+2025-06-04 13:06:16,776 - train_models - INFO - Numeric features: ['NoOfMan_lag_1', 'NoOfMan_lag_2', 'NoOfMan_lag_3', 'NoOfMan_lag_7', 'NoOfMan_rolling_mean_7', 'IsWeekend_feat', 'NoOfMan_rolling_max_7', 'NoOfMan_rolling_min_7', 'NoOfMan_rolling_std_7', 'NoOfMan_same_dow_lag', 'NoOfMan_same_dom_lag', 'NoOfMan_7day_trend', 'NoOfMan_1day_trend', 'Quantity_lag_1', 'Quantity_lag_7', 'Quantity_rolling_mean_7', 'Quantity_per_Worker', 'Relative_Quantity', 'Quantity_same_dow_lag', 'ResourceKPI_lag_1', 'SystemKPI_lag_1', 'Combined_KPI_lag_1', 'Hours_SystemHours_Ratio_lag_1', 'Hours_per_Quantity', 'SystemHours_per_Quantity', 'Workers_Predicted_from_Quantity', 'Quantity_7day_trend', 'Quantity_1day_trend']
+2025-06-04 13:06:16,776 - train_models - INFO - Categorical features: ['DayOfWeek_feat', 'Month_feat', 'Quarter', 'Year_feat']
+2025-06-04 13:06:16,777 - train_models - INFO - Building model for WorkType: 202
+2025-06-04 13:06:16,788 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 13:07:06,501 - train_models - INFO - Model for 202 - MAE: 0.2118, RMSE: 0.3301, R²: 0.7457, MAPE: 10.10%
+2025-06-04 13:07:06,504 - train_models - INFO - Top 10 most important features for 202:
+2025-06-04 13:07:06,504 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.3966
+2025-06-04 13:07:06,505 - train_models - INFO -   NoOfMan_7day_trend: 0.1988
+2025-06-04 13:07:06,505 - train_models - INFO -   NoOfMan_1day_trend: 0.1268
+2025-06-04 13:07:06,506 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0678
+2025-06-04 13:07:06,506 - train_models - INFO -   NoOfMan_lag_1: 0.0675
+2025-06-04 13:07:06,506 - train_models - INFO -   NoOfMan_lag_7: 0.0662
+2025-06-04 13:07:06,507 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0387
+2025-06-04 13:07:06,507 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0044
+2025-06-04 13:07:06,508 - train_models - INFO -   Quantity_lag_7: 0.0022
+2025-06-04 13:07:06,508 - train_models - INFO -   Quantity_rolling_mean_7: 0.0022
+2025-06-04 13:07:06,509 - train_models - INFO - Cross-validation details for 202:
+2025-06-04 13:07:06,509 - train_models - INFO -   Fold 1: MAE=0.2223, RMSE=0.4186, R²=0.3858, MAPE=11.30%
+2025-06-04 13:07:06,510 - train_models - INFO -   Fold 2: MAE=0.2068, RMSE=0.3083, R²=0.7811, MAPE=11.43%
+2025-06-04 13:07:06,510 - train_models - INFO -   Fold 3: MAE=0.2267, RMSE=0.3572, R²=0.8014, MAPE=11.66%
+2025-06-04 13:07:06,510 - train_models - INFO -   Fold 4: MAE=0.1722, RMSE=0.2251, R²=0.8969, MAPE=7.87%
+2025-06-04 13:07:06,511 - train_models - INFO -   Fold 5: MAE=0.2311, RMSE=0.3415, R²=0.8634, MAPE=8.26%
+2025-06-04 13:07:06,511 - train_models - INFO - Building model for WorkType: 203
+2025-06-04 13:07:06,521 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 13:07:58,480 - train_models - INFO - Model for 203 - MAE: 0.2238, RMSE: 0.3226, R²: 0.9149, MAPE: 4.68%
+2025-06-04 13:07:58,480 - train_models - INFO - Top 10 most important features for 203:
+2025-06-04 13:07:58,481 - train_models - INFO -   NoOfMan_7day_trend: 0.3052
+2025-06-04 13:07:58,481 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.2342
+2025-06-04 13:07:58,482 - train_models - INFO -   NoOfMan_rolling_max_7: 0.1220
+2025-06-04 13:07:58,482 - train_models - INFO -   NoOfMan_1day_trend: 0.0913
+2025-06-04 13:07:58,483 - train_models - INFO -   NoOfMan_lag_7: 0.0849
+2025-06-04 13:07:58,483 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0723
+2025-06-04 13:07:58,483 - train_models - INFO -   NoOfMan_lag_1: 0.0533
+2025-06-04 13:07:58,484 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0049
+2025-06-04 13:07:58,484 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0028
+2025-06-04 13:07:58,485 - train_models - INFO -   NoOfMan_lag_2: 0.0025
+2025-06-04 13:07:58,485 - train_models - INFO - Cross-validation details for 203:
+2025-06-04 13:07:58,486 - train_models - INFO -   Fold 1: MAE=0.2838, RMSE=0.3915, R²=0.8792, MAPE=5.69%
+2025-06-04 13:07:58,486 - train_models - INFO -   Fold 2: MAE=0.2561, RMSE=0.3475, R²=0.9120, MAPE=5.04%
+2025-06-04 13:07:58,487 - train_models - INFO -   Fold 3: MAE=0.2285, RMSE=0.3669, R²=0.8986, MAPE=4.25%
+2025-06-04 13:07:58,487 - train_models - INFO -   Fold 4: MAE=0.1777, RMSE=0.2699, R²=0.9409, MAPE=4.20%
+2025-06-04 13:07:58,487 - train_models - INFO -   Fold 5: MAE=0.1727, RMSE=0.2370, R²=0.9439, MAPE=4.22%
+2025-06-04 13:07:58,488 - train_models - INFO - Building model for WorkType: 206
+2025-06-04 13:07:58,499 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 13:09:05,910 - train_models - INFO - Model for 206 - MAE: 1.4074, RMSE: 2.1493, R²: 0.9308, MAPE: 8.07%
+2025-06-04 13:09:05,910 - train_models - INFO - Top 10 most important features for 206:
+2025-06-04 13:09:05,911 - train_models - INFO -   NoOfMan_same_dow_lag: 0.5192
+2025-06-04 13:09:05,911 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1538
+2025-06-04 13:09:05,912 - train_models - INFO -   DayOfWeek_feat_6: 0.0712
+2025-06-04 13:09:05,912 - train_models - INFO -   NoOfMan_1day_trend: 0.0706
+2025-06-04 13:09:05,912 - train_models - INFO -   NoOfMan_7day_trend: 0.0529
+2025-06-04 13:09:05,913 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0366
+2025-06-04 13:09:05,913 - train_models - INFO -   NoOfMan_lag_1: 0.0272
+2025-06-04 13:09:05,914 - train_models - INFO -   Quantity_rolling_mean_7: 0.0088
+2025-06-04 13:09:05,914 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0072
+2025-06-04 13:09:05,915 - train_models - INFO -   NoOfMan_lag_7: 0.0071
+2025-06-04 13:09:05,915 - train_models - INFO - Cross-validation details for 206:
+2025-06-04 13:09:05,915 - train_models - INFO -   Fold 1: MAE=1.7312, RMSE=2.3736, R²=0.9234, MAPE=9.92%
+2025-06-04 13:09:05,916 - train_models - INFO -   Fold 2: MAE=1.5977, RMSE=2.2832, R²=0.9261, MAPE=8.85%
+2025-06-04 13:09:05,918 - train_models - INFO -   Fold 3: MAE=1.5386, RMSE=2.6666, R²=0.8934, MAPE=8.90%
+2025-06-04 13:09:05,918 - train_models - INFO -   Fold 4: MAE=0.9702, RMSE=1.4891, R²=0.9582, MAPE=6.46%
+2025-06-04 13:09:05,919 - train_models - INFO -   Fold 5: MAE=1.1994, RMSE=1.9342, R²=0.9529, MAPE=6.23%
+2025-06-04 13:09:05,919 - train_models - INFO - Building model for WorkType: 209
+2025-06-04 13:09:05,929 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 13:10:01,879 - train_models - INFO - Model for 209 - MAE: 0.8890, RMSE: 1.3839, R²: 0.8892, MAPE: 12.37%
+2025-06-04 13:10:01,880 - train_models - INFO - Top 10 most important features for 209:
+2025-06-04 13:10:01,881 - train_models - INFO -   NoOfMan_7day_trend: 0.4014
+2025-06-04 13:10:01,881 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.2195
+2025-06-04 13:10:01,882 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0996
+2025-06-04 13:10:01,882 - train_models - INFO -   NoOfMan_1day_trend: 0.0674
+2025-06-04 13:10:01,882 - train_models - INFO -   NoOfMan_lag_7: 0.0502
+2025-06-04 13:10:01,883 - train_models - INFO -   Quantity_rolling_mean_7: 0.0480
+2025-06-04 13:10:01,883 - train_models - INFO -   NoOfMan_lag_1: 0.0257
+2025-06-04 13:10:01,884 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0193
+2025-06-04 13:10:01,884 - train_models - INFO -   Quantity_7day_trend: 0.0089
+2025-06-04 13:10:01,885 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0083
+2025-06-04 13:10:01,885 - train_models - INFO - Cross-validation details for 209:
+2025-06-04 13:10:01,885 - train_models - INFO -   Fold 1: MAE=1.0129, RMSE=1.4761, R²=0.8544, MAPE=13.82%
+2025-06-04 13:10:01,886 - train_models - INFO -   Fold 2: MAE=1.0118, RMSE=1.7278, R²=0.8461, MAPE=14.93%
+2025-06-04 13:10:01,887 - train_models - INFO -   Fold 3: MAE=0.6588, RMSE=0.8745, R²=0.9400, MAPE=10.54%
+2025-06-04 13:10:01,887 - train_models - INFO -   Fold 4: MAE=0.8561, RMSE=1.4067, R²=0.8992, MAPE=11.26%
+2025-06-04 13:10:01,888 - train_models - INFO -   Fold 5: MAE=0.9053, RMSE=1.4342, R²=0.9064, MAPE=11.29%
+2025-06-04 13:10:01,888 - train_models - INFO - Building model for WorkType: 210
+2025-06-04 13:10:01,901 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 13:10:58,802 - train_models - INFO - Model for 210 - MAE: 0.8203, RMSE: 1.1818, R²: 0.8893, MAPE: 17.53%
+2025-06-04 13:10:58,803 - train_models - INFO - Top 10 most important features for 210:
+2025-06-04 13:10:58,803 - train_models - INFO -   NoOfMan_7day_trend: 0.2585
+2025-06-04 13:10:58,804 - train_models - INFO -   NoOfMan_same_dow_lag: 0.1964
+2025-06-04 13:10:58,804 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1763
+2025-06-04 13:10:58,805 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0659
+2025-06-04 13:10:58,805 - train_models - INFO -   NoOfMan_1day_trend: 0.0637
+2025-06-04 13:10:58,806 - train_models - INFO -   NoOfMan_lag_7: 0.0379
+2025-06-04 13:10:58,806 - train_models - INFO -   Quantity_1day_trend: 0.0324
+2025-06-04 13:10:58,806 - train_models - INFO -   NoOfMan_lag_1: 0.0322
+2025-06-04 13:10:58,807 - train_models - INFO -   DayOfWeek_feat_6: 0.0258
+2025-06-04 13:10:58,807 - train_models - INFO -   Quantity_7day_trend: 0.0191
+2025-06-04 13:10:58,808 - train_models - INFO - Cross-validation details for 210:
+2025-06-04 13:10:58,808 - train_models - INFO -   Fold 1: MAE=0.8406, RMSE=1.1561, R²=0.8801, MAPE=14.02%
+2025-06-04 13:10:58,809 - train_models - INFO -   Fold 2: MAE=0.7251, RMSE=1.0331, R²=0.9022, MAPE=12.35%
+2025-06-04 13:10:58,809 - train_models - INFO -   Fold 3: MAE=0.6315, RMSE=0.8805, R²=0.9256, MAPE=8.84%
+2025-06-04 13:10:58,810 - train_models - INFO -   Fold 4: MAE=0.9206, RMSE=1.2697, R²=0.8765, MAPE=26.85%
+2025-06-04 13:10:58,810 - train_models - INFO -   Fold 5: MAE=0.9837, RMSE=1.5698, R²=0.8621, MAPE=25.57%
+2025-06-04 13:10:58,811 - train_models - INFO - Building model for WorkType: 211
+2025-06-04 13:10:58,819 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 13:11:58,165 - train_models - INFO - Model for 211 - MAE: 0.6402, RMSE: 0.9919, R²: 0.9112, MAPE: 10.93%
+2025-06-04 13:11:58,166 - train_models - INFO - Top 10 most important features for 211:
+2025-06-04 13:11:58,166 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.3616
+2025-06-04 13:11:58,166 - train_models - INFO -   NoOfMan_7day_trend: 0.1838
+2025-06-04 13:11:58,167 - train_models - INFO -   NoOfMan_1day_trend: 0.1838
+2025-06-04 13:11:58,167 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0697
+2025-06-04 13:11:58,168 - train_models - INFO -   NoOfMan_lag_1: 0.0458
+2025-06-04 13:11:58,168 - train_models - INFO -   NoOfMan_lag_7: 0.0366
+2025-06-04 13:11:58,169 - train_models - INFO -   DayOfWeek_feat_6: 0.0332
+2025-06-04 13:11:58,169 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0258
+2025-06-04 13:11:58,170 - train_models - INFO -   Quantity_same_dow_lag: 0.0129
+2025-06-04 13:11:58,170 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0056
+2025-06-04 13:11:58,170 - train_models - INFO - Cross-validation details for 211:
+2025-06-04 13:11:58,171 - train_models - INFO -   Fold 1: MAE=1.0752, RMSE=1.6638, R²=0.8074, MAPE=16.02%
+2025-06-04 13:11:58,171 - train_models - INFO -   Fold 2: MAE=0.6008, RMSE=0.9621, R²=0.9136, MAPE=9.68%
+2025-06-04 13:11:58,172 - train_models - INFO -   Fold 3: MAE=0.4565, RMSE=0.7031, R²=0.9571, MAPE=8.25%
+2025-06-04 13:11:58,172 - train_models - INFO -   Fold 4: MAE=0.5683, RMSE=0.9042, R²=0.9316, MAPE=10.87%
+2025-06-04 13:11:58,173 - train_models - INFO -   Fold 5: MAE=0.5004, RMSE=0.7265, R²=0.9461, MAPE=9.84%
+2025-06-04 13:11:58,173 - train_models - INFO - Building model for WorkType: 213
+2025-06-04 13:11:58,185 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 13:12:51,381 - train_models - INFO - Model for 213 - MAE: 0.3880, RMSE: 0.5794, R²: 0.8907, MAPE: 15.54%
+2025-06-04 13:12:51,381 - train_models - INFO - Top 10 most important features for 213:
+2025-06-04 13:12:51,382 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.4416
+2025-06-04 13:12:51,382 - train_models - INFO -   NoOfMan_7day_trend: 0.2157
+2025-06-04 13:12:51,383 - train_models - INFO -   NoOfMan_1day_trend: 0.1397
+2025-06-04 13:12:51,383 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0523
+2025-06-04 13:12:51,383 - train_models - INFO -   NoOfMan_lag_1: 0.0454
+2025-06-04 13:12:51,384 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0309
+2025-06-04 13:12:51,384 - train_models - INFO -   NoOfMan_lag_7: 0.0292
+2025-06-04 13:12:51,385 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0063
+2025-06-04 13:12:51,385 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0055
+2025-06-04 13:12:51,385 - train_models - INFO -   NoOfMan_lag_2: 0.0039
+2025-06-04 13:12:51,386 - train_models - INFO - Cross-validation details for 213:
+2025-06-04 13:12:51,386 - train_models - INFO -   Fold 1: MAE=0.5163, RMSE=0.7663, R²=0.8625, MAPE=14.97%
+2025-06-04 13:12:51,387 - train_models - INFO -   Fold 2: MAE=0.4433, RMSE=0.6051, R²=0.8743, MAPE=23.91%
+2025-06-04 13:12:51,387 - train_models - INFO -   Fold 3: MAE=0.3248, RMSE=0.5527, R²=0.8868, MAPE=14.71%
+2025-06-04 13:12:51,388 - train_models - INFO -   Fold 4: MAE=0.3309, RMSE=0.4824, R²=0.9116, MAPE=13.14%
+2025-06-04 13:12:51,388 - train_models - INFO -   Fold 5: MAE=0.3244, RMSE=0.4906, R²=0.9181, MAPE=10.96%
+2025-06-04 13:12:51,388 - train_models - INFO - Building model for WorkType: 214
+2025-06-04 13:12:51,398 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 13:13:42,751 - train_models - INFO - Model for 214 - MAE: 0.4567, RMSE: 0.6902, R²: 0.8912, MAPE: 10.22%
+2025-06-04 13:13:42,751 - train_models - INFO - Top 10 most important features for 214:
+2025-06-04 13:13:42,752 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.5063
+2025-06-04 13:13:42,752 - train_models - INFO -   NoOfMan_7day_trend: 0.1864
+2025-06-04 13:13:42,753 - train_models - INFO -   NoOfMan_1day_trend: 0.0839
+2025-06-04 13:13:42,753 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0652
+2025-06-04 13:13:42,754 - train_models - INFO -   NoOfMan_lag_7: 0.0542
+2025-06-04 13:13:42,754 - train_models - INFO -   NoOfMan_lag_1: 0.0419
+2025-06-04 13:13:42,754 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0115
+2025-06-04 13:13:42,755 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0073
+2025-06-04 13:13:42,756 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0065
+2025-06-04 13:13:42,756 - train_models - INFO -   Quantity_same_dow_lag: 0.0035
+2025-06-04 13:13:42,757 - train_models - INFO - Cross-validation details for 214:
+2025-06-04 13:13:42,757 - train_models - INFO -   Fold 1: MAE=0.4918, RMSE=0.6837, R²=0.8372, MAPE=13.32%
+2025-06-04 13:13:42,758 - train_models - INFO -   Fold 2: MAE=0.4176, RMSE=0.5316, R²=0.9213, MAPE=9.92%
+2025-06-04 13:13:42,758 - train_models - INFO -   Fold 3: MAE=0.3105, RMSE=0.4309, R²=0.9494, MAPE=8.86%
+2025-06-04 13:13:42,758 - train_models - INFO -   Fold 4: MAE=0.3060, RMSE=0.5414, R²=0.9318, MAPE=5.56%
+2025-06-04 13:13:42,759 - train_models - INFO -   Fold 5: MAE=0.7574, RMSE=1.2634, R²=0.8162, MAPE=13.43%
+2025-06-04 13:13:42,759 - train_models - INFO - Building model for WorkType: 215
+2025-06-04 13:13:42,772 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 13:14:44,219 - train_models - INFO - Model for 215 - MAE: 0.6756, RMSE: 1.0523, R²: 0.8980, MAPE: 15.55%
+2025-06-04 13:14:44,220 - train_models - INFO - Top 10 most important features for 215:
+2025-06-04 13:14:44,220 - train_models - INFO -   NoOfMan_7day_trend: 0.1732
+2025-06-04 13:14:44,221 - train_models - INFO -   NoOfMan_same_dow_lag: 0.1718
+2025-06-04 13:14:44,221 - train_models - INFO -   DayOfWeek_feat_6: 0.1661
+2025-06-04 13:14:44,221 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1433
+2025-06-04 13:14:44,222 - train_models - INFO -   NoOfMan_1day_trend: 0.1260
+2025-06-04 13:14:44,222 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0659
+2025-06-04 13:14:44,223 - train_models - INFO -   NoOfMan_lag_1: 0.0335
+2025-06-04 13:14:44,223 - train_models - INFO -   NoOfMan_lag_7: 0.0300
+2025-06-04 13:14:44,223 - train_models - INFO -   Quantity_7day_trend: 0.0115
+2025-06-04 13:14:44,224 - train_models - INFO -   Quantity_rolling_mean_7: 0.0101
+2025-06-04 13:14:44,224 - train_models - INFO - Cross-validation details for 215:
+2025-06-04 13:14:44,225 - train_models - INFO -   Fold 1: MAE=0.9782, RMSE=1.5211, R²=0.8077, MAPE=25.79%
+2025-06-04 13:14:44,225 - train_models - INFO -   Fold 2: MAE=0.6982, RMSE=1.0071, R²=0.9127, MAPE=16.64%
+2025-06-04 13:14:44,226 - train_models - INFO -   Fold 3: MAE=0.6556, RMSE=1.0211, R²=0.9074, MAPE=11.54%
+2025-06-04 13:14:44,226 - train_models - INFO -   Fold 4: MAE=0.5172, RMSE=0.7901, R²=0.9354, MAPE=13.04%
+2025-06-04 13:14:44,227 - train_models - INFO -   Fold 5: MAE=0.5289, RMSE=0.9220, R²=0.9267, MAPE=10.74%
+2025-06-04 13:14:44,227 - train_models - INFO - Building model for WorkType: 217
+2025-06-04 13:14:44,236 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 13:15:29,186 - train_models - INFO - Model for 217 - MAE: 0.4052, RMSE: 0.5428, R²: 0.9132, MAPE: 17.34%
+2025-06-04 13:15:29,187 - train_models - INFO - Top 10 most important features for 217:
+2025-06-04 13:15:29,188 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.5673
+2025-06-04 13:15:29,188 - train_models - INFO -   NoOfMan_7day_trend: 0.1232
+2025-06-04 13:15:29,188 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0853
+2025-06-04 13:15:29,189 - train_models - INFO -   NoOfMan_lag_1: 0.0699
+2025-06-04 13:15:29,189 - train_models - INFO -   NoOfMan_1day_trend: 0.0644
+2025-06-04 13:15:29,190 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0362
+2025-06-04 13:15:29,190 - train_models - INFO -   NoOfMan_lag_7: 0.0258
+2025-06-04 13:15:29,191 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0047
+2025-06-04 13:15:29,191 - train_models - INFO -   NoOfMan_same_dom_lag: 0.0019
+2025-06-04 13:15:29,192 - train_models - INFO -   NoOfMan_lag_2: 0.0018
+2025-06-04 13:15:29,192 - train_models - INFO - Cross-validation details for 217:
+2025-06-04 13:15:29,192 - train_models - INFO -   Fold 1: MAE=0.5785, RMSE=0.6967, R²=0.8311, MAPE=26.19%
+2025-06-04 13:15:29,193 - train_models - INFO -   Fold 2: MAE=0.4155, RMSE=0.5392, R²=0.9115, MAPE=20.73%
+2025-06-04 13:15:29,193 - train_models - INFO -   Fold 3: MAE=0.3600, RMSE=0.4801, R²=0.9453, MAPE=13.17%
+2025-06-04 13:15:29,194 - train_models - INFO -   Fold 4: MAE=0.3056, RMSE=0.3919, R²=0.9671, MAPE=12.90%
+2025-06-04 13:15:29,194 - train_models - INFO -   Fold 5: MAE=0.3662, RMSE=0.6060, R²=0.9109, MAPE=13.70%
+2025-06-04 13:15:29,195 - train_models - INFO - Saving 10 models to C:/forlogssystems/Models
+2025-06-04 13:15:30,797 - train_models - INFO - Model files saved successfully
+2025-06-04 13:15:30,797 - train_models - INFO - Performance summary saved to C:/forlogssystems/Models\model_performance_summary.xlsx
+2025-06-04 13:15:30,804 - train_models - INFO - Model training completed successfully
+2025-06-04 14:10:01,434 - train_models - INFO - Starting the model training process
+2025-06-04 14:10:01,434 - train_models - INFO - Training from SQL database (command line argument)
+2025-06-04 14:10:01,441 - train_models - INFO - Connecting to database ABC on server 192.168.1.43
+2025-06-04 14:10:01,629 - train_models - INFO - Executing SQL query: 
+                SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
+                FROM WorkUtilizationData 
+                WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 210, 217) 
+                AND Hours > 0 
+                AND NoOfMan > 0 
+                AND SystemHours > 0 
+                AND Quantity > 0
+                ORDER BY Date
+            
+2025-06-04 14:10:02,450 - train_models - INFO - Read chunk of 10000 rows
+2025-06-04 14:10:02,700 - train_models - INFO - Read chunk of 5326 rows
+2025-06-04 14:10:02,719 - train_models - INFO - Data loaded successfully. Total rows: 15326
+2025-06-04 14:10:02,720 - train_models - INFO - Converting Date column to datetime format
+2025-06-04 14:10:02,757 - train_models - INFO - Engineering features...
+2025-06-04 14:10:03,855 - utils.feature_engineering - INFO - Engineering features
+2025-06-04 14:10:03,912 - utils.feature_engineering - INFO - Feature engineering completed. Added 14 new features.
+2025-06-04 14:10:03,920 - train_models - INFO - Creating lag features...
+2025-06-04 14:10:03,940 - utils.feature_engineering - INFO - Creating lag features for NoOfMan grouped by WorkType
+2025-06-04 14:10:04,298 - utils.feature_engineering - INFO - Lag features created. Dropped 0 rows with NaN values.
+2025-06-04 14:10:04,299 - utils.feature_engineering - INFO - Final shape: (15326, 69)
+2025-06-04 14:10:04,327 - train_models - INFO - Found 10 unique work types
+2025-06-04 14:10:04,328 - train_models - INFO - Building models for 10 work types
+2025-06-04 14:10:04,336 - utils.feature_builder - INFO - Built feature set: 4 numeric, 2 categorical
+2025-06-04 14:10:04,337 - train_models - INFO - Using 4 numeric and 2 categorical features
+2025-06-04 14:10:04,337 - train_models - INFO - Numeric features: ['IsWeekend_feat', 'NoOfMan_lag_1', 'NoOfMan_lag_7', 'NoOfMan_rolling_mean_7']
+2025-06-04 14:10:04,338 - train_models - INFO - Categorical features: ['DayOfWeek_feat', 'Month_feat']
+2025-06-04 14:10:04,338 - train_models - INFO - Building model for WorkType: 202
+2025-06-04 14:10:04,348 - train_models - INFO - Using 4 numeric features and 2 categorical features
+2025-06-04 14:10:04,369 - train_models - ERROR - Error building models: Input X contains NaN.
+RandomForestRegressor does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values
+2025-06-04 14:10:04,560 - train_models - ERROR - Traceback (most recent call last):
+  File "C:\forlogssystems\work_utilization_app\train_models.py", line 205, in build_models
+    pipeline.fit(X_train, y_train)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\base.py", line 1389, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\pipeline.py", line 662, in fit
+    self._final_estimator.fit(Xt, y, **last_step_params["fit"])
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\base.py", line 1389, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\ensemble\_forest.py", line 375, in fit
+    estimator._compute_missing_values_in_feature_mask(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        X, estimator_name=self.__class__.__name__
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\tree\_classes.py", line 214, in _compute_missing_values_in_feature_mask
+    assert_all_finite(X, **common_kwargs)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\utils\validation.py", line 210, in assert_all_finite
+    _assert_all_finite(
+    ~~~~~~~~~~~~~~~~~~^
+        X.data if sp.issparse(X) else X,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        input_name=input_name,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\utils\validation.py", line 120, in _assert_all_finite
+    _assert_all_finite_element_wise(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        X,
+        ^^
+    ...<4 lines>...
+        input_name=input_name,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\utils\validation.py", line 169, in _assert_all_finite_element_wise
+    raise ValueError(msg_err)
+ValueError: Input X contains NaN.
+RandomForestRegressor does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values
+
+2025-06-04 14:10:04,562 - train_models - INFO - Saving 0 models to C:/forlogssystems/Models
+2025-06-04 14:10:05,212 - train_models - INFO - Model files saved successfully
+2025-06-04 14:10:05,212 - train_models - INFO - Performance summary saved to C:/forlogssystems/Models\model_performance_summary.xlsx
+2025-06-04 14:10:05,216 - train_models - INFO - Model training completed successfully
+2025-06-04 14:10:51,535 - train_models - INFO - Starting the model training process
+2025-06-04 14:10:51,536 - train_models - INFO - Training from SQL database (command line argument)
+2025-06-04 14:10:51,543 - train_models - INFO - Connecting to database ABC on server 192.168.1.43
+2025-06-04 14:10:51,685 - train_models - INFO - Executing SQL query: 
+                SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
+                FROM WorkUtilizationData 
+                WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 210, 217) 
+                AND Hours > 0 
+                AND NoOfMan > 0 
+                AND SystemHours > 0 
+                AND Quantity > 0
+                ORDER BY Date
+            
+2025-06-04 14:10:52,503 - train_models - INFO - Read chunk of 10000 rows
+2025-06-04 14:10:52,573 - train_models - INFO - Read chunk of 5326 rows
+2025-06-04 14:10:52,597 - train_models - INFO - Data loaded successfully. Total rows: 15326
+2025-06-04 14:10:52,598 - train_models - INFO - Converting Date column to datetime format
+2025-06-04 14:10:52,625 - train_models - INFO - Engineering features...
+2025-06-04 14:10:53,586 - utils.feature_engineering - INFO - Engineering features
+2025-06-04 14:10:53,641 - utils.feature_engineering - INFO - Feature engineering completed. Added 14 new features.
+2025-06-04 14:10:53,650 - train_models - INFO - Creating lag features...
+2025-06-04 14:10:53,669 - utils.feature_engineering - INFO - Creating lag features for NoOfMan grouped by WorkType
+2025-06-04 14:10:54,024 - utils.feature_engineering - INFO - Lag features created. Dropped 0 rows with NaN values.
+2025-06-04 14:10:54,025 - utils.feature_engineering - INFO - Final shape: (15326, 69)
+2025-06-04 14:10:54,047 - train_models - INFO - Found 10 unique work types
+2025-06-04 14:10:54,047 - train_models - INFO - Building models for 10 work types
+2025-06-04 14:10:54,050 - utils.feature_builder - INFO - Built feature set: 4 numeric, 2 categorical
+2025-06-04 14:10:54,050 - train_models - INFO - Using 4 numeric and 2 categorical features
+2025-06-04 14:10:54,051 - train_models - INFO - Numeric features: ['IsWeekend_feat', 'NoOfMan_lag_1', 'NoOfMan_lag_7', 'NoOfMan_rolling_mean_7']
+2025-06-04 14:10:54,051 - train_models - INFO - Categorical features: ['DayOfWeek_feat', 'Month_feat']
+2025-06-04 14:10:54,052 - train_models - INFO - Building model for WorkType: 202
+2025-06-04 14:10:54,064 - train_models - INFO - Using 4 numeric features and 2 categorical features
+2025-06-04 14:10:54,081 - train_models - ERROR - Error building models: Input X contains NaN.
+RandomForestRegressor does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values
+2025-06-04 14:10:54,094 - train_models - ERROR - Traceback (most recent call last):
+  File "C:\forlogssystems\work_utilization_app\train_models.py", line 205, in build_models
+    pipeline.fit(X_train, y_train)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\base.py", line 1389, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\pipeline.py", line 662, in fit
+    self._final_estimator.fit(Xt, y, **last_step_params["fit"])
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\base.py", line 1389, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\ensemble\_forest.py", line 375, in fit
+    estimator._compute_missing_values_in_feature_mask(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        X, estimator_name=self.__class__.__name__
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\tree\_classes.py", line 214, in _compute_missing_values_in_feature_mask
+    assert_all_finite(X, **common_kwargs)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\utils\validation.py", line 210, in assert_all_finite
+    _assert_all_finite(
+    ~~~~~~~~~~~~~~~~~~^
+        X.data if sp.issparse(X) else X,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        input_name=input_name,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\utils\validation.py", line 120, in _assert_all_finite
+    _assert_all_finite_element_wise(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        X,
+        ^^
+    ...<4 lines>...
+        input_name=input_name,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\utils\validation.py", line 169, in _assert_all_finite_element_wise
+    raise ValueError(msg_err)
+ValueError: Input X contains NaN.
+RandomForestRegressor does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values
+
+2025-06-04 14:10:54,096 - train_models - INFO - Saving 0 models to C:/forlogssystems/Models
+2025-06-04 14:10:54,630 - train_models - INFO - Model files saved successfully
+2025-06-04 14:10:54,631 - train_models - INFO - Performance summary saved to C:/forlogssystems/Models\model_performance_summary.xlsx
+2025-06-04 14:10:54,634 - train_models - INFO - Model training completed successfully
+2025-06-04 14:12:12,126 - train_models - INFO - Starting the model training process
+2025-06-04 14:12:12,126 - train_models - INFO - Training from SQL database (command line argument)
+2025-06-04 14:12:12,133 - train_models - INFO - Connecting to database ABC on server 192.168.1.43
+2025-06-04 14:12:12,274 - train_models - INFO - Executing SQL query: 
+                SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
+                FROM WorkUtilizationData 
+                WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 210, 217) 
+                AND Hours > 0 
+                AND NoOfMan > 0 
+                AND SystemHours > 0 
+                AND Quantity > 0
+                ORDER BY Date
+            
+2025-06-04 14:12:13,057 - train_models - INFO - Read chunk of 10000 rows
+2025-06-04 14:12:13,127 - train_models - INFO - Read chunk of 5326 rows
+2025-06-04 14:12:13,149 - train_models - INFO - Data loaded successfully. Total rows: 15326
+2025-06-04 14:12:13,150 - train_models - INFO - Converting Date column to datetime format
+2025-06-04 14:12:13,172 - train_models - INFO - Engineering features...
+2025-06-04 14:12:14,071 - utils.feature_engineering - INFO - Engineering features
+2025-06-04 14:12:14,126 - utils.feature_engineering - INFO - Feature engineering completed. Added 14 new features.
+2025-06-04 14:12:14,134 - train_models - INFO - Creating lag features...
+2025-06-04 14:12:14,153 - utils.feature_engineering - INFO - Creating lag features for NoOfMan grouped by WorkType
+2025-06-04 14:12:14,516 - utils.feature_engineering - INFO - Lag features created. Dropped 0 rows with NaN values.
+2025-06-04 14:12:14,516 - utils.feature_engineering - INFO - Final shape: (15326, 69)
+2025-06-04 14:12:14,538 - train_models - INFO - Found 10 unique work types
+2025-06-04 14:12:14,539 - train_models - INFO - Building models for 10 work types
+2025-06-04 14:12:14,541 - utils.feature_builder - INFO - Built feature set: 4 numeric, 2 categorical
+2025-06-04 14:12:14,541 - train_models - INFO - Using 4 numeric and 2 categorical features
+2025-06-04 14:12:14,542 - train_models - INFO - Numeric features: ['IsWeekend_feat', 'NoOfMan_lag_1', 'NoOfMan_lag_7', 'NoOfMan_rolling_mean_7']
+2025-06-04 14:12:14,542 - train_models - INFO - Categorical features: ['DayOfWeek_feat', 'Month_feat']
+2025-06-04 14:12:14,543 - train_models - INFO - Building model for WorkType: 202
+2025-06-04 14:12:14,552 - train_models - INFO - Using 4 numeric features and 2 categorical features
+2025-06-04 14:12:14,571 - train_models - ERROR - Error building models: Input X contains NaN.
+RandomForestRegressor does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values
+2025-06-04 14:12:14,581 - train_models - ERROR - Traceback (most recent call last):
+  File "C:\forlogssystems\work_utilization_app\train_models.py", line 205, in build_models
+    pipeline.fit(X_train, y_train)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\base.py", line 1389, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\pipeline.py", line 662, in fit
+    self._final_estimator.fit(Xt, y, **last_step_params["fit"])
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\base.py", line 1389, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\ensemble\_forest.py", line 375, in fit
+    estimator._compute_missing_values_in_feature_mask(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        X, estimator_name=self.__class__.__name__
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\tree\_classes.py", line 214, in _compute_missing_values_in_feature_mask
+    assert_all_finite(X, **common_kwargs)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\utils\validation.py", line 210, in assert_all_finite
+    _assert_all_finite(
+    ~~~~~~~~~~~~~~~~~~^
+        X.data if sp.issparse(X) else X,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        input_name=input_name,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\utils\validation.py", line 120, in _assert_all_finite
+    _assert_all_finite_element_wise(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        X,
+        ^^
+    ...<4 lines>...
+        input_name=input_name,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\forlogssystems\work_utilization_app\venv\Lib\site-packages\sklearn\utils\validation.py", line 169, in _assert_all_finite_element_wise
+    raise ValueError(msg_err)
+ValueError: Input X contains NaN.
+RandomForestRegressor does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values
+
+2025-06-04 14:12:14,584 - train_models - INFO - Saving 0 models to C:/forlogssystems/Models
+2025-06-04 14:12:15,127 - train_models - INFO - Model files saved successfully
+2025-06-04 14:12:15,128 - train_models - INFO - Performance summary saved to C:/forlogssystems/Models\model_performance_summary.xlsx
+2025-06-04 14:12:15,131 - train_models - INFO - Model training completed successfully
+2025-06-04 14:20:00,219 - train_models - INFO - Starting the model training process
+2025-06-04 14:20:00,219 - train_models - INFO - Training from SQL database (command line argument)
+2025-06-04 14:20:00,226 - train_models - INFO - Connecting to database ABC on server 192.168.1.43
+2025-06-04 14:20:00,363 - train_models - INFO - Executing SQL query: 
+                SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
+                FROM WorkUtilizationData 
+                WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 210, 217) 
+                AND Hours > 0 
+                AND NoOfMan > 0 
+                AND SystemHours > 0 
+                AND Quantity > 0
+                ORDER BY Date
+            
+2025-06-04 14:20:01,227 - train_models - INFO - Read chunk of 10000 rows
+2025-06-04 14:20:01,310 - train_models - INFO - Read chunk of 5326 rows
+2025-06-04 14:20:01,331 - train_models - INFO - Data loaded successfully. Total rows: 15326
+2025-06-04 14:20:01,331 - train_models - INFO - Converting Date column to datetime format
+2025-06-04 14:20:01,356 - train_models - INFO - Engineering features...
+2025-06-04 14:20:02,280 - utils.feature_engineering - INFO - Engineering features
+2025-06-04 14:20:02,363 - utils.feature_engineering - INFO - Feature engineering completed. Added 14 new features.
+2025-06-04 14:20:02,375 - train_models - INFO - Creating lag features...
+2025-06-04 14:20:02,403 - utils.feature_engineering - INFO - Creating lag features for NoOfMan grouped by WorkType
+2025-06-04 14:20:02,812 - utils.feature_engineering - INFO - Lag features created. Dropped 0 rows with NaN values.
+2025-06-04 14:20:02,812 - utils.feature_engineering - INFO - Final shape: (15326, 69)
+2025-06-04 14:20:02,843 - train_models - INFO - Found 10 unique work types
+2025-06-04 14:20:02,843 - train_models - INFO - Building models for 10 work types
+2025-06-04 14:20:02,844 - train_models - INFO - Numeric features: ['NoOfMan_lag_1', 'NoOfMan_lag_2', 'NoOfMan_lag_3', 'NoOfMan_lag_7', 'NoOfMan_rolling_mean_7', 'IsWeekend_feat', 'NoOfMan_rolling_max_7', 'NoOfMan_rolling_min_7', 'NoOfMan_rolling_std_7', 'NoOfMan_same_dow_lag', 'NoOfMan_same_dom_lag', 'NoOfMan_7day_trend', 'NoOfMan_1day_trend', 'Quantity_lag_1', 'Quantity_lag_7', 'Quantity_rolling_mean_7', 'Quantity_per_Worker', 'Relative_Quantity', 'Quantity_same_dow_lag', 'ResourceKPI_lag_1', 'SystemKPI_lag_1', 'Combined_KPI_lag_1', 'Hours_SystemHours_Ratio_lag_1', 'Hours_per_Quantity', 'SystemHours_per_Quantity', 'Workers_Predicted_from_Quantity', 'Quantity_7day_trend', 'Quantity_1day_trend']
+2025-06-04 14:20:02,844 - train_models - INFO - Categorical features: ['DayOfWeek_feat', 'Month_feat', 'Quarter', 'Year_feat']
+2025-06-04 14:20:02,845 - train_models - INFO - Building model for WorkType: 202
+2025-06-04 14:20:06,889 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 14:20:56,511 - train_models - INFO - Model for 202 - MAE: 0.2115, RMSE: 0.3285, R²: 0.7502, MAPE: 10.10%
+2025-06-04 14:20:56,512 - train_models - INFO - Top 10 most important features for 202:
+2025-06-04 14:20:56,512 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.3966
+2025-06-04 14:20:56,513 - train_models - INFO -   NoOfMan_7day_trend: 0.1980
+2025-06-04 14:20:56,513 - train_models - INFO -   NoOfMan_1day_trend: 0.1275
+2025-06-04 14:20:56,514 - train_models - INFO -   NoOfMan_lag_1: 0.0681
+2025-06-04 14:20:56,514 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0676
+2025-06-04 14:20:56,514 - train_models - INFO -   NoOfMan_lag_7: 0.0659
+2025-06-04 14:20:56,515 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0387
+2025-06-04 14:20:56,515 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0045
+2025-06-04 14:20:56,516 - train_models - INFO -   Quantity_lag_7: 0.0022
+2025-06-04 14:20:56,516 - train_models - INFO -   Quantity_rolling_mean_7: 0.0022
+2025-06-04 14:20:56,517 - train_models - INFO - Cross-validation details for 202:
+2025-06-04 14:20:56,517 - train_models - INFO -   Fold 1: MAE=0.2192, RMSE=0.4124, R²=0.4038, MAPE=11.18%
+2025-06-04 14:20:56,517 - train_models - INFO -   Fold 2: MAE=0.2041, RMSE=0.3034, R²=0.7879, MAPE=11.29%
+2025-06-04 14:20:56,518 - train_models - INFO -   Fold 3: MAE=0.2275, RMSE=0.3580, R²=0.8005, MAPE=11.75%
+2025-06-04 14:20:56,518 - train_models - INFO -   Fold 4: MAE=0.1738, RMSE=0.2260, R²=0.8960, MAPE=8.02%
+2025-06-04 14:20:56,519 - train_models - INFO -   Fold 5: MAE=0.2328, RMSE=0.3426, R²=0.8626, MAPE=8.29%
+2025-06-04 14:20:56,519 - train_models - INFO - Building model for WorkType: 203
+2025-06-04 14:21:00,009 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 14:21:52,490 - train_models - INFO - Model for 203 - MAE: 0.2207, RMSE: 0.3188, R²: 0.9169, MAPE: 4.61%
+2025-06-04 14:21:52,491 - train_models - INFO - Top 10 most important features for 203:
+2025-06-04 14:21:52,491 - train_models - INFO -   NoOfMan_7day_trend: 0.3021
+2025-06-04 14:21:52,492 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.2349
+2025-06-04 14:21:52,492 - train_models - INFO -   NoOfMan_rolling_max_7: 0.1199
+2025-06-04 14:21:52,492 - train_models - INFO -   NoOfMan_1day_trend: 0.0945
+2025-06-04 14:21:52,493 - train_models - INFO -   NoOfMan_lag_7: 0.0830
+2025-06-04 14:21:52,493 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0716
+2025-06-04 14:21:52,494 - train_models - INFO -   NoOfMan_lag_1: 0.0568
+2025-06-04 14:21:52,494 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0052
+2025-06-04 14:21:52,495 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0028
+2025-06-04 14:21:52,495 - train_models - INFO -   NoOfMan_lag_2: 0.0025
+2025-06-04 14:21:52,496 - train_models - INFO - Cross-validation details for 203:
+2025-06-04 14:21:52,496 - train_models - INFO -   Fold 1: MAE=0.2751, RMSE=0.3824, R²=0.8848, MAPE=5.51%
+2025-06-04 14:21:52,497 - train_models - INFO -   Fold 2: MAE=0.2491, RMSE=0.3415, R²=0.9150, MAPE=4.91%
+2025-06-04 14:21:52,497 - train_models - INFO -   Fold 3: MAE=0.2283, RMSE=0.3681, R²=0.8979, MAPE=4.24%
+2025-06-04 14:21:52,498 - train_models - INFO -   Fold 4: MAE=0.1781, RMSE=0.2656, R²=0.9428, MAPE=4.17%
+2025-06-04 14:21:52,498 - train_models - INFO -   Fold 5: MAE=0.1727, RMSE=0.2365, R²=0.9442, MAPE=4.22%
+2025-06-04 14:21:52,498 - train_models - INFO - Building model for WorkType: 206
+2025-06-04 14:21:56,802 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 14:23:03,783 - train_models - INFO - Model for 206 - MAE: 1.3873, RMSE: 2.1264, R²: 0.9321, MAPE: 7.94%
+2025-06-04 14:23:03,784 - train_models - INFO - Top 10 most important features for 206:
+2025-06-04 14:23:03,784 - train_models - INFO -   NoOfMan_same_dow_lag: 0.5196
+2025-06-04 14:23:03,785 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1520
+2025-06-04 14:23:03,785 - train_models - INFO -   NoOfMan_1day_trend: 0.0740
+2025-06-04 14:23:03,786 - train_models - INFO -   DayOfWeek_feat_6: 0.0710
+2025-06-04 14:23:03,786 - train_models - INFO -   NoOfMan_7day_trend: 0.0499
+2025-06-04 14:23:03,786 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0379
+2025-06-04 14:23:03,787 - train_models - INFO -   NoOfMan_lag_1: 0.0289
+2025-06-04 14:23:03,787 - train_models - INFO -   Quantity_rolling_mean_7: 0.0085
+2025-06-04 14:23:03,788 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0069
+2025-06-04 14:23:03,788 - train_models - INFO -   NoOfMan_lag_7: 0.0068
+2025-06-04 14:23:03,789 - train_models - INFO - Cross-validation details for 206:
+2025-06-04 14:23:03,789 - train_models - INFO -   Fold 1: MAE=1.7147, RMSE=2.3579, R²=0.9244, MAPE=9.76%
+2025-06-04 14:23:03,790 - train_models - INFO -   Fold 2: MAE=1.5788, RMSE=2.2428, R²=0.9287, MAPE=8.69%
+2025-06-04 14:23:03,790 - train_models - INFO -   Fold 3: MAE=1.5172, RMSE=2.6742, R²=0.8928, MAPE=8.77%
+2025-06-04 14:23:03,790 - train_models - INFO -   Fold 4: MAE=0.9487, RMSE=1.4620, R²=0.9597, MAPE=6.38%
+2025-06-04 14:23:03,791 - train_models - INFO -   Fold 5: MAE=1.1769, RMSE=1.8950, R²=0.9547, MAPE=6.11%
+2025-06-04 14:23:03,791 - train_models - INFO - Building model for WorkType: 209
+2025-06-04 14:23:07,269 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 14:24:02,089 - train_models - INFO - Model for 209 - MAE: 0.8790, RMSE: 1.3744, R²: 0.8911, MAPE: 12.23%
+2025-06-04 14:24:02,089 - train_models - INFO - Top 10 most important features for 209:
+2025-06-04 14:24:02,090 - train_models - INFO -   NoOfMan_7day_trend: 0.4015
+2025-06-04 14:24:02,090 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.2195
+2025-06-04 14:24:02,091 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0988
+2025-06-04 14:24:02,091 - train_models - INFO -   NoOfMan_1day_trend: 0.0679
+2025-06-04 14:24:02,092 - train_models - INFO -   NoOfMan_lag_7: 0.0500
+2025-06-04 14:24:02,092 - train_models - INFO -   Quantity_rolling_mean_7: 0.0482
+2025-06-04 14:24:02,093 - train_models - INFO -   NoOfMan_lag_1: 0.0260
+2025-06-04 14:24:02,093 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0193
+2025-06-04 14:24:02,093 - train_models - INFO -   Quantity_7day_trend: 0.0091
+2025-06-04 14:24:02,094 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0085
+2025-06-04 14:24:02,094 - train_models - INFO - Cross-validation details for 209:
+2025-06-04 14:24:02,095 - train_models - INFO -   Fold 1: MAE=0.9819, RMSE=1.4332, R²=0.8627, MAPE=13.38%
+2025-06-04 14:24:02,095 - train_models - INFO -   Fold 2: MAE=1.0064, RMSE=1.7217, R²=0.8472, MAPE=14.69%
+2025-06-04 14:24:02,096 - train_models - INFO -   Fold 3: MAE=0.6511, RMSE=0.8710, R²=0.9405, MAPE=10.40%
+2025-06-04 14:24:02,096 - train_models - INFO -   Fold 4: MAE=0.8430, RMSE=1.3955, R²=0.9008, MAPE=11.13%
+2025-06-04 14:24:02,097 - train_models - INFO -   Fold 5: MAE=0.9125, RMSE=1.4508, R²=0.9043, MAPE=11.54%
+2025-06-04 14:24:02,097 - train_models - INFO - Building model for WorkType: 210
+2025-06-04 14:24:05,683 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 14:25:01,511 - train_models - INFO - Model for 210 - MAE: 0.8111, RMSE: 1.1754, R²: 0.8906, MAPE: 17.41%
+2025-06-04 14:25:01,512 - train_models - INFO - Top 10 most important features for 210:
+2025-06-04 14:25:01,512 - train_models - INFO -   NoOfMan_7day_trend: 0.2594
+2025-06-04 14:25:01,513 - train_models - INFO -   NoOfMan_same_dow_lag: 0.1927
+2025-06-04 14:25:01,513 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1762
+2025-06-04 14:25:01,514 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0659
+2025-06-04 14:25:01,514 - train_models - INFO -   NoOfMan_1day_trend: 0.0643
+2025-06-04 14:25:01,514 - train_models - INFO -   NoOfMan_lag_7: 0.0387
+2025-06-04 14:25:01,515 - train_models - INFO -   Quantity_1day_trend: 0.0329
+2025-06-04 14:25:01,515 - train_models - INFO -   NoOfMan_lag_1: 0.0328
+2025-06-04 14:25:01,516 - train_models - INFO -   DayOfWeek_feat_6: 0.0258
+2025-06-04 14:25:01,516 - train_models - INFO -   Quantity_7day_trend: 0.0197
+2025-06-04 14:25:01,516 - train_models - INFO - Cross-validation details for 210:
+2025-06-04 14:25:01,517 - train_models - INFO -   Fold 1: MAE=0.8253, RMSE=1.1353, R²=0.8844, MAPE=13.80%
+2025-06-04 14:25:01,517 - train_models - INFO -   Fold 2: MAE=0.7127, RMSE=1.0310, R²=0.9026, MAPE=12.11%
+2025-06-04 14:25:01,518 - train_models - INFO -   Fold 3: MAE=0.6199, RMSE=0.8603, R²=0.9290, MAPE=8.68%
+2025-06-04 14:25:01,518 - train_models - INFO -   Fold 4: MAE=0.9102, RMSE=1.2604, R²=0.8783, MAPE=26.75%
+2025-06-04 14:25:01,519 - train_models - INFO -   Fold 5: MAE=0.9873, RMSE=1.5900, R²=0.8585, MAPE=25.71%
+2025-06-04 14:25:01,519 - train_models - INFO - Building model for WorkType: 211
+2025-06-04 14:25:05,253 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 14:26:02,659 - train_models - INFO - Model for 211 - MAE: 0.6402, RMSE: 0.9841, R²: 0.9127, MAPE: 10.83%
+2025-06-04 14:26:02,660 - train_models - INFO - Top 10 most important features for 211:
+2025-06-04 14:26:02,660 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.3618
+2025-06-04 14:26:02,661 - train_models - INFO -   NoOfMan_1day_trend: 0.1880
+2025-06-04 14:26:02,661 - train_models - INFO -   NoOfMan_7day_trend: 0.1796
+2025-06-04 14:26:02,661 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0693
+2025-06-04 14:26:02,662 - train_models - INFO -   NoOfMan_lag_1: 0.0485
+2025-06-04 14:26:02,662 - train_models - INFO -   NoOfMan_lag_7: 0.0349
+2025-06-04 14:26:02,663 - train_models - INFO -   DayOfWeek_feat_6: 0.0330
+2025-06-04 14:26:02,663 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0263
+2025-06-04 14:26:02,664 - train_models - INFO -   Quantity_same_dow_lag: 0.0117
+2025-06-04 14:26:02,664 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0059
+2025-06-04 14:26:02,664 - train_models - INFO - Cross-validation details for 211:
+2025-06-04 14:26:02,665 - train_models - INFO -   Fold 1: MAE=1.0750, RMSE=1.6368, R²=0.8136, MAPE=15.97%
+2025-06-04 14:26:02,665 - train_models - INFO -   Fold 2: MAE=0.6174, RMSE=0.9751, R²=0.9112, MAPE=10.18%
+2025-06-04 14:26:02,666 - train_models - INFO -   Fold 3: MAE=0.4534, RMSE=0.7012, R²=0.9573, MAPE=8.14%
+2025-06-04 14:26:02,666 - train_models - INFO -   Fold 4: MAE=0.5606, RMSE=0.8924, R²=0.9334, MAPE=10.37%
+2025-06-04 14:26:02,667 - train_models - INFO -   Fold 5: MAE=0.4945, RMSE=0.7153, R²=0.9478, MAPE=9.50%
+2025-06-04 14:26:02,667 - train_models - INFO - Building model for WorkType: 213
+2025-06-04 14:26:06,070 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 14:26:59,006 - train_models - INFO - Model for 213 - MAE: 0.3885, RMSE: 0.5805, R²: 0.8901, MAPE: 15.43%
+2025-06-04 14:26:59,007 - train_models - INFO - Top 10 most important features for 213:
+2025-06-04 14:26:59,007 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.4444
+2025-06-04 14:26:59,007 - train_models - INFO -   NoOfMan_7day_trend: 0.2089
+2025-06-04 14:26:59,008 - train_models - INFO -   NoOfMan_1day_trend: 0.1447
+2025-06-04 14:26:59,008 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0520
+2025-06-04 14:26:59,009 - train_models - INFO -   NoOfMan_lag_1: 0.0470
+2025-06-04 14:26:59,009 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0307
+2025-06-04 14:26:59,010 - train_models - INFO -   NoOfMan_lag_7: 0.0271
+2025-06-04 14:26:59,010 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0070
+2025-06-04 14:26:59,010 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0054
+2025-06-04 14:26:59,011 - train_models - INFO -   NoOfMan_lag_2: 0.0036
+2025-06-04 14:26:59,011 - train_models - INFO - Cross-validation details for 213:
+2025-06-04 14:26:59,012 - train_models - INFO -   Fold 1: MAE=0.5258, RMSE=0.7773, R²=0.8585, MAPE=15.03%
+2025-06-04 14:26:59,012 - train_models - INFO -   Fold 2: MAE=0.4440, RMSE=0.6090, R²=0.8727, MAPE=23.59%
+2025-06-04 14:26:59,013 - train_models - INFO -   Fold 3: MAE=0.3262, RMSE=0.5589, R²=0.8842, MAPE=14.75%
+2025-06-04 14:26:59,013 - train_models - INFO -   Fold 4: MAE=0.3256, RMSE=0.4747, R²=0.9144, MAPE=12.99%
+2025-06-04 14:26:59,014 - train_models - INFO -   Fold 5: MAE=0.3210, RMSE=0.4824, R²=0.9208, MAPE=10.79%
+2025-06-04 14:26:59,014 - train_models - INFO - Building model for WorkType: 214
+2025-06-04 14:27:02,520 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 14:27:54,446 - train_models - INFO - Model for 214 - MAE: 0.4591, RMSE: 0.6912, R²: 0.8908, MAPE: 10.26%
+2025-06-04 14:27:54,447 - train_models - INFO - Top 10 most important features for 214:
+2025-06-04 14:27:54,447 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.5065
+2025-06-04 14:27:54,448 - train_models - INFO -   NoOfMan_7day_trend: 0.1858
+2025-06-04 14:27:54,448 - train_models - INFO -   NoOfMan_1day_trend: 0.0847
+2025-06-04 14:27:54,448 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0652
+2025-06-04 14:27:54,449 - train_models - INFO -   NoOfMan_lag_7: 0.0537
+2025-06-04 14:27:54,449 - train_models - INFO -   NoOfMan_lag_1: 0.0421
+2025-06-04 14:27:54,450 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0119
+2025-06-04 14:27:54,450 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0075
+2025-06-04 14:27:54,450 - train_models - INFO -   NoOfMan_same_dow_lag: 0.0065
+2025-06-04 14:27:54,451 - train_models - INFO -   NoOfMan_lag_2: 0.0034
+2025-06-04 14:27:54,451 - train_models - INFO - Cross-validation details for 214:
+2025-06-04 14:27:54,452 - train_models - INFO -   Fold 1: MAE=0.4953, RMSE=0.6865, R²=0.8358, MAPE=13.48%
+2025-06-04 14:27:54,452 - train_models - INFO -   Fold 2: MAE=0.4245, RMSE=0.5362, R²=0.9199, MAPE=10.03%
+2025-06-04 14:27:54,452 - train_models - INFO -   Fold 3: MAE=0.3166, RMSE=0.4362, R²=0.9482, MAPE=8.98%
+2025-06-04 14:27:54,453 - train_models - INFO -   Fold 4: MAE=0.3054, RMSE=0.5383, R²=0.9326, MAPE=5.51%
+2025-06-04 14:27:54,453 - train_models - INFO -   Fold 5: MAE=0.7537, RMSE=1.2588, R²=0.8176, MAPE=13.32%
+2025-06-04 14:27:54,454 - train_models - INFO - Building model for WorkType: 215
+2025-06-04 14:27:58,281 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 14:28:59,296 - train_models - INFO - Model for 215 - MAE: 0.6755, RMSE: 1.0518, R²: 0.8981, MAPE: 15.53%
+2025-06-04 14:28:59,297 - train_models - INFO - Top 10 most important features for 215:
+2025-06-04 14:28:59,298 - train_models - INFO -   NoOfMan_7day_trend: 0.1736
+2025-06-04 14:28:59,298 - train_models - INFO -   DayOfWeek_feat_6: 0.1681
+2025-06-04 14:28:59,299 - train_models - INFO -   NoOfMan_same_dow_lag: 0.1673
+2025-06-04 14:28:59,299 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.1435
+2025-06-04 14:28:59,300 - train_models - INFO -   NoOfMan_1day_trend: 0.1257
+2025-06-04 14:28:59,300 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0665
+2025-06-04 14:28:59,300 - train_models - INFO -   NoOfMan_lag_1: 0.0347
+2025-06-04 14:28:59,301 - train_models - INFO -   NoOfMan_lag_7: 0.0291
+2025-06-04 14:28:59,301 - train_models - INFO -   Quantity_7day_trend: 0.0128
+2025-06-04 14:28:59,302 - train_models - INFO -   Quantity_rolling_mean_7: 0.0101
+2025-06-04 14:28:59,302 - train_models - INFO - Cross-validation details for 215:
+2025-06-04 14:28:59,303 - train_models - INFO -   Fold 1: MAE=0.9710, RMSE=1.5149, R²=0.8092, MAPE=25.92%
+2025-06-04 14:28:59,303 - train_models - INFO -   Fold 2: MAE=0.6903, RMSE=0.9951, R²=0.9148, MAPE=16.46%
+2025-06-04 14:28:59,304 - train_models - INFO -   Fold 3: MAE=0.6672, RMSE=1.0316, R²=0.9055, MAPE=11.70%
+2025-06-04 14:28:59,304 - train_models - INFO -   Fold 4: MAE=0.5227, RMSE=0.7961, R²=0.9344, MAPE=12.98%
+2025-06-04 14:28:59,304 - train_models - INFO -   Fold 5: MAE=0.5265, RMSE=0.9213, R²=0.9268, MAPE=10.58%
+2025-06-04 14:28:59,305 - train_models - INFO - Building model for WorkType: 217
+2025-06-04 14:29:02,675 - train_models - INFO - Using 26 numeric features and 4 categorical features
+2025-06-04 14:29:48,347 - train_models - INFO - Model for 217 - MAE: 0.4119, RMSE: 0.5522, R²: 0.9102, MAPE: 17.42%
+2025-06-04 14:29:48,348 - train_models - INFO - Top 10 most important features for 217:
+2025-06-04 14:29:48,348 - train_models - INFO -   NoOfMan_rolling_mean_7: 0.5730
+2025-06-04 14:29:48,349 - train_models - INFO -   NoOfMan_7day_trend: 0.1209
+2025-06-04 14:29:48,349 - train_models - INFO -   NoOfMan_rolling_max_7: 0.0839
+2025-06-04 14:29:48,350 - train_models - INFO -   NoOfMan_1day_trend: 0.0660
+2025-06-04 14:29:48,350 - train_models - INFO -   NoOfMan_lag_1: 0.0660
+2025-06-04 14:29:48,351 - train_models - INFO -   NoOfMan_rolling_min_7: 0.0379
+2025-06-04 14:29:48,351 - train_models - INFO -   NoOfMan_lag_7: 0.0244
+2025-06-04 14:29:48,351 - train_models - INFO -   NoOfMan_rolling_std_7: 0.0048
+2025-06-04 14:29:48,352 - train_models - INFO -   NoOfMan_lag_2: 0.0017
+2025-06-04 14:29:48,352 - train_models - INFO -   NoOfMan_same_dom_lag: 0.0017
+2025-06-04 14:29:48,353 - train_models - INFO - Cross-validation details for 217:
+2025-06-04 14:29:48,353 - train_models - INFO -   Fold 1: MAE=0.5945, RMSE=0.7118, R²=0.8237, MAPE=26.22%
+2025-06-04 14:29:48,354 - train_models - INFO -   Fold 2: MAE=0.4202, RMSE=0.5484, R²=0.9085, MAPE=20.98%
+2025-06-04 14:29:48,354 - train_models - INFO -   Fold 3: MAE=0.3635, RMSE=0.4859, R²=0.9439, MAPE=13.21%
+2025-06-04 14:29:48,355 - train_models - INFO -   Fold 4: MAE=0.3146, RMSE=0.4084, R²=0.9643, MAPE=13.11%
+2025-06-04 14:29:48,355 - train_models - INFO -   Fold 5: MAE=0.3667, RMSE=0.6065, R²=0.9107, MAPE=13.58%
+2025-06-04 14:29:48,356 - train_models - INFO - Saving 10 models to C:/forlogssystems/Models
+2025-06-04 14:29:49,153 - train_models - INFO - Model files saved successfully
+2025-06-04 14:29:49,154 - train_models - INFO - Performance summary saved to C:/forlogssystems/Models\model_performance_summary.xlsx
+2025-06-04 14:29:49,160 - train_models - INFO - Model training completed successfully

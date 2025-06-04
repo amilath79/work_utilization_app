@@ -167,12 +167,14 @@ def build_models(processed_data, work_types=None, n_splits=5):
 
             work_type_data.to_excel('work_type_data_PRe.xlsx', index=False)
             
-            # Define preprocessing for categorical features  
+            # Define preprocessing with imputation for missing values
+            from sklearn.impute import SimpleImputer
+            
             preprocessor = ColumnTransformer(
                 transformers=[
+                    ('num', SimpleImputer(strategy='median'), available_numeric),
                     ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)
-                ],
-                remainder='passthrough'
+                ]
             )
 
             # Define the model pipeline using DEFAULT_MODEL_PARAMS from config
@@ -218,17 +220,21 @@ def build_models(processed_data, work_types=None, n_splits=5):
             
             # Get feature importances from the final model
             model = pipeline.named_steps['model']
-            ohe = pipeline.named_steps['preprocessor'].transformers_[0][1]
             
-            # Extract feature names after one-hot encoding
+            # Get feature names after preprocessing
+            # Numeric features (after imputation)
+            num_feature_names = available_numeric
+            
+            # Categorical features (after one-hot encoding)
+            ohe = pipeline.named_steps['preprocessor'].named_transformers_['cat']
             cat_feature_names = []
             for i, feature in enumerate(categorical_features):
                 categories = ohe.categories_[i]
                 for category in categories:
                     cat_feature_names.append(f"{feature}_{category}")
             
-            # Combine with numeric feature names
-            all_feature_names = cat_feature_names + available_numeric
+            # Combine feature names
+            all_feature_names = num_feature_names + cat_feature_names
             
             # Get feature importances
             importances = model.feature_importances_
@@ -269,6 +275,7 @@ def train_from_sql(connection_string=None, sql_query=None):
     """
     Train models using data from a SQL query
     
+    
     Parameters:
     -----------
     connection_string : str, optional
@@ -301,7 +308,12 @@ def train_from_sql(connection_string=None, sql_query=None):
         if sql_query is None:
             sql_query = """
                 SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
-                FROM WorkUtilizationData WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 208, 210, 217) AND Hours <> 0
+                FROM WorkUtilizationData 
+                WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 210, 217) 
+                AND Hours > 0 
+                AND NoOfMan > 0 
+                AND SystemHours > 0 
+                AND Quantity > 0
                 ORDER BY Date
             """
         

@@ -695,6 +695,49 @@ def main():
     **Note:** A reduction in required resources is considered a positive improvement in efficiency.
     """)
     
+
+        # Add custom CSS for centered column headers
+    st.markdown("""
+    <style>
+    /* Center align dataframe column headers */
+    .stDataFrame thead tr th {
+        text-align: center !important;
+    }
+    
+    /* Center align dataframe column headers (alternative selector) */
+    div[data-testid="stDataFrame"] thead tr th {
+        text-align: center !important;
+    }
+    
+    /* Center align table headers */
+    .stDataFrame table thead tr th {
+        text-align: center !important;
+        font-weight: bold !important;
+    }
+    
+    /* Center align specific dataframe cells if needed */
+    .stDataFrame tbody tr td {
+        text-align: center !important;
+    }
+    
+    /* Style for better visual appearance */
+    .stDataFrame {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    /* Center align table content */
+    .stTable table thead tr th {
+        text-align: center !important;
+        font-weight: bold !important;
+        background-color: #f0f2f6 !important;
+    }
+    
+    .stTable table tbody tr td {
+        text-align: center !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     # Current date
     current_date = datetime.now().date()
     next_date = get_next_working_day(current_date)

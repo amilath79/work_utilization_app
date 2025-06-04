@@ -69,9 +69,14 @@ def load_workutilizationdata():
     """Load data from the WorkUtilizationData table"""
     try:
         sql_query = """
-        SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
-        FROM WorkUtilizationData WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 208, 210, 217) AND Hours <> 0
-        ORDER BY Date
+                SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
+                FROM WorkUtilizationData 
+                WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 210, 217) 
+                AND Hours > 0 
+                AND NoOfMan > 0 
+                AND SystemHours > 0 
+                AND Quantity > 0
+                ORDER BY Date
         """
         
         with st.spinner("Loading work utilization data..."):
