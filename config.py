@@ -99,8 +99,8 @@ DEFAULT_PUNCH_CODE_WORKING_DAYS = [0, 1, 2, 3, 4]
 # Feature tier controls (can be turned on/off)
 FEATURE_TIERS = {
     'BASIC': True,        # Essential features - always recommended
-    'INTERMEDIATE': False, # Enhanced features for better accuracy  
-    'ADVANCED': False      # Sophisticated features for maximum performance
+    'INTERMEDIATE': True, # Enhanced features for better accuracy  
+    'ADVANCED': True      # Sophisticated features for maximum performance
 }
 
 # ==========================================

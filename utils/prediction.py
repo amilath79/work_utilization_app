@@ -15,6 +15,7 @@ from utils.holiday_utils import is_working_day_for_punch_code
 # Import the torch_utils module for neural network support
 try:
     from utils.torch_utils import load_torch_models, predict_with_torch_model
+    import torch
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
@@ -34,12 +35,20 @@ from utils.holiday_utils import is_swedish_holiday
 
 def _precompute_feature_lists():
     """Pre-compute feature lists from tier configuration at module load time"""
-    from utils.feature_builder import get_feature_lists_for_data
+    from utils.feature_builder import FeatureBuilder
+    from config import FEATURE_TIERS
     
     feature_cache = {}
     
+    # Create a feature builder with reasonable defaults for precomputation
+    # We'll use conservative estimates since we don't have actual data at module load
+    feature_builder = FeatureBuilder(
+        data_columns=['Date', 'WorkType', 'NoOfMan', 'Hours', 'SystemHours', 'Quantity', 'ResourceKPI', 'SystemKPI'],
+        data_length=1000  # Assume sufficient data for advanced features
+    )
+    
     # Get comprehensive feature lists based on tier configuration
-    numeric_features, categorical_features = get_feature_lists_for_data()
+    numeric_features, categorical_features = feature_builder.get_feature_lists()
     
     # Cache different combinations
     feature_cache['remainder'] = numeric_features
@@ -47,16 +56,20 @@ def _precompute_feature_lists():
     feature_cache['categorical'] = categorical_features
     feature_cache['numeric'] = numeric_features
     
-    # Fallback features (basic tier only)
+    # Fallback features (basic tier only) - use config-based basic features
     fallback_features = ['DayOfWeek_feat', 'Month_feat', 'IsWeekend_feat']
-    for lag in [1, 2, 3, 7]:  # Basic lags
-        fallback_features.append(f'NoOfMan_lag_{lag}')
-    fallback_features.append('NoOfMan_rolling_mean_7')
+    
+    # Add basic lag features from config
+    if FEATURE_TIERS['BASIC']:
+        for lag in [1, 7]:  # Basic lags from config BASIC_FEATURES
+            fallback_features.append(f'NoOfMan_lag_{lag}')
+        fallback_features.append('NoOfMan_rolling_mean_7')
     
     feature_cache['fallback'] = fallback_features
     
-    # Log feature summary
-    logger.info(f"Feature cache built: {len(numeric_features)} numeric, {len(categorical_features)} categorical features")
+    # Log feature summary with tier information
+    active_tiers = [tier for tier, enabled in FEATURE_TIERS.items() if enabled]
+    logger.info(f"Feature cache built with tiers {active_tiers}: {len(numeric_features)} numeric, {len(categorical_features)} categorical features")
     
     return feature_cache
 
@@ -161,7 +174,7 @@ def load_neural_models():
 
 def predict_with_neural_network(df, nn_models, nn_scalers, work_type, date=None, sequence_length=7):
     """
-    Make prediction using the PyTorch neural network model
+    Make prediction using the PyTorch neural network model with tiered features
     """
     try:
         # Check if PyTorch is available
@@ -188,21 +201,50 @@ def predict_with_neural_network(df, nn_models, nn_scalers, work_type, date=None,
         work_type_data = work_type_data.sort_values('Date', ascending=False)
         recent_data = work_type_data.head(sequence_length)
         
-        # ✅ FULLY DYNAMIC FEATURE GENERATION
-        features = ['NoOfMan', 'DayOfWeek_feat', 'Month_feat', 'IsWeekend_feat']
+        # Use tiered feature system to get appropriate features
+        from utils.feature_builder import FeatureBuilder
+        from config import FEATURE_TIERS, LAG_DAYS, ROLLING_WINDOWS
         
-        # Add ALL available lag features from config
-        for lag in LAG_DAYS:
-            lag_feature = f'NoOfMan_lag_{lag}'
-            features.append(lag_feature)
+        # Create feature builder for this data
+        feature_builder = FeatureBuilder(
+            data_columns=list(recent_data.columns),
+            data_length=len(recent_data)
+        )
         
-        # Add ALL available rolling features from config  
-        for window in ROLLING_WINDOWS:
-            rolling_feature = f'NoOfMan_rolling_mean_{window}'
-            features.append(rolling_feature)
+        # Get features based on tier configuration
+        numeric_features, categorical_features = feature_builder.get_feature_lists()
+        
+        # Base features for neural network
+        base_features = ['NoOfMan', 'DayOfWeek_feat', 'Month_feat', 'IsWeekend_feat']
+        
+        # Add lag features based on active tiers
+        lag_features = []
+        if FEATURE_TIERS['ADVANCED']:
+            for lag in LAG_DAYS:
+                lag_features.append(f'NoOfMan_lag_{lag}')
+        elif FEATURE_TIERS['INTERMEDIATE']:
+            for lag in [1, 2, 3, 7, 14, 30]:
+                lag_features.append(f'NoOfMan_lag_{lag}')
+        else:  # Basic
+            for lag in [1, 7]:
+                lag_features.append(f'NoOfMan_lag_{lag}')
+        
+        # Add rolling features based on active tiers
+        rolling_features = []
+        if FEATURE_TIERS['ADVANCED']:
+            for window in ROLLING_WINDOWS:
+                rolling_features.append(f'NoOfMan_rolling_mean_{window}')
+        elif FEATURE_TIERS['INTERMEDIATE']:
+            for window in [7, 14, 30]:
+                rolling_features.append(f'NoOfMan_rolling_mean_{window}')
+        else:  # Basic
+            rolling_features.append('NoOfMan_rolling_mean_7')
+        
+        # Combine all features
+        all_neural_features = base_features + lag_features + rolling_features
         
         # Filter to only include features that actually exist in the data
-        available_features = [f for f in features if f in recent_data.columns]
+        available_features = [f for f in all_neural_features if f in recent_data.columns]
         
         # ✅ VALIDATION: Check if we have minimum required features
         if len(available_features) < 4:  # At minimum need NoOfMan + 3 date features
@@ -211,7 +253,8 @@ def predict_with_neural_network(df, nn_models, nn_scalers, work_type, date=None,
             return None
         
         # ✅ LOG WHAT FEATURES ARE BEING USED
-        logger.info(f"Neural network using {len(available_features)} features for {work_type}: {available_features}")
+        active_tiers = [tier for tier, enabled in FEATURE_TIERS.items() if enabled]
+        logger.info(f"Neural network using {len(available_features)} features from tiers {active_tiers} for {work_type}: {available_features}")
         
         # ✅ EXTRACT SEQUENCE USING AVAILABLE FEATURES
         try:
@@ -229,9 +272,7 @@ def predict_with_neural_network(df, nn_models, nn_scalers, work_type, date=None,
         # Ensure sequence is in chronological order (oldest to newest)
         sequence = sequence[::-1]
         
-        # ✅ DYNAMIC INPUT SIZE CHECK
-        expected_input_size = sequence.shape[1]
-        
+
         # Check if model expects this input size (optional validation)
         try:
             # This is a rough check - you might need to adjust based on your model architecture
@@ -253,6 +294,102 @@ def predict_with_neural_network(df, nn_models, nn_scalers, work_type, date=None,
         logger.error(traceback.format_exc())
         return None
 
+def create_prediction_features(df, work_type, next_date, latest_date):
+    """
+    Create a properly engineered feature set for prediction using the tiered feature system
+    
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        Historical data
+    work_type : str
+        Work type to predict for
+    next_date : datetime
+        Date to predict for
+    latest_date : datetime
+        Latest date in historical data
+        
+    Returns:
+    --------
+    pd.DataFrame
+        Single row dataframe with all required features
+    """
+    try:
+        from utils.feature_engineering import engineer_features, create_lag_features
+        from utils.feature_builder import FeatureBuilder
+        
+        # Filter data for this work type
+        work_type_data = df[df['WorkType'] == work_type].copy()
+        
+        # Create a mock prediction row with the next date
+        prediction_row = {
+            'Date': next_date,
+            'WorkType': work_type,
+            'NoOfMan': 0,  # Placeholder - we're predicting this
+        }
+        
+        # Add any other columns that might be in the original data for productivity features
+        productivity_columns = ['Hours', 'SystemHours', 'Quantity', 'ResourceKPI', 'SystemKPI']
+        for col in productivity_columns:
+            if col in df.columns:
+                # Use the mean value from recent data as placeholder
+                recent_data = work_type_data.tail(7)  # Last 7 days
+                mean_value = recent_data[col].mean() if not recent_data.empty else 0
+                prediction_row[col] = mean_value if not pd.isna(mean_value) else 0
+        
+        # Create a temporary dataframe with historical data + prediction row
+        temp_df = pd.concat([work_type_data, pd.DataFrame([prediction_row])], ignore_index=True)
+        
+        # Run through the same feature engineering pipeline as training
+        engineered_df = engineer_features(temp_df)
+        
+        # Use tiered feature system to determine appropriate lag days and rolling windows
+        feature_builder = FeatureBuilder(
+            data_columns=list(engineered_df.columns),
+            data_length=len(engineered_df)
+        )
+        
+        # Get the appropriate feature configuration based on available data
+        numeric_features, categorical_features = feature_builder.get_feature_lists()
+        
+        # Determine lag days and rolling windows based on feature tiers enabled
+        from config import FEATURE_TIERS, LAG_DAYS, ROLLING_WINDOWS
+        
+        if FEATURE_TIERS['ADVANCED']:
+            lag_days_to_use = LAG_DAYS
+            rolling_windows_to_use = ROLLING_WINDOWS
+        elif FEATURE_TIERS['INTERMEDIATE']:
+            # Use intermediate configuration - defined in config
+            lag_days_to_use = [1, 2, 3, 7, 14, 30]
+            rolling_windows_to_use = [7, 14, 30]
+        else:
+            # Use basic configuration
+            lag_days_to_use = [1, 7]
+            rolling_windows_to_use = [7]
+        
+        # Create lag features with appropriate configuration
+        features_df = create_lag_features(
+            engineered_df, 
+            'WorkType', 
+            'NoOfMan',
+            lag_days=lag_days_to_use,
+            rolling_windows=rolling_windows_to_use
+        )
+        
+        # Get the last row (our prediction row) with all engineered features
+        prediction_features = features_df.iloc[-1:].copy()
+        
+        # Log which feature tier is being used
+        active_tiers = [tier for tier, enabled in FEATURE_TIERS.items() if enabled]
+        logger.info(f"Using feature tiers: {active_tiers} for prediction of {work_type}")
+        
+        return prediction_features
+        
+    except Exception as e:
+        logger.error(f"Error creating prediction features: {str(e)}")
+        logger.error(traceback.format_exc())
+        return None
+
 def predict_next_day(df, models, date=None, use_neural_network=False):
     """
     Predict NoOfMan and Hours for the next day for each WorkType
@@ -269,18 +406,7 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
         if use_neural_network:
             nn_models, nn_scalers, nn_metrics = load_neural_models()
         
-        # Get the day of week, month, etc. for the next day
-        next_day_features = {
-            'Date': next_date,
-            'DayOfWeek_feat': next_date.dayofweek,
-            'Month_feat': next_date.month,
-            'IsWeekend_feat': 1 if next_date.dayofweek >= 5 else 0,
-            'Year_feat': next_date.year,
-            'Quarter': (next_date.month - 1) // 3 + 1,
-            'DayOfMonth': next_date.day,
-            'WeekOfYear': next_date.isocalendar()[1]
-        }
-        
+
         predictions = {}
         hours_predictions = {}
         
@@ -305,102 +431,37 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
                     logger.info(f"Neural network predicted {nn_prediction:.2f} workers for WorkType {work_type}")
                     continue
             
-            # Fall back to traditional model if neural prediction fails or wasn't requested
-            # Filter data for this WorkType
-            work_type_data = df[df['WorkType'] == work_type]
-            
-            if len(work_type_data) < 8:  # Need at least 7 days of history for lag features
-                logger.warning(f"Not enough data for WorkType {work_type}. Skipping.")
-                continue
+            # Fall back to traditional model - USE PROPER FEATURE ENGINEERING
+            try:
+                # Create properly engineered features using the same pipeline as training
+                prediction_features = create_prediction_features(df, work_type, next_date, latest_date)
                 
-            # Get the most recent values for lag features
-            lag_features = {}
-            for lag in LAG_DAYS:
-                try:
-                    lag_date = latest_date - timedelta(days=lag)
-                    lag_records = work_type_data[work_type_data['Date'] == lag_date]
-                    lag_value = lag_records['NoOfMan'].sum() if not lag_records.empty else 0
-                    lag_features[f'NoOfMan_lag_{lag}'] = lag_value
-                except:
-                    # If a lag day isn't available
-                    lag_features[f'NoOfMan_lag_{lag}'] = 0
-            
-            # Calculate rolling statistics
-            for window in ROLLING_WINDOWS:
-                try:
-                    recent_data = work_type_data[work_type_data['Date'] > latest_date - timedelta(days=window)]
-                    values = recent_data['NoOfMan'].values
-                    
-                    # Calculate rolling mean
-                    rolling_mean = values.mean() if len(values) > 0 else 0
-                    lag_features[f'NoOfMan_rolling_mean_{window}'] = rolling_mean
-                    
-                    # Calculate other rolling statistics if needed by the model
-                    if ROLLING_WINDOWS and window == ROLLING_WINDOWS[0]:  # Only for first window to avoid feature explosion
-                        lag_features[f'NoOfMan_rolling_max_{window}'] = values.max() if len(values) > 0 else 0
-                        lag_features[f'NoOfMan_rolling_min_{window}'] = values.min() if len(values) > 0 else 0
-                        lag_features[f'NoOfMan_rolling_std_{window}'] = values.std() if len(values) > 1 else 0
-                except Exception as roll_err:
-                    logger.warning(f"Error calculating rolling stats for window {window}: {str(roll_err)}")
-                    lag_features[f'NoOfMan_rolling_mean_{window}'] = 0
-                    if ROLLING_WINDOWS and window == ROLLING_WINDOWS[0]:
-                        lag_features[f'NoOfMan_rolling_max_{window}'] = 0
-                        lag_features[f'NoOfMan_rolling_min_{window}'] = 0
-                        lag_features[f'NoOfMan_rolling_std_{window}'] = 0
-            
-            # Same day of week lag
-            try:
-                same_dow_records = work_type_data[
-                    (work_type_data['DayOfWeek_feat'] == next_day_features['DayOfWeek_feat']) &
-                    (work_type_data['Date'] < latest_date)
-                ].sort_values('Date', ascending=False)
+                if prediction_features is None:
+                    logger.warning(f"Could not create features for WorkType {work_type}. Skipping.")
+                    continue
                 
-                same_dow_value = same_dow_records.iloc[0]['NoOfMan'] if not same_dow_records.empty else 0
-                lag_features['NoOfMan_same_dow_lag'] = same_dow_value
-            except:
-                lag_features['NoOfMan_same_dow_lag'] = 0
-            
-            # Same day of month lag
-            try:
-                same_dom_records = work_type_data[
-                    (work_type_data['DayOfMonth'] == next_day_features['DayOfMonth']) &
-                    (work_type_data['Date'] < latest_date)
-                ].sort_values('Date', ascending=False)
+                # Get the model
+                model = models[work_type]
                 
-                same_dom_value = same_dom_records.iloc[0]['NoOfMan'] if not same_dom_records.empty else 0
-                lag_features['NoOfMan_same_dom_lag'] = same_dom_value
-            except:
-                lag_features['NoOfMan_same_dom_lag'] = 0
-            
-            # Add trend indicators
-            try:
-                if 1 in LAG_DAYS and 7 in LAG_DAYS:
-                    lag_features['NoOfMan_7day_trend'] = lag_features['NoOfMan_lag_1'] - lag_features['NoOfMan_lag_7']
-                if 1 in LAG_DAYS and 2 in LAG_DAYS:
-                    lag_features['NoOfMan_1day_trend'] = lag_features['NoOfMan_lag_1'] - lag_features['NoOfMan_lag_2']
-            except:
-                if 1 in LAG_DAYS and 7 in LAG_DAYS:
-                    lag_features['NoOfMan_7day_trend'] = 0
-                if 1 in LAG_DAYS and 2 in LAG_DAYS:
-                    lag_features['NoOfMan_1day_trend'] = 0
-            
-            # Combine features
-            all_features = {**next_day_features, **lag_features}
-            
-            # Get required features for the model
-            model = models[work_type]
-            required_features = _get_required_features(model)
-            
-            # Create the prediction dataframe with required features
-            X_pred = pd.DataFrame([{
-                feature: all_features.get(feature, 0) 
-                for feature in required_features
-            }])
-            
-            # Make prediction
-            try:
-                # X_pred already contains all required features from _get_required_features()
-                # No need to add additional features - just predict directly
+                # Get required features for the model
+                required_features = _get_required_features(model)
+                
+                # Filter to only include features that exist in our engineered features
+                available_features = [f for f in required_features if f in prediction_features.columns]
+                
+                if len(available_features) == 0:
+                    logger.warning(f"No required features available for WorkType {work_type}. Skipping.")
+                    continue
+                
+                # Create prediction dataframe with only the available required features
+                X_pred = prediction_features[available_features].copy()
+                
+                # Fill any missing values with 0
+                X_pred = X_pred.fillna(0)
+                
+                logger.info(f"Using {len(available_features)} features for WorkType {work_type}")
+                
+                # Make prediction
                 prediction = model.predict(X_pred)[0]
                 
                 # Ensure prediction is not negative
@@ -477,29 +538,30 @@ def predict_multiple_days(df, models, num_days=7, use_neural_network=False):
                 for work_type, pred_value in predictions.items():
                     hours_value = hours_predictions.get(work_type, pred_value * 8.0)  # Default to 8 hours if missing
                     
-                    # Use actual prediction values (including zeros for non-working punch codes)
+                    # Create new row with all the necessary columns for feature engineering
                     new_row = {
                         'Date': next_date,
                         'WorkType': work_type,
                         'NoOfMan': pred_value,
-                        'Hours': hours_value,
-                        
-                        # Add the date features
-                        'DayOfWeek_feat': next_date.dayofweek,
-                        'Month_feat': next_date.month,
-                        'IsWeekend_feat': 1 if next_date.dayofweek == 5 else 0,  # Only Saturday is a weekend
-                        'Year_feat': next_date.year,
-                        'Quarter': (next_date.month - 1) // 3 + 1,
-                        'DayOfMonth': next_date.day,
-                        'WeekOfYear': next_date.isocalendar()[1]
+                        'Hours': hours_value
                     }
                     
-                    # Add necessary lag features for the next iteration
+                    # Add productivity columns if they exist in original data
+                    productivity_columns = ['SystemHours', 'Quantity', 'ResourceKPI', 'SystemKPI']
+                    for col in productivity_columns:
+                        if col in current_df.columns:
+                            # Use recent average for productivity metrics
+                            recent_data = current_df[current_df['WorkType'] == work_type].tail(7)
+                            mean_value = recent_data[col].mean() if not recent_data.empty else 0
+                            new_row[col] = mean_value if not pd.isna(mean_value) else 0
+                    
                     new_rows.append(new_row)
                 
                 # Append new rows to the dataframe
                 if new_rows:
-                    current_df = pd.concat([current_df, pd.DataFrame(new_rows)], ignore_index=True)
+                    new_df = pd.DataFrame(new_rows)
+                    current_df = pd.concat([current_df, new_df], ignore_index=True)
+                    
             except Exception as day_error:
                 # Handle errors for individual days without failing the entire prediction
                 logger.error(f"Error processing day {prediction_date}: {str(day_error)}")
@@ -560,7 +622,7 @@ def evaluate_predictions(y_true, y_pred):
     
 
 def _get_required_features(model):
-    """Helper function to get feature names required by the model - now uses pre-computed lists"""
+    """Helper function to get feature names required by the model - uses tiered feature system"""
     try:
         # If it's a pipeline, get the feature names from the model
         if hasattr(model, 'steps'):
@@ -571,23 +633,44 @@ def _get_required_features(model):
             # Otherwise, extract from preprocessor
             preprocessor = model.named_steps.get('preprocessor')
             if preprocessor:
-                cat_cols = []
-
+                feature_names = []
+                
                 if hasattr(preprocessor, 'transformers_'):
                     for name, transformer, cols in preprocessor.transformers_:
-                        if name == 'cat' and hasattr(transformer, 'categories_'):
-                            for i, _ in enumerate(transformer.categories_):
-                                if i < len(cols):
-                                    cat_cols.append(cols[i])
+                        if name == 'num':
+                            # Numeric features - add as-is
+                            feature_names.extend(cols)
+                        elif name == 'cat' and hasattr(transformer, 'categories_'):
+                            # Categorical features - add original column names
+                            feature_names.extend(cols)
                 
-                # Use pre-computed remainder columns
-                return cat_cols + _FEATURE_CACHE.get('remainder', [])
-
-        # Use pre-computed default features
-        return _FEATURE_CACHE.get('default', [])
+                if feature_names:
+                    return feature_names
+        
+        # Fallback: Use tiered feature system to get appropriate features
+        from utils.feature_builder import FeatureBuilder
+        from config import FEATURE_TIERS
+        
+        # Create a feature builder with conservative assumptions
+        feature_builder = FeatureBuilder(
+            data_columns=['Date', 'WorkType', 'NoOfMan', 'Hours', 'SystemHours', 'Quantity', 'ResourceKPI', 'SystemKPI'],
+            data_length=1000
+        )
+        
+        # Get features based on current tier configuration
+        numeric_features, categorical_features = feature_builder.get_feature_lists()
+        
+        # Combine and return
+        all_features = categorical_features + numeric_features
+        
+        active_tiers = [tier for tier, enabled in FEATURE_TIERS.items() if enabled]
+        logger.info(f"Using tiered features from {active_tiers}: {len(all_features)} total features")
+        
+        return all_features
 
     except Exception as e:
         logger.error(f"Error getting required features: {str(e)}")
         logger.error(traceback.format_exc())
         # Use pre-computed fallback features
         return _FEATURE_CACHE.get('fallback', [])
+    
