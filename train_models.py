@@ -188,6 +188,13 @@ def build_models(processed_data, work_types=None, n_splits=5):
                 
                 # Prepare features and target
                 all_available_features = available_numeric + available_categorical
+
+                logger.info(f"=== FEATURE COUNT TRAINING - {work_type} ===")
+                logger.info(f"Total available features: {len(all_available_features)}")
+                logger.info(f"Numeric features: {len(available_numeric)}")
+                logger.info(f"Categorical features: {len(available_categorical)}")
+                logger.info(f"Features: {all_available_features}")
+
                 X = work_type_data[all_available_features]
                 y = work_type_data['NoOfMan']
                 
@@ -386,7 +393,6 @@ def train_from_sql(connection_string=None, sql_query=None):
                 AND NoOfMan > 0 
                 AND SystemHours > 0 
                 AND Quantity > 0
-                AND Date > '2024-05-01'
                 ORDER BY Date
             """
         

@@ -245,7 +245,8 @@ def predict_with_neural_network(df, nn_models, nn_scalers, work_type, date=None,
         
         # Filter to only include features that actually exist in the data
         available_features = [f for f in all_neural_features if f in recent_data.columns]
-        
+
+       
         # ✅ VALIDATION: Check if we have minimum required features
         if len(available_features) < 4:  # At minimum need NoOfMan + 3 date features
             logger.warning(f"Not enough features available for neural prediction for WorkType: {work_type}. "
@@ -462,6 +463,12 @@ def create_prediction_features(df, work_type, next_date, latest_date):
         latest_features['Month_feat'] = next_date.month
         latest_features['IsWeekend_feat'] = 1 if next_date.weekday() == 5 else 0
         latest_features['Year_feat'] = next_date.year
+
+        logger.info(f"=== FEATURE ENGINEERING SUMMARY - {work_type} ===")
+        logger.info(f"Input data columns: {len(engineered_df.columns)}")
+        logger.info(f"Final feature columns: {len(latest_features.columns)}")
+        logger.info(f"Lag days used: {lag_days_to_use}")
+        logger.info(f"Rolling windows used: {rolling_windows_to_use}")
         
         return latest_features
         
@@ -527,6 +534,14 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
                 
                 # Filter to only include features that exist in our engineered features
                 available_features = [f for f in required_features if f in prediction_features.columns]
+
+                logger.info(f"=== FEATURE COUNT PREDICTION - {work_type} ===")
+                logger.info(f"Required features: {len(required_features)}")
+                logger.info(f"Available features: {len(available_features)}")
+                logger.info(f"Missing features: {len(required_features) - len(available_features)}")
+                if len(required_features) != len(available_features):
+                    missing = [f for f in required_features if f not in available_features]
+                    logger.info(f"Missing feature names: {missing}")
                 
                 if len(available_features) == 0:
                     logger.warning(f"No required features available for WorkType {work_type}. Skipping.")
