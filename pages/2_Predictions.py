@@ -504,6 +504,38 @@ def main():
         st.write("### Monthly Resource Plan")
         st.dataframe(monthly_pivot, use_container_width=True)
 
+        # Add this after predictions are generated
+        if st.session_state.current_predictions:
+            st.subheader("📊 Prediction Validation")
+            
+            # Compare with historical averages
+            validation_data = []
+            for work_type in selected_work_types:
+                # Get historical data for this work type
+                hist_data = st.session_state.ts_data[st.session_state.ts_data['WorkType'] == work_type]
+                
+                if not hist_data.empty:
+                    hist_avg = hist_data['NoOfMan'].mean()
+                    hist_min = hist_data['NoOfMan'].min()
+                    hist_max = hist_data['NoOfMan'].max()
+                    
+                    # Get prediction average
+                    pred_values = [pred_dict.get(work_type, 0) for pred_dict in predictions.values()]
+                    pred_avg = np.mean(pred_values)
+                    
+                    validation_data.append({
+                        'Work Type': work_type,
+                        'Historical Avg': round(hist_avg, 2),
+                        'Historical Range': f"{hist_min} - {hist_max}",
+                        'Predicted Avg': round(pred_avg, 2),
+                        'Within Range': "✅" if hist_min <= pred_avg <= hist_max else "⚠️"
+                    })
+            
+            if validation_data:
+                validation_df = pd.DataFrame(validation_data)
+                st.dataframe(validation_df, use_container_width=True)
+
+
         # # Download options
         # st.subheader("Download Options")
         # col1, col2, col3 = st.columns(3)

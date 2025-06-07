@@ -98,11 +98,25 @@ DEFAULT_PUNCH_CODE_WORKING_DAYS = [0, 1, 2, 3, 4]
 
 # Feature tier controls (can be turned on/off)
 FEATURE_TIERS = {
-    'BASIC': True,        # Essential features - always recommended
-    'INTERMEDIATE': True, # Enhanced features for better accuracy  
-    'ADVANCED': True      # Sophisticated features for maximum performance
+    'BASIC': True,
+    'INTERMEDIATE': True,   # Enable this
+    'ADVANCED': False
 }
 
+
+# ADVANCED FEATURE TOGGLES - Easy on/off switches
+ADVANCED_FEATURE_TOGGLES = {
+    'DATE_FEATURES': True,           # Extended date intelligence (DayOfYear, etc.)
+    'LAG_FEATURES': True,            # Long-term patterns (90, 365 day lags)
+    'ROLLING_FEATURES': True,        # Extended rolling windows (90 day patterns)
+    'PRODUCTIVITY_FEATURES': True,  # Productivity metrics (turn off if causing issues)
+    'BUSINESS_FEATURES': True,      # Business logic features (turn off if not implemented)
+}
+
+
+# ==========================================
+# BASIC FEATURES (Tier 1) - Essential
+# ==========================================
 # ==========================================
 # BASIC FEATURES (Tier 1) - Essential
 # ==========================================
@@ -116,12 +130,18 @@ BASIC_FEATURES = {
     # Essential lag features - most recent patterns
     'LAG_FEATURES': {
         'NoOfMan': [1, 7],  # Yesterday and same day last week
+        'Quantity': [1, 7],  # Recent quantity patterns
+        'ResourceKPI': [1],  # Most recent KPI
     },
     
     # Basic trend indicators
     'ROLLING_FEATURES': {
         'NoOfMan': {
             'windows': [7],  # Weekly averages
+            'functions': ['mean']
+        },
+        'Quantity': {
+            'windows': [7],
             'functions': ['mean']
         }
     }
@@ -228,9 +248,9 @@ ADVANCED_FEATURES = {
     
     # Business logic features
     'BUSINESS_FEATURES': [
-        'Workload_Intensity',      # High/Medium/Low workload indicator
-        'Seasonal_Factor',         # Seasonal adjustment factor
-        'Capacity_Utilization',    # How close to maximum capacity
+        # 'Workload_Intensity',      # High/Medium/Low workload indicator
+        # 'Seasonal_Factor',         # Seasonal adjustment factor
+        # 'Capacity_Utilization',    # How close to maximum capacity
     ]
 }
 

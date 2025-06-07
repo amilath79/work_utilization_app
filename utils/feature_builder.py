@@ -152,23 +152,28 @@ class FeatureBuilder:
     
     def _build_advanced_features(self):
         """Build advanced tier features"""
+        from config import ADVANCED_FEATURE_TOGGLES  # Add this import
+        
         numeric = []
         categorical = []
         
         # Date features
-        categorical.extend(ADVANCED_FEATURES['DATE_FEATURES']['categorical'])
-        numeric.extend(ADVANCED_FEATURES['DATE_FEATURES']['numeric'])
+        if ADVANCED_FEATURE_TOGGLES.get('DATE_FEATURES', True):  # Add this check
+            categorical.extend(ADVANCED_FEATURES['DATE_FEATURES']['categorical'])
+            numeric.extend(ADVANCED_FEATURES['DATE_FEATURES']['numeric'])
         
-        # Lag features
-        for base_feature, lags in ADVANCED_FEATURES['LAG_FEATURES'].items():
-            for lag in lags:
-                numeric.append(f'{base_feature}_lag_{lag}')
+        # Lag features  
+        if ADVANCED_FEATURE_TOGGLES.get('LAG_FEATURES', True):  # Add this check
+            for base_feature, lags in ADVANCED_FEATURES['LAG_FEATURES'].items():
+                for lag in lags:
+                    numeric.append(f'{base_feature}_lag_{lag}')
         
         # Rolling features
-        for base_feature, config in ADVANCED_FEATURES['ROLLING_FEATURES'].items():
-            for window in config['windows']:
-                for func in config['functions']:
-                    numeric.append(f'{base_feature}_rolling_{func}_{window}')
+        if ADVANCED_FEATURE_TOGGLES.get('ROLLING_FEATURES', True):  # Add this check
+            for base_feature, config in ADVANCED_FEATURES['ROLLING_FEATURES'].items():
+                for window in config['windows']:
+                    for func in config['functions']:
+                        numeric.append(f'{base_feature}_rolling_{func}_{window}')
         
         # Productivity features (if available)
         if self.available_features['HAS_PRODUCTIVITY']:

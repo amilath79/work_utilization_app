@@ -294,80 +294,159 @@ def predict_with_neural_network(df, nn_models, nn_scalers, work_type, date=None,
         logger.error(traceback.format_exc())
         return None
 
+# def create_prediction_features(df, work_type, next_date, latest_date):
+#     """
+#     Create a properly engineered feature set for prediction using the tiered feature system
+    
+#     Parameters:
+#     -----------
+#     df : pd.DataFrame
+#         Historical data
+#     work_type : str
+#         Work type to predict for
+#     next_date : datetime
+#         Date to predict for
+#     latest_date : datetime
+#         Latest date in historical data
+        
+#     Returns:
+#     --------
+#     pd.DataFrame
+#         Single row dataframe with all required features
+#     """
+#     try:
+#         from utils.feature_engineering_ import engineer_features, create_lag_features
+#         from utils.feature_builder import FeatureBuilder
+        
+#         # Filter data for this work type
+#         work_type_data = df[df['WorkType'] == work_type].copy()
+
+#         recent_data = work_type_data.tail(7)
+#         recent_avg = recent_data['NoOfMan'].mean() if not recent_data.empty else 1
+        
+#         # Create a mock prediction row with the next date
+#         prediction_row = {
+#             'Date': next_date,
+#             'WorkType': work_type,
+#             'NoOfMan': recent_avg,  # Placeholder - we're predicting this
+#         }
+        
+#         # Add any other columns that might be in the original data for productivity features
+#         productivity_columns = ['Hours', 'SystemHours', 'Quantity', 'ResourceKPI', 'SystemKPI']
+#         for col in productivity_columns:
+#             if col in df.columns:
+#                 # Use the mean value from recent data as placeholder
+#                 recent_data = work_type_data.tail(7)  # Last 7 days
+#                 mean_value = recent_data[col].mean() if not recent_data.empty else 0
+#                 prediction_row[col] = mean_value if not pd.isna(mean_value) else 0
+        
+#         # Create a temporary dataframe with historical data + prediction row
+#         temp_df = pd.concat([work_type_data, pd.DataFrame([prediction_row])], ignore_index=True)
+        
+#         # Run through the same feature engineering pipeline as training
+#         engineered_df = engineer_features(temp_df)
+        
+#         # Use tiered feature system to determine appropriate lag days and rolling windows
+#         feature_builder = FeatureBuilder(
+#             data_columns=list(engineered_df.columns),
+#             data_length=len(engineered_df)
+#         )
+        
+#         # Get the appropriate feature configuration based on available data
+#         numeric_features, categorical_features = feature_builder.get_feature_lists()
+        
+#         # Determine lag days and rolling windows based on feature tiers enabled
+#         from config import FEATURE_TIERS, LAG_DAYS, ROLLING_WINDOWS
+        
+#         if FEATURE_TIERS['ADVANCED']:
+#             lag_days_to_use = LAG_DAYS
+#             rolling_windows_to_use = ROLLING_WINDOWS
+#         elif FEATURE_TIERS['INTERMEDIATE']:
+#             # Use intermediate configuration - defined in config
+#             lag_days_to_use = [1, 2, 3, 7, 14, 30]
+#             rolling_windows_to_use = [7, 14, 30]
+#         else:
+#             # Use basic configuration
+#             lag_days_to_use = [1, 7]
+#             rolling_windows_to_use = [7]
+        
+#         # Create lag features with appropriate configuration
+#         features_df = create_lag_features(
+#             engineered_df, 
+#             'WorkType', 
+#             'NoOfMan',
+#             lag_days=lag_days_to_use,
+#             rolling_windows=rolling_windows_to_use
+#         )
+        
+#         # Get the last row (our prediction row) with all engineered features
+#         prediction_features = features_df.iloc[-1:].copy()
+        
+#         # Log which feature tier is being used
+#         active_tiers = [tier for tier, enabled in FEATURE_TIERS.items() if enabled]
+#         logger.info(f"Using feature tiers: {active_tiers} for prediction of {work_type}")
+        
+#         return prediction_features
+        
+#     except Exception as e:
+#         logger.error(f"Error creating prediction features: {str(e)}")
+#         logger.error(traceback.format_exc())
+#         return None
+
+
 def create_prediction_features(df, work_type, next_date, latest_date):
     """
-    Create a properly engineered feature set for prediction using the tiered feature system
-    
-    Parameters:
-    -----------
-    df : pd.DataFrame
-        Historical data
-    work_type : str
-        Work type to predict for
-    next_date : datetime
-        Date to predict for
-    latest_date : datetime
-        Latest date in historical data
-        
-    Returns:
-    --------
-    pd.DataFrame
-        Single row dataframe with all required features
+    Create prediction features using config-based lag/rolling settings
     """
     try:
         from utils.feature_engineering import engineer_features, create_lag_features
-        from utils.feature_builder import FeatureBuilder
+        from config import FEATURE_TIERS, BASIC_FEATURES, INTERMEDIATE_FEATURES, ADVANCED_FEATURES, LAG_DAYS, ROLLING_WINDOWS
         
-        # Filter data for this work type
+        # 1. Process historical data ONLY
         work_type_data = df[df['WorkType'] == work_type].copy()
         
-        # Create a mock prediction row with the next date
-        prediction_row = {
-            'Date': next_date,
-            'WorkType': work_type,
-            'NoOfMan': 0,  # Placeholder - we're predicting this
-        }
+        # 2. Run feature engineering on clean historical data
+        engineered_df = engineer_features(work_type_data)
         
-        # Add any other columns that might be in the original data for productivity features
-        productivity_columns = ['Hours', 'SystemHours', 'Quantity', 'ResourceKPI', 'SystemKPI']
-        for col in productivity_columns:
-            if col in df.columns:
-                # Use the mean value from recent data as placeholder
-                recent_data = work_type_data.tail(7)  # Last 7 days
-                mean_value = recent_data[col].mean() if not recent_data.empty else 0
-                prediction_row[col] = mean_value if not pd.isna(mean_value) else 0
+        # 3. Get lag days and rolling windows from config based on active tiers
+        lag_days_to_use = []
+        rolling_windows_to_use = []
         
-        # Create a temporary dataframe with historical data + prediction row
-        temp_df = pd.concat([work_type_data, pd.DataFrame([prediction_row])], ignore_index=True)
+        if FEATURE_TIERS['BASIC']:
+            # Get from BASIC_FEATURES config
+            basic_lags = []
+            for feature, lags in BASIC_FEATURES['LAG_FEATURES'].items():
+                basic_lags.extend(lags)
+            lag_days_to_use.extend(basic_lags)
+            
+            # Get rolling windows from BASIC config
+            for feature, config in BASIC_FEATURES['ROLLING_FEATURES'].items():
+                rolling_windows_to_use.extend(config['windows'])
         
-        # Run through the same feature engineering pipeline as training
-        engineered_df = engineer_features(temp_df)
-        
-        # Use tiered feature system to determine appropriate lag days and rolling windows
-        feature_builder = FeatureBuilder(
-            data_columns=list(engineered_df.columns),
-            data_length=len(engineered_df)
-        )
-        
-        # Get the appropriate feature configuration based on available data
-        numeric_features, categorical_features = feature_builder.get_feature_lists()
-        
-        # Determine lag days and rolling windows based on feature tiers enabled
-        from config import FEATURE_TIERS, LAG_DAYS, ROLLING_WINDOWS
+        if FEATURE_TIERS['INTERMEDIATE']:
+            # Get from INTERMEDIATE_FEATURES config
+            intermediate_lags = []
+            for feature, lags in INTERMEDIATE_FEATURES['LAG_FEATURES'].items():
+                intermediate_lags.extend(lags)
+            lag_days_to_use.extend(intermediate_lags)
+            
+            # Get rolling windows from INTERMEDIATE config
+            for feature, config in INTERMEDIATE_FEATURES['ROLLING_FEATURES'].items():
+                rolling_windows_to_use.extend(config['windows'])
         
         if FEATURE_TIERS['ADVANCED']:
-            lag_days_to_use = LAG_DAYS
-            rolling_windows_to_use = ROLLING_WINDOWS
-        elif FEATURE_TIERS['INTERMEDIATE']:
-            # Use intermediate configuration - defined in config
-            lag_days_to_use = [1, 2, 3, 7, 14, 30]
-            rolling_windows_to_use = [7, 14, 30]
-        else:
-            # Use basic configuration
-            lag_days_to_use = [1, 7]
-            rolling_windows_to_use = [7]
+            # Use global LAG_DAYS and ROLLING_WINDOWS from config
+            lag_days_to_use.extend(LAG_DAYS)
+            rolling_windows_to_use.extend(ROLLING_WINDOWS)
         
-        # Create lag features with appropriate configuration
+        # Remove duplicates and sort
+        lag_days_to_use = sorted(list(set(lag_days_to_use)))
+        rolling_windows_to_use = sorted(list(set(rolling_windows_to_use)))
+        
+        logger.info(f"Using config lag days: {lag_days_to_use}")
+        logger.info(f"Using config rolling windows: {rolling_windows_to_use}")
+        
+        # 4. Create lag features using config values
         features_df = create_lag_features(
             engineered_df, 
             'WorkType', 
@@ -376,20 +455,20 @@ def create_prediction_features(df, work_type, next_date, latest_date):
             rolling_windows=rolling_windows_to_use
         )
         
-        # Get the last row (our prediction row) with all engineered features
-        prediction_features = features_df.iloc[-1:].copy()
+        # 5. Get latest row and update date features only
+        latest_features = features_df.iloc[-1:].copy()
+        latest_features['Date'] = next_date
+        latest_features['DayOfWeek_feat'] = next_date.weekday()
+        latest_features['Month_feat'] = next_date.month
+        latest_features['IsWeekend_feat'] = 1 if next_date.weekday() == 5 else 0
+        latest_features['Year_feat'] = next_date.year
         
-        # Log which feature tier is being used
-        active_tiers = [tier for tier, enabled in FEATURE_TIERS.items() if enabled]
-        logger.info(f"Using feature tiers: {active_tiers} for prediction of {work_type}")
-        
-        return prediction_features
+        return latest_features
         
     except Exception as e:
         logger.error(f"Error creating prediction features: {str(e)}")
-        logger.error(traceback.format_exc())
         return None
-
+    
 def predict_next_day(df, models, date=None, use_neural_network=False):
     """
     Predict NoOfMan and Hours for the next day for each WorkType
@@ -453,12 +532,20 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
                     logger.warning(f"No required features available for WorkType {work_type}. Skipping.")
                     continue
                 
+
+                # After creating prediction_features, add this:
+                logger.info(f"Prediction features for {work_type}:")
+                for col in ['NoOfMan_lag_1', 'NoOfMan_lag_7', 'NoOfMan_rolling_mean_7']:
+                    if col in prediction_features.columns:
+                        val = prediction_features[col].iloc[0]
+                        logger.info(f"  {col}: {val}")
+
                 # Create prediction dataframe with only the available required features
                 X_pred = prediction_features[available_features].copy()
                 
                 # Fill any missing values with 0
                 X_pred = X_pred.fillna(0)
-                
+                print(X_pred)
                 logger.info(f"Using {len(available_features)} features for WorkType {work_type}")
                 
                 # Make prediction
