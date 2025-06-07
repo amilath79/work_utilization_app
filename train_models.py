@@ -20,14 +20,13 @@ from sklearn.pipeline import Pipeline
 
 # Import feature engineering functions from utils
 from utils.feature_engineering import engineer_features, create_lag_features
-from utils.feature_builder import FeatureBuilder
 
 from config import (
     MODELS_DIR, DATA_DIR, LAG_DAYS, ROLLING_WINDOWS, 
     CHUNK_SIZE, DEFAULT_MODEL_PARAMS,
     SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION,
     SQL_USERNAME, SQL_PASSWORD,
-    FEATURE_TIERS, BASIC_FEATURES, INTERMEDIATE_FEATURES, ADVANCED_FEATURES
+    FEATURE_GROUPS, PRODUCTIVITY_FEATURES, DATE_FEATURES, ESSENTIAL_LAGS, ESSENTIAL_WINDOWS
 )
 
 # Configure logging
@@ -125,22 +124,48 @@ def build_models(processed_data, work_types=None, n_splits=5):
         
         logger.info(f"Building models for {len(work_types)} work types")
         
-        # Log which feature tiers are enabled
-        active_tiers = [tier for tier, enabled in FEATURE_TIERS.items() if enabled]
-        logger.info(f"Using feature tiers: {active_tiers}")
+        # Log which feature groups are enabled
+        active_groups = [group for group, enabled in FEATURE_GROUPS.items() if enabled]
+        logger.info(f"Using feature groups: {active_groups}")
         
         models = {}
         feature_importances = {}
         metrics = {}
         
-        # Use tiered feature system to get appropriate features
-        feature_builder = FeatureBuilder(
-            data_columns=list(processed_data.columns),
-            data_length=len(processed_data)
-        )
+        # Simple config-driven feature selection
+        numeric_features = []
+        categorical_features = []
         
-        # Get feature lists based on tier configuration
-        numeric_features, categorical_features = feature_builder.get_feature_lists()
+        # Essential lag features
+        if FEATURE_GROUPS['LAG_FEATURES']:
+            for lag in ESSENTIAL_LAGS:
+                numeric_features.append(f'NoOfMan_lag_{lag}')
+            # Add quantity lag_1 if productivity features enabled
+            if FEATURE_GROUPS['PRODUCTIVITY_FEATURES']:
+                numeric_features.append('Quantity_lag_1')
+        
+        # Essential rolling features  
+        if FEATURE_GROUPS['ROLLING_FEATURES']:
+            for window in ESSENTIAL_WINDOWS:
+                numeric_features.append(f'NoOfMan_rolling_mean_{window}')
+        
+        # Date features from config
+        if FEATURE_GROUPS['DATE_FEATURES']:
+            categorical_features.extend(DATE_FEATURES['categorical'])
+            numeric_features.extend(DATE_FEATURES['numeric'])
+            numeric_features.append('DayOfMonth')  # Add day of month
+        
+        # Productivity features from config
+        if FEATURE_GROUPS['PRODUCTIVITY_FEATURES']:
+            numeric_features.extend(PRODUCTIVITY_FEATURES)
+        
+        # Pattern features (optional)
+        if FEATURE_GROUPS['PATTERN_FEATURES']:
+            numeric_features.append('NoOfMan_same_dow_lag')
+        
+        # Trend features (optional)  
+        if FEATURE_GROUPS['TREND_FEATURES']:
+            numeric_features.append('NoOfMan_trend_7d')
         
         # Function to calculate modified MAPE with minimum threshold
         def modified_mape(y_true, y_pred, epsilon=1.0):
@@ -148,8 +173,8 @@ def build_models(processed_data, work_types=None, n_splits=5):
             denominator = np.maximum(np.abs(y_true), epsilon)
             return np.mean(np.abs(y_pred - y_true) / denominator) * 100
         
-        # Log all features that will be used
-        logger.info(f"Tiered feature system generated {len(numeric_features)} numeric features and {len(categorical_features)} categorical features")
+        # Log final feature selection
+        logger.info(f"Config-driven features: {len(numeric_features)} numeric, {len(categorical_features)} categorical")
         logger.info(f"Numeric features: {numeric_features}")
         logger.info(f"Categorical features: {categorical_features}")
         
@@ -453,26 +478,14 @@ def train_from_sql(connection_string=None, sql_query=None):
 
         logger.info("Creating lag features with tiered configuration...")
         
-        # Use tiered configuration for lag features
-        if FEATURE_TIERS['ADVANCED']:
-            lag_days_to_use = LAG_DAYS
-            rolling_windows_to_use = ROLLING_WINDOWS
-        elif FEATURE_TIERS['INTERMEDIATE']:
-            # Use intermediate configuration - defined in config
-            lag_days_to_use = [1, 2, 3, 7, 14, 30]
-            rolling_windows_to_use = [7, 14, 30]
-        else:
-            # Use basic configuration
-            lag_days_to_use = [1, 7]
-            rolling_windows_to_use = [7]
-        
-        logger.info(f"Using lag days: {lag_days_to_use}")
-        logger.info(f"Using rolling windows: {rolling_windows_to_use}")
+         # Use config values directly - no complex logic needed
+        logger.info(f"Using essential lags: {ESSENTIAL_LAGS}")
+        logger.info(f"Using essential windows: {ESSENTIAL_WINDOWS}")
         
         lag_features_df = create_lag_features(
             feature_df,
-            lag_days=lag_days_to_use,
-            rolling_windows=rolling_windows_to_use
+            lag_days=ESSENTIAL_LAGS,
+            rolling_windows=ESSENTIAL_WINDOWS
         )
         
         work_types = lag_features_df['WorkType'].unique()

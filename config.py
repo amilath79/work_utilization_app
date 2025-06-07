@@ -4,10 +4,183 @@ Configuration settings for the Work Utilization Prediction application.
 import os
 from pathlib import Path
 
+from typing import Optional, Dict, Any
+import logging
+from dataclasses import dataclass
+from enum import Enum
+
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
 # Application settings
 APP_TITLE = "Workforce Prediction"
 DEFAULT_LAYOUT = "wide"  # or "centered"
 THEME_COLOR = "#1E88E5"  # Primary theme color
+
+
+# ==============================================
+# ENTERPRISE CONFIGURATION CLASSES
+# ==============================================
+
+class Environment(Enum):
+    DEVELOPMENT = "development"
+    STAGING = "staging"
+    PRODUCTION = "production"
+
+class LogLevel(Enum):
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
+
+@dataclass
+class MLflowConfig:
+    """Enterprise MLflow Configuration"""
+    tracking_uri: str
+    artifact_root: str
+    experiment_name: str
+    enable_tracking: bool
+    auto_log: bool
+    username: Optional[str] = None
+    password: Optional[str] = None
+    token: Optional[str] = None
+    
+    @classmethod
+    def from_env(cls) -> 'MLflowConfig':
+        """Create MLflow config from environment variables"""
+        return cls(
+            tracking_uri=os.getenv('MLFLOW_TRACKING_URI', f'file:///{MODELS_DIR}/mlflow-runs'),
+            artifact_root=os.getenv('MLFLOW_ARTIFACT_ROOT', f'{MODELS_DIR}/mlflow-artifacts'),
+            experiment_name=os.getenv('MLFLOW_EXPERIMENT_NAME', 'workforce_prediction'),
+            enable_tracking=os.getenv('MLFLOW_ENABLE_TRACKING', 'true').lower() == 'true',
+            auto_log=os.getenv('MLFLOW_AUTO_LOG', 'true').lower() == 'true',
+            username=os.getenv('MLFLOW_TRACKING_USERNAME'),
+            password=os.getenv('MLFLOW_TRACKING_PASSWORD'),
+            token=os.getenv('MLFLOW_TRACKING_TOKEN')
+        )
+    
+    def validate(self) -> None:
+        """Validate MLflow configuration"""
+        if self.enable_tracking:
+            if not self.tracking_uri:
+                raise ValueError("MLflow tracking URI is required when tracking is enabled")
+            
+            # Create directories if using file-based tracking
+            if self.tracking_uri.startswith('file://'):
+                tracking_path = self.tracking_uri.replace('file:///', '').replace('file://', '')
+                os.makedirs(tracking_path, exist_ok=True)
+                
+            if self.artifact_root:
+                os.makedirs(self.artifact_root, exist_ok=True)
+
+@dataclass
+class EnterpriseConfig:
+    """Enterprise application configuration"""
+    environment: Environment
+    log_level: LogLevel
+    enterprise_mode: bool
+    audit_logging: bool
+    security_headers: bool
+    
+    @classmethod
+    def from_env(cls) -> 'EnterpriseConfig':
+        """Create enterprise config from environment variables"""
+        return cls(
+            environment=Environment(os.getenv('ENVIRONMENT', 'development')),
+            log_level=LogLevel(os.getenv('LOG_LEVEL', 'INFO')),
+            enterprise_mode=os.getenv('ENTERPRISE_MODE', 'false').lower() == 'true',
+            audit_logging=os.getenv('AUDIT_LOGGING', 'false').lower() == 'true',
+            security_headers=os.getenv('SECURITY_HEADERS', 'true').lower() == 'true'
+        )
+
+# Initialize enterprise configurations
+MLFLOW_CONFIG = MLflowConfig.from_env()
+ENTERPRISE_CONFIG = EnterpriseConfig.from_env()
+
+# Validate configurations
+try:
+    MLFLOW_CONFIG.validate()
+except Exception as e:
+    print(f"MLflow configuration error: {e}")
+    MLFLOW_CONFIG.enable_tracking = False
+
+
+
+# ==============================================
+# ENTERPRISE LOGGING CONFIGURATION
+# ==============================================
+
+# Enterprise logging directories
+ENTERPRISE_LOGS_DIR = os.path.join(BASE_DIR, "logs", "enterprise")
+AUDIT_LOGS_DIR = os.path.join(BASE_DIR, "logs", "audit")
+MODEL_LOGS_DIR = os.path.join(BASE_DIR, "logs", "models")
+
+# Create logging directories
+for log_dir in [ENTERPRISE_LOGS_DIR, AUDIT_LOGS_DIR, MODEL_LOGS_DIR]:
+    os.makedirs(log_dir, exist_ok=True)
+
+# Enterprise logging configuration
+ENTERPRISE_LOGGING_CONFIG = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'enterprise': {
+            'format': '%(asctime)s | %(name)s | %(levelname)s | %(funcName)s:%(lineno)d | %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        },
+        'audit': {
+            'format': '%(asctime)s | AUDIT | %(levelname)s | %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        }
+    },
+    'handlers': {
+        'enterprise_file': {
+            'level': ENTERPRISE_CONFIG.log_level.value,
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(ENTERPRISE_LOGS_DIR, 'application.log'),
+            'maxBytes': 10485760,  # 10MB
+            'backupCount': 5,
+            'formatter': 'enterprise'
+        },
+        'audit_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(AUDIT_LOGS_DIR, 'audit.log'),
+            'maxBytes': 10485760,  # 10MB
+            'backupCount': 10,
+            'formatter': 'audit'
+        },
+        'console': {
+            'level': ENTERPRISE_CONFIG.log_level.value,
+            'class': 'logging.StreamHandler',
+            'formatter': 'enterprise'
+        }
+    },
+    'loggers': {
+        'enterprise': {
+            'handlers': ['enterprise_file', 'console'],
+            'level': ENTERPRISE_CONFIG.log_level.value,
+            'propagate': False
+        },
+        'audit': {
+            'handlers': ['audit_file'],
+            'level': 'INFO',
+            'propagate': False
+        }
+    }
+}
+
+# Apply logging configuration
+import logging.config
+logging.config.dictConfig(ENTERPRISE_LOGGING_CONFIG)
+
+# Create enterprise loggers
+enterprise_logger = logging.getLogger('enterprise')
+audit_logger = logging.getLogger('audit')
+
+#--------------------------------------------------------------
 
 # Paths
 BASE_DIR = Path(__file__).parent.absolute()
@@ -95,208 +268,38 @@ DEFAULT_PUNCH_CODE_WORKING_DAYS = [0, 1, 2, 3, 4]
 
 
 # ==========================================
-# TIERED FEATURE CONFIGURATION SYSTEM
+# FEATURE SELECTION CONFIGURATION
 # ==========================================
 
-# Feature tier controls (can be turned on/off)
-FEATURE_TIERS = {
-    'BASIC': True,
-    'INTERMEDIATE': True,   # Enable this
-    'ADVANCED': False
+# Core feature categories - Enable/Disable groups to prevent overfitting
+FEATURE_GROUPS = {
+    'LAG_FEATURES': True,           # Essential: NoOfMan_lag_1, lag_7, etc.
+    'ROLLING_FEATURES': True,       # Essential: rolling_mean_7, etc.
+    'DATE_FEATURES': True,          # Essential: DayOfWeek, Month, etc.
+    'PRODUCTIVITY_FEATURES': True,  # New: Workers_per_Hour, etc.
+    'CYCLICAL_FEATURES': True,     # Optional: Sin/Cos transforms ENABLE for better patterns
+    'TREND_FEATURES': False,        # Optional: Trend calculations ENABLE for momentum
+    'PATTERN_FEATURES': False,      # Optional: Same day patterns ENABLE for seasonality
+}
+
+# Productivity features to create (only if PRODUCTIVITY_FEATURES=True)
+PRODUCTIVITY_FEATURES = [
+    'Workers_per_Hour',
+    'Quantity_per_Hour', 
+    'Workload_Density',
+    'KPI_Performance'
+]
+
+# Essential lag features (reduce from current LAG_DAYS to prevent overfitting)
+ESSENTIAL_LAGS = [1, 7, 28]  # Only most important: yesterday, last week, last month
+
+# Essential rolling windows (reduce from current ROLLING_WINDOWS)
+ESSENTIAL_WINDOWS = [7, 30]  # Only weekly and monthly averages
+
+# Date features to include
+DATE_FEATURES = {
+    'categorical': ['DayOfWeek_feat', 'Month_feat'],
+    'numeric': ['IsWeekend_feat']
 }
 
 
-# ADVANCED FEATURE TOGGLES - Easy on/off switches
-ADVANCED_FEATURE_TOGGLES = {
-    'DATE_FEATURES': True,           # Extended date intelligence (DayOfYear, etc.)
-    'LAG_FEATURES': True,            # Long-term patterns (90, 365 day lags)
-    'ROLLING_FEATURES': True,        # Extended rolling windows (90 day patterns)
-    'PRODUCTIVITY_FEATURES': True,  # Productivity metrics (turn off if causing issues)
-    'BUSINESS_FEATURES': True,      # Business logic features (turn off if not implemented)
-}
-
-
-# ==========================================
-# BASIC FEATURES (Tier 1) - Essential
-# ==========================================
-# ==========================================
-# BASIC FEATURES (Tier 1) - Essential
-# ==========================================
-BASIC_FEATURES = {
-    # Core date features
-    'DATE_FEATURES': {
-        'categorical': ['DayOfWeek_feat', 'Month_feat'],
-        'numeric': ['IsWeekend_feat']
-    },
-    
-    # Essential lag features - most recent patterns
-    'LAG_FEATURES': {
-        'NoOfMan': [1, 7],  # Yesterday and same day last week
-        'Quantity': [1, 7],  # Recent quantity patterns
-        'ResourceKPI': [1],  # Most recent KPI
-    },
-    
-    # Basic trend indicators
-    'ROLLING_FEATURES': {
-        'NoOfMan': {
-            'windows': [7],  # Weekly averages
-            'functions': ['mean']
-        },
-        'Quantity': {
-            'windows': [7],
-            'functions': ['mean']
-        }
-    }
-}
-
-# ==========================================
-# INTERMEDIATE FEATURES (Tier 2) - Enhanced
-# ==========================================
-INTERMEDIATE_FEATURES = {
-    # Extended date features
-    'DATE_FEATURES': {
-        'categorical': ['Quarter'],
-        'numeric': ['DayOfMonth'] ,
-        # 'numeric': ['Year_feat', 'DayOfMonth', 'WeekOfYear']
-    },
-    
-    # More comprehensive lag patterns
-    'LAG_FEATURES': {
-        'NoOfMan': [2, 3, 14],  # Short to medium term patterns
-    },
-    
-    # Enhanced rolling statistics
-    # 'ROLLING_FEATURES': {
-    #     'NoOfMan': {
-    #         'windows': [14],  # Bi-weekly and monthly patterns
-    #         'functions': ['mean'],
-    #         'extended_stats': {  # Additional stats for first window only
-    #             'window': 7,
-    #             'functions': ['max', 'min', 'std']
-    #         }
-    #     }
-    # },
-    
-
-    'ROLLING_FEATURES': {
-        'NoOfMan': {
-            'windows': [7, 30],  # Weekly and monthly averages
-            'functions': ['mean']  # Only mean, remove max/min/std noise
-        },
-        'Quantity': {
-            'windows': [7],
-            'functions': ['mean']
-        }
-    },
-
-    # Pattern recognition features
-    'PATTERN_FEATURES': [
-        'NoOfMan_same_dow_lag',    # Same day of week pattern
-        'NoOfMan_same_dom_lag',    # Same day of month pattern
-    ],
-    
-    # # Trend features
-    # 'TREND_FEATURES': [
-    #     ('NoOfMan_7day_trend', 'NoOfMan', 1, 7),   # Week-over-week trend
-    #     ('NoOfMan_1day_trend', 'NoOfMan', 1, 2),   # Day-over-day trend
-    # ]
-
-    'PRODUCTIVITY_FEATURES': {
-    'LAG_FEATURES': {
-        'Quantity': [1, 7],      # Workload volume context
-        'ResourceKPI': [1],      # Recent efficiency
-    },
-    'ROLLING_FEATURES': {
-        'Quantity': {
-            'windows': [7],
-            'functions': ['mean']
-        }
-    },
-    'DERIVED_FEATURES': [
-        'Quantity_per_Worker',   # Key business metric
-        'Combined_KPI',          # Efficiency indicator
-    ]
-    }
-}
-
-# ==========================================
-# ADVANCED FEATURES (Tier 3) - Sophisticated
-# ==========================================
-ADVANCED_FEATURES = {
-    # Extended date intelligence
-    'DATE_FEATURES': {
-        'categorical': [],
-        'numeric': ['DayOfYear']
-    },
-    
-    # Long-term patterns
-    'LAG_FEATURES': {
-        'NoOfMan': [90, 365],  # Seasonal and yearly patterns
-    },
-    
-    # Extended rolling windows
-    'ROLLING_FEATURES': {
-        'NoOfMan': {
-            'windows': [90],  # Quarterly patterns
-            'functions': ['mean']
-        }
-    },
-    
-    # Productivity metrics (if data available)
-    'PRODUCTIVITY_FEATURES': {
-        'LAG_FEATURES': {
-            'Quantity': [1, 7, 30],
-            'Hours': [1, 7],
-            'SystemHours': [1, 7],
-            'ResourceKPI': [1, 7],
-            'SystemKPI': [1, 7]
-        },
-        'ROLLING_FEATURES': {
-            'Quantity': {
-                'windows': [7, 30],
-                'functions': ['mean']
-            },
-            'Hours': {
-                'windows': [7],
-                'functions': ['mean']
-            }
-        },
-        'DERIVED_FEATURES': [
-            'Hours_SystemHours_Ratio',
-            'Quantity_per_Worker', 
-            'Hours_per_Quantity',
-            'SystemHours_per_Quantity',
-            'Combined_KPI',
-            'Workers_Predicted_from_Quantity'
-        ],
-        'PATTERN_FEATURES': [
-            'Quantity_same_dow_lag'
-        ],
-        # 'TREND_FEATURES': [
-        #     ('Quantity_7day_trend', 'Quantity', 1, 7),
-        #     ('Hours_7day_trend', 'Hours', 1, 7)
-        # ]
-    },
-    
-    # Business logic features
-    'BUSINESS_FEATURES': [
-        # 'Workload_Intensity',      # High/Medium/Low workload indicator
-        # 'Seasonal_Factor',         # Seasonal adjustment factor
-        # 'Capacity_Utilization',    # How close to maximum capacity
-    ]
-}
-
-# ==========================================
-# FEATURE AVAILABILITY DETECTION
-# ==========================================
-FEATURE_AVAILABILITY = {
-    # Data columns required for productivity features
-    'PRODUCTIVITY_REQUIRED_COLUMNS': ['Quantity', 'Hours', 'SystemHours', 'ResourceKPI', 'SystemKPI'],
-    
-    # Minimum data requirements
-    'MIN_DATA_REQUIREMENTS': {
-        'BASIC': 14,        # Need at least 2 weeks of data
-        'INTERMEDIATE': 45, # Need at least 6 weeks of data  
-        'ADVANCED': 180     # Need at least 6 months of data
-    }
-}
