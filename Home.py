@@ -8,6 +8,7 @@ import os
 import sys
 from datetime import datetime
 import traceback
+from config import ENTERPRISE_CONFIG, enterprise_logger
 
 # Add parent directory to path to import from utils
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -75,6 +76,27 @@ def load_data_from_database():
         return None
 
 def main():
+
+    # Simple enterprise page configuration
+    if ENTERPRISE_CONFIG.enterprise_mode:
+        st.set_page_config(
+            page_title=f"Enterprise - {APP_TITLE}",
+            page_icon="🏢",
+            layout="wide",
+            initial_sidebar_state="expanded"
+        )
+        # Add enterprise info to sidebar
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("### 🏢 Enterprise Mode")
+        st.sidebar.markdown(f"🔒 Environment: {ENTERPRISE_CONFIG.environment.value}")
+    else:
+        st.set_page_config(
+            page_title=APP_TITLE,
+            page_icon=APP_ICON,
+            layout="wide",
+            initial_sidebar_state="expanded"
+        )
+        
     # Display logo if available
     if os.path.exists(LOGO_PATH):
         st.image(LOGO_PATH, width=50)

@@ -1,6 +1,6 @@
 """
 Module for training workforce prediction models with tiered feature system.
-For All PunchCodes
+For All PunchCodes with Enterprise MLflow Integration
 """
 import pandas as pd
 import numpy as np
@@ -17,6 +17,8 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
+import mlflow
+import mlflow.sklearn
 
 # Import feature engineering functions from utils
 from utils.feature_engineering import engineer_features, create_lag_features
@@ -26,8 +28,12 @@ from config import (
     CHUNK_SIZE, DEFAULT_MODEL_PARAMS,
     SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION,
     SQL_USERNAME, SQL_PASSWORD,
-    FEATURE_GROUPS, PRODUCTIVITY_FEATURES, DATE_FEATURES, ESSENTIAL_LAGS, ESSENTIAL_WINDOWS
+    FEATURE_GROUPS, PRODUCTIVITY_FEATURES, DATE_FEATURES, ESSENTIAL_LAGS, ESSENTIAL_WINDOWS,
+    MLFLOW_CONFIG, ENTERPRISE_CONFIG, enterprise_logger
 )
+
+# Enterprise MLflow integration
+from utils.enterprise_mlflow import mlflow_manager
 
 # Configure logging
 logging.basicConfig(
@@ -101,7 +107,7 @@ def load_data(file_path):
 
 def build_models(processed_data, work_types=None, n_splits=5):
     """
-    Build and train a model for each WorkType using time series cross-validation with tiered features
+    Build and train a model for each WorkType using time series cross-validation with enterprise MLflow tracking
     
     Parameters:
     -----------
@@ -118,248 +124,311 @@ def build_models(processed_data, work_types=None, n_splits=5):
         (models, feature_importances, metrics)
     """
     try:
+        # Initialize enterprise MLflow tracking
+        mlflow_initialized = mlflow_manager.initialize()
+        
+        if not mlflow_initialized:
+            enterprise_logger.warning("MLflow tracking not available, proceeding without tracking")
+        
         # If work_types is not provided, get them from the data
         if work_types is None:
             work_types = sorted(processed_data['WorkType'].unique())
         
-        logger.info(f"Building models for {len(work_types)} work types")
+        enterprise_logger.info(f"Building models for {len(work_types)} work types with enterprise tracking")
         
         # Log which feature groups are enabled
         active_groups = [group for group, enabled in FEATURE_GROUPS.items() if enabled]
-        logger.info(f"Using feature groups: {active_groups}")
+        enterprise_logger.info(f"Using feature groups: {active_groups}")
         
-        models = {}
-        feature_importances = {}
-        metrics = {}
+        # Start enterprise training session
+        session_params = {
+            "n_splits": n_splits,
+            "total_work_types": len(work_types),
+            "feature_groups": active_groups,
+            "model_params": DEFAULT_MODEL_PARAMS,
+            "environment": ENTERPRISE_CONFIG.environment.value,
+            "data_shape": processed_data.shape,
+            "training_timestamp": datetime.now().isoformat()
+        }
         
-        # Simple config-driven feature selection
-        numeric_features = []
-        categorical_features = []
-        
-        # Essential lag features
-        if FEATURE_GROUPS['LAG_FEATURES']:
-            for lag in ESSENTIAL_LAGS:
-                numeric_features.append(f'NoOfMan_lag_{lag}')
-            # Add quantity lag_1 if productivity features enabled
+        with mlflow_manager.start_run(
+            run_name=f"training_session_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            tags={"session_type": "bulk_training", "enterprise": "true"}
+        ) as parent_run:
+            
+            if parent_run:
+                mlflow_manager.log_training_parameters(session_params)
+                enterprise_logger.info(f"Started enterprise training session: {parent_run.info.run_id}")
+            
+            models = {}
+            feature_importances = {}
+            metrics = {}
+            
+            # Simple config-driven feature selection
+            numeric_features = []
+            categorical_features = []
+            
+            # Essential lag features
+            if FEATURE_GROUPS['LAG_FEATURES']:
+                for lag in ESSENTIAL_LAGS:
+                    numeric_features.append(f'NoOfMan_lag_{lag}')
+                # Add quantity lag_1 if productivity features enabled
+                if FEATURE_GROUPS['PRODUCTIVITY_FEATURES']:
+                    numeric_features.append('Quantity_lag_1')
+            
+            # Essential rolling features  
+            if FEATURE_GROUPS['ROLLING_FEATURES']:
+                for window in ESSENTIAL_WINDOWS:
+                    numeric_features.append(f'NoOfMan_rolling_mean_{window}')
+            
+            # Date features from config
+            if FEATURE_GROUPS['DATE_FEATURES']:
+                categorical_features.extend(DATE_FEATURES['categorical'])
+                numeric_features.extend(DATE_FEATURES['numeric'])
+                numeric_features.append('DayOfMonth')  # Add day of month
+            
+            # Productivity features from config
             if FEATURE_GROUPS['PRODUCTIVITY_FEATURES']:
-                numeric_features.append('Quantity_lag_1')
-        
-        # Essential rolling features  
-        if FEATURE_GROUPS['ROLLING_FEATURES']:
-            for window in ESSENTIAL_WINDOWS:
-                numeric_features.append(f'NoOfMan_rolling_mean_{window}')
-        
-        # Date features from config
-        if FEATURE_GROUPS['DATE_FEATURES']:
-            categorical_features.extend(DATE_FEATURES['categorical'])
-            numeric_features.extend(DATE_FEATURES['numeric'])
-            numeric_features.append('DayOfMonth')  # Add day of month
-        
-        # Productivity features from config
-        if FEATURE_GROUPS['PRODUCTIVITY_FEATURES']:
-            numeric_features.extend(PRODUCTIVITY_FEATURES)
-        
-        # Pattern features (optional)
-        if FEATURE_GROUPS['PATTERN_FEATURES']:
-            numeric_features.append('NoOfMan_same_dow_lag')
-        
-        # Trend features (optional)  
-        if FEATURE_GROUPS['TREND_FEATURES']:
-            numeric_features.append('NoOfMan_trend_7d')
-        
-        # Function to calculate modified MAPE with minimum threshold
-        def modified_mape(y_true, y_pred, epsilon=1.0):
-            """Calculate MAPE with a minimum threshold to avoid division by zero"""
-            denominator = np.maximum(np.abs(y_true), epsilon)
-            return np.mean(np.abs(y_pred - y_true) / denominator) * 100
-        
-        # Log final feature selection
-        logger.info(f"Config-driven features: {len(numeric_features)} numeric, {len(categorical_features)} categorical")
-        logger.info(f"Numeric features: {numeric_features}")
-        logger.info(f"Categorical features: {categorical_features}")
-        
-        for work_type in work_types:
-            try:
-                logger.info(f"Building model for WorkType: {work_type}")
-                avg_value = diagnose_training_data(processed_data, work_type)
-                print(f'Work Type : {work_type} - Avarage Value : {avg_value}')
-                # Filter data for this WorkType
-                work_type_data = processed_data[processed_data['WorkType'] == work_type] 
-                
-                if len(work_type_data) < 30:  # Skip if not enough data
-                    logger.warning(f"Skipping {work_type}: Not enough data ({len(work_type_data)} records)")
-                    continue
-                
-                # Sort data by date to ensure time-based splitting works correctly
-                work_type_data = work_type_data.sort_values('Date')
-                
-                # Check which features are available in the dataset
-                available_numeric = [f for f in numeric_features if f in work_type_data.columns]
-                available_categorical = [f for f in categorical_features if f in work_type_data.columns]
-                
-                logger.info(f"Available features for {work_type}: {len(available_numeric)} numeric, {len(available_categorical)} categorical")
-                
-                # Debug: Log missing features if many are missing
-                missing_numeric = [f for f in numeric_features if f not in work_type_data.columns]
-                missing_categorical = [f for f in categorical_features if f not in work_type_data.columns]
-                
-                if missing_numeric:
-                    logger.debug(f"Missing numeric features for {work_type}: {missing_numeric}")
-                if missing_categorical:
-                    logger.debug(f"Missing categorical features for {work_type}: {missing_categorical}")
-                
-                # Skip if no features are available
-                if len(available_numeric) == 0 and len(available_categorical) == 0:
-                    logger.warning(f"Skipping {work_type}: No features available")
-                    continue
-                
-                # Prepare features and target
-                all_available_features = available_numeric + available_categorical
+                numeric_features.extend(PRODUCTIVITY_FEATURES)
+            
+            # Pattern features (optional)
+            if FEATURE_GROUPS['PATTERN_FEATURES']:
+                numeric_features.append('NoOfMan_same_dow_lag')
+            
+            # Trend features (optional)  
+            if FEATURE_GROUPS['TREND_FEATURES']:
+                numeric_features.append('NoOfMan_trend_7d')
+            
+            # Function to calculate modified MAPE with minimum threshold
+            def modified_mape(y_true, y_pred, epsilon=1.0):
+                """Calculate MAPE with a minimum threshold to avoid division by zero"""
+                denominator = np.maximum(np.abs(y_true), epsilon)
+                return np.mean(np.abs(y_pred - y_true) / denominator) * 100
+            
+            # Log final feature selection
+            enterprise_logger.info(f"Config-driven features: {len(numeric_features)} numeric, {len(categorical_features)} categorical")
+            enterprise_logger.info(f"Numeric features: {numeric_features}")
+            enterprise_logger.info(f"Categorical features: {categorical_features}")
+            
+            for work_type in work_types:
+                # Enterprise model training with tracking
+                with mlflow_manager.start_run(
+                    run_name=f"model_{work_type}",
+                    nested=True,
+                    tags={"work_type": work_type, "model_type": "random_forest"}
+                ) as model_run:
+                    
+                    try:
+                        enterprise_logger.info(f"Building enterprise model for WorkType: {work_type}")
+                        avg_value = diagnose_training_data(processed_data, work_type)
+                        print(f'Work Type : {work_type} - Average Value : {avg_value}')
+                        
+                        # Log work type specific parameters
+                        if model_run:
+                            work_type_params = {
+                                "work_type": work_type,
+                                "avg_target_value": avg_value,
+                                "data_points": len(processed_data[processed_data['WorkType'] == work_type])
+                            }
+                            mlflow_manager.log_training_parameters(work_type_params)
+                        
+                        # Filter data for this WorkType
+                        work_type_data = processed_data[processed_data['WorkType'] == work_type] 
+                        
+                        if len(work_type_data) < 30:  # Skip if not enough data
+                            logger.warning(f"Skipping {work_type}: Not enough data ({len(work_type_data)} records)")
+                            continue
+                        
+                        # Sort data by date to ensure time-based splitting works correctly
+                        work_type_data = work_type_data.sort_values('Date')
+                        
+                        # Check which features are available in the dataset
+                        available_numeric = [f for f in numeric_features if f in work_type_data.columns]
+                        available_categorical = [f for f in categorical_features if f in work_type_data.columns]
+                        
+                        enterprise_logger.info(f"Available features for {work_type}: {len(available_numeric)} numeric, {len(available_categorical)} categorical")
+                        
+                        # Debug: Log missing features if many are missing
+                        missing_numeric = [f for f in numeric_features if f not in work_type_data.columns]
+                        missing_categorical = [f for f in categorical_features if f not in work_type_data.columns]
+                        
+                        if missing_numeric:
+                            logger.debug(f"Missing numeric features for {work_type}: {missing_numeric}")
+                        if missing_categorical:
+                            logger.debug(f"Missing categorical features for {work_type}: {missing_categorical}")
+                        
+                        # Skip if no features are available
+                        if len(available_numeric) == 0 and len(available_categorical) == 0:
+                            logger.warning(f"Skipping {work_type}: No features available")
+                            continue
+                        
+                        # Prepare features and target
+                        all_available_features = available_numeric + available_categorical
 
-                logger.info(f"=== FEATURE COUNT TRAINING - {work_type} ===")
-                logger.info(f"Total available features: {len(all_available_features)}")
-                logger.info(f"Numeric features: {len(available_numeric)}")
-                logger.info(f"Categorical features: {len(available_categorical)}")
-                logger.info(f"Features: {all_available_features}")
+                        enterprise_logger.info(f"=== FEATURE COUNT TRAINING - {work_type} ===")
+                        enterprise_logger.info(f"Total available features: {len(all_available_features)}")
+                        enterprise_logger.info(f"Numeric features: {len(available_numeric)}")
+                        enterprise_logger.info(f"Categorical features: {len(available_categorical)}")
+                        enterprise_logger.info(f"Features: {all_available_features}")
 
-                X = work_type_data[all_available_features]
-                y = work_type_data['NoOfMan']
-                
-                # Define preprocessing with imputation for missing values
-                from sklearn.impute import SimpleImputer
-                
-                transformers = []
-                if available_numeric:
-                    numeric_pipeline = Pipeline([
-                        ('imputer', SimpleImputer(strategy='median')),
-                        ('scaler', StandardScaler())  # Critical for productivity features
-                    ])
-                transformers.append(('num', numeric_pipeline, available_numeric))
-                if available_categorical:
-                    transformers.append(('cat', OneHotEncoder(handle_unknown='ignore'), available_categorical))
-                
-                preprocessor = ColumnTransformer(transformers=transformers)
+                        X = work_type_data[all_available_features]
+                        y = work_type_data['NoOfMan']
+                        
+                        # Define preprocessing with imputation for missing values
+                        from sklearn.impute import SimpleImputer
+                        
+                        transformers = []
+                        if available_numeric:
+                            numeric_pipeline = Pipeline([
+                                ('imputer', SimpleImputer(strategy='median')),
+                                ('scaler', StandardScaler())  # Critical for productivity features
+                            ])
+                            transformers.append(('num', numeric_pipeline, available_numeric))
+                        if available_categorical:
+                            transformers.append(('cat', OneHotEncoder(handle_unknown='ignore'), available_categorical))
+                        
+                        preprocessor = ColumnTransformer(transformers=transformers)
 
-                # Define the model pipeline using DEFAULT_MODEL_PARAMS from config
-                model_params = DEFAULT_MODEL_PARAMS.copy()
+                        # Define the model pipeline using DEFAULT_MODEL_PARAMS from config
+                        model_params = DEFAULT_MODEL_PARAMS.copy()
 
-                pipeline = Pipeline([
-                    ('preprocessor', preprocessor),
-                    ('model', RandomForestRegressor(**model_params))
-                ])
-                
-                # Initialize TimeSeriesSplit with n splits
-                tscv = TimeSeriesSplit(n_splits=n_splits)
-                
-                # Initialize metrics lists
-                mae_scores = []
-                rmse_scores = []
-                r2_scores = []
-                mape_scores = []
-                
-                # Perform time series cross-validation  
-                for train_idx, test_idx in tscv.split(X):
-                    X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
-                    y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
-                    
-                    # Train model
-                    pipeline.fit(X_train, y_train)
-                    
-
-                    bias_ratio = validate_model_performance(pipeline, X, y, work_type)
-                    print(f'Basic Ratio for {work_type} : {bias_ratio}')
-                    # Make predictions
-                    y_pred = pipeline.predict(X_test)
-                    
-                    # Calculate metrics  
-                    mae_scores.append(mean_absolute_error(y_test, y_pred))
-                    rmse_scores.append(np.sqrt(mean_squared_error(y_test, y_pred))) 
-                    r2_scores.append(r2_score(y_test, y_pred))
-                    
-                    # Calculate modified MAPE
-                    mape = modified_mape(y_test, y_pred, epsilon=1.0)
-                    mape_scores.append(mape)
-                
-                # Train final model on all data
-                pipeline.fit(X, y)
-                models[work_type] = pipeline
-                
-                # Get feature importances from the final model
-                model = pipeline.named_steps['model']
-                
-                # Get feature names after preprocessing
-                feature_names = []
-                
-                # Add numeric feature names (they stay the same after imputation)
-                if available_numeric:
-                    feature_names.extend(available_numeric)
-                
-                # Add categorical feature names (expanded after one-hot encoding)
-                if available_categorical:
-                    preprocessor_fitted = pipeline.named_steps['preprocessor']
-                    
-                    # Check if categorical transformer exists by looking at transformer names
-                    transformer_names = [name for name, transformer, columns in preprocessor_fitted.transformers_]
-                    
-                    if 'cat' in transformer_names:
-                        try:
-                            ohe = preprocessor_fitted.named_transformers_['cat']
-                            for i, feature in enumerate(available_categorical):
-                                categories = ohe.categories_[i]
-                                for category in categories:
-                                    feature_names.append(f"{feature}_{category}")
-                        except Exception as cat_error:
-                            logger.warning(f"Error processing categorical features for {work_type}: {str(cat_error)}")
-                            # Fallback: just use original categorical feature names
-                            feature_names.extend(available_categorical)
-                
-                # Get feature importances
-                importances = model.feature_importances_
-                
-                # Validate that we have the right number of feature names
-                if len(feature_names) != len(importances):
-                    logger.warning(f"Feature names length ({len(feature_names)}) doesn't match importances length ({len(importances)}) for {work_type}")
-                    # Create generic feature names as fallback
-                    feature_names = [f"feature_{i}" for i in range(len(importances))]
-                
-                # Create dictionary of feature importances
-                feature_importances[work_type] = dict(zip(feature_names, importances))
-                
-                # Store average metrics
-                metrics[work_type] = {
-                    'MAE': np.mean(mae_scores),
-                    'RMSE': np.mean(rmse_scores), 
-                    'R²': np.mean(r2_scores),
-                    'MAPE': np.mean(mape_scores)
-                }
-                
-                logger.info(f"Model for {work_type} - MAE: {metrics[work_type]['MAE']:.4f}, RMSE: {metrics[work_type]['RMSE']:.4f}, R²: {metrics[work_type]['R²']:.4f}, MAPE: {metrics[work_type]['MAPE']:.2f}%")
-                
-                # Print top 10 most important features
-                importances_dict = feature_importances[work_type]
-                sorted_importances = sorted(importances_dict.items(), key=lambda x: x[1], reverse=True)
-                logger.info(f"Top 10 most important features for {work_type}:")
-                for feature, importance in sorted_importances[:10]:
-                    logger.info(f"  {feature}: {importance:.4f}")
-                
-                # Also print individual fold scores for detailed analysis
-                logger.info(f"Cross-validation details for {work_type}:")
-                for i in range(len(mae_scores)):
-                    logger.info(f"  Fold {i+1}: MAE={mae_scores[i]:.4f}, RMSE={rmse_scores[i]:.4f}, R²={r2_scores[i]:.4f}, MAPE={mape_scores[i]:.2f}%")
-                    
-            except Exception as e:
-                logger.error(f"Error training model for WorkType {work_type}: {str(e)}")
-                logger.error(traceback.format_exc())
-                # Continue with next work type instead of failing completely
-                continue
-        
-        return models, feature_importances, metrics
+                        pipeline = Pipeline([
+                            ('preprocessor', preprocessor),
+                            ('model', RandomForestRegressor(**model_params))
+                        ])
+                        
+                        # Initialize TimeSeriesSplit with n splits
+                        tscv = TimeSeriesSplit(n_splits=n_splits)
+                        
+                        # Initialize metrics lists
+                        mae_scores = []
+                        rmse_scores = []
+                        r2_scores = []
+                        mape_scores = []
+                        
+                        # Perform time series cross-validation  
+                        for train_idx, test_idx in tscv.split(X):
+                            X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
+                            y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
+                            
+                            # Train model
+                            pipeline.fit(X_train, y_train)
+                            
+                            bias_ratio = validate_model_performance(pipeline, X, y, work_type)
+                            print(f'Bias Ratio for {work_type} : {bias_ratio}')
+                            
+                            # Make predictions
+                            y_pred = pipeline.predict(X_test)
+                            
+                            # Calculate metrics  
+                            mae_scores.append(mean_absolute_error(y_test, y_pred))
+                            rmse_scores.append(np.sqrt(mean_squared_error(y_test, y_pred))) 
+                            r2_scores.append(r2_score(y_test, y_pred))
+                            
+                            # Calculate modified MAPE
+                            mape = modified_mape(y_test, y_pred, epsilon=1.0)
+                            mape_scores.append(mape)
+                        
+                        # Train final model on all data
+                        pipeline.fit(X, y)
+                        models[work_type] = pipeline
+                        
+                        # Get feature importances from the final model
+                        model = pipeline.named_steps['model']
+                        
+                        # Get feature names after preprocessing
+                        feature_names = []
+                        
+                        # Add numeric feature names (they stay the same after imputation)
+                        if available_numeric:
+                            feature_names.extend(available_numeric)
+                        
+                        # Add categorical feature names (expanded after one-hot encoding)
+                        if available_categorical:
+                            preprocessor_fitted = pipeline.named_steps['preprocessor']
+                            
+                            # Check if categorical transformer exists by looking at transformer names
+                            transformer_names = [name for name, transformer, columns in preprocessor_fitted.transformers_]
+                            
+                            if 'cat' in transformer_names:
+                                try:
+                                    ohe = preprocessor_fitted.named_transformers_['cat']
+                                    for i, feature in enumerate(available_categorical):
+                                        categories = ohe.categories_[i]
+                                        for category in categories:
+                                            feature_names.append(f"{feature}_{category}")
+                                except Exception as cat_error:
+                                    logger.warning(f"Error processing categorical features for {work_type}: {str(cat_error)}")
+                                    # Fallback: just use original categorical feature names
+                                    feature_names.extend(available_categorical)
+                        
+                        # Get feature importances
+                        importances = model.feature_importances_
+                        
+                        # Validate that we have the right number of feature names
+                        if len(feature_names) != len(importances):
+                            logger.warning(f"Feature names length ({len(feature_names)}) doesn't match importances length ({len(importances)}) for {work_type}")
+                            # Create generic feature names as fallback
+                            feature_names = [f"feature_{i}" for i in range(len(importances))]
+                        
+                        # Create dictionary of feature importances
+                        feature_importances[work_type] = dict(zip(feature_names, importances))
+                        
+                        # Store average metrics
+                        work_type_metrics = {
+                            'MAE': np.mean(mae_scores),
+                            'RMSE': np.mean(rmse_scores), 
+                            'R²': np.mean(r2_scores),
+                            'MAPE': np.mean(mape_scores)
+                        }
+                        metrics[work_type] = work_type_metrics
+                        
+                        # Enterprise MLflow logging
+                        if model_run:
+                            # Log metrics with cross-validation scores
+                            cv_scores = {
+                                'MAE': mae_scores,
+                                'RMSE': rmse_scores,
+                                'R2': r2_scores,
+                                'MAPE': mape_scores
+                            }
+                            
+                            mlflow_manager.log_model_metrics(work_type, work_type_metrics, cv_scores)
+                            mlflow_manager.log_model_artifact(pipeline, work_type, feature_importances.get(work_type))
+                        
+                        enterprise_logger.info(f"Enterprise model completed for {work_type} - MAE: {work_type_metrics['MAE']:.4f}")
+                        
+                        # Print top 10 most important features
+                        importances_dict = feature_importances[work_type]
+                        sorted_importances = sorted(importances_dict.items(), key=lambda x: x[1], reverse=True)
+                        logger.info(f"Top 10 most important features for {work_type}:")
+                        for feature, importance in sorted_importances[:10]:
+                            logger.info(f"  {feature}: {importance:.4f}")
+                        
+                        # Also print individual fold scores for detailed analysis
+                        logger.info(f"Cross-validation details for {work_type}:")
+                        for i in range(len(mae_scores)):
+                            logger.info(f"  Fold {i+1}: MAE={mae_scores[i]:.4f}, RMSE={rmse_scores[i]:.4f}, R²={r2_scores[i]:.4f}, MAPE={mape_scores[i]:.2f}%")
+                            
+                    except Exception as e:
+                        logger.error(f"Error training model for WorkType {work_type}: {str(e)}")
+                        logger.error(traceback.format_exc())
+                        # Continue with next work type instead of failing completely
+                        continue
+            
+            # Log final training session metrics
+            if parent_run:
+                mlflow_manager.log_training_parameters({
+                    "total_models_trained": len(models),
+                    "training_success_rate": len(models) / len(work_types) if work_types else 0
+                })
+            
+            return models, feature_importances, metrics
         
     except Exception as e:
         logger.error(f"Error building models: {str(e)}")
         logger.error(traceback.format_exc())
         return {}, {}, {}
-
 
 def validate_model_performance(model, X, y, work_type):
     """Check if model is learning properly"""
@@ -384,7 +453,7 @@ def validate_model_performance(model, X, y, work_type):
 
 def train_from_sql(connection_string=None, sql_query=None):
     """
-    Train models using data from a SQL query with tiered feature system
+    Train models using data from a SQL query with enterprise MLflow tracking
     
     Parameters:
     -----------
@@ -471,14 +540,13 @@ def train_from_sql(connection_string=None, sql_query=None):
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
         
-            
-        # Process data and train models using tiered feature system
+        # Process data and train models using config-driven feature system
         logger.info("Engineering features...")
         feature_df = engineer_features(df)
 
-        logger.info("Creating lag features with tiered configuration...")
+        logger.info("Creating lag features with config-driven configuration...")
         
-         # Use config values directly - no complex logic needed
+        # Use config values directly - no complex logic needed
         logger.info(f"Using essential lags: {ESSENTIAL_LAGS}")
         logger.info(f"Using essential windows: {ESSENTIAL_WINDOWS}")
         
@@ -555,8 +623,8 @@ def save_models(models, feature_importances, metrics):
         
         # Also save configuration info
         config_info = {
-            'feature_tiers': FEATURE_TIERS,
-            'active_tiers': [tier for tier, enabled in FEATURE_TIERS.items() if enabled],
+            'feature_groups': FEATURE_GROUPS,
+            'active_groups': [group for group, enabled in FEATURE_GROUPS.items() if enabled],
             'training_date': datetime.now().isoformat(),
             'models_count': len(models)
         }
@@ -575,8 +643,7 @@ def save_models(models, feature_importances, metrics):
         logger.error(f"Error saving models: {str(e)}")
         logger.error(traceback.format_exc())
         return False
-    
-# In train_models.py, add this after loading data:
+
 def diagnose_training_data(df, work_type):
     """Diagnose potential issues in training data"""
     wt_data = df[df['WorkType'] == work_type]
@@ -604,15 +671,14 @@ def diagnose_training_data(df, work_type):
     
     return wt_data['NoOfMan'].mean()
 
-
 def main():
-    """Main function to run the training process"""
+    """Main function to run the training process with enterprise MLflow"""
     try:
-        logger.info("Starting the model training process")
+        logger.info("Starting the enterprise model training process")
         
-        # Log feature tier configuration
-        active_tiers = [tier for tier, enabled in FEATURE_TIERS.items() if enabled]
-        logger.info(f"Feature tiers enabled: {active_tiers}")
+        # Log feature group configuration
+        active_groups = [group for group, enabled in FEATURE_GROUPS.items() if enabled]
+        enterprise_logger.info(f"Feature groups enabled: {active_groups}")
         
         # Check if command line arguments were provided
         import sys
@@ -642,49 +708,37 @@ def main():
             # Load the data
             df = load_data(file_path)
 
-            # Use the feature engineering utilities with tiered configuration
+            # Use the feature engineering utilities with config-driven configuration
             logger.info("Engineering features...")
             feature_df = engineer_features(df)
             
-            logger.info("Creating lag features with tiered configuration...")
-            
-            # Use tiered configuration for lag features
-            if FEATURE_TIERS['ADVANCED']:
-                lag_days_to_use = LAG_DAYS
-                rolling_windows_to_use = ROLLING_WINDOWS
-            elif FEATURE_TIERS['INTERMEDIATE']:
-                # Use intermediate configuration
-                lag_days_to_use = [1, 2, 3, 7, 14, 30]
-                rolling_windows_to_use = [7, 14, 30]
-            else:
-                # Use basic configuration
-                lag_days_to_use = [1, 7]
-                rolling_windows_to_use = [7]
-            
-            logger.info(f"Using lag days: {lag_days_to_use}")
-            logger.info(f"Using rolling windows: {rolling_windows_to_use}")
+            logger.info("Creating lag features with config-driven configuration...")
             
             lag_features_df = create_lag_features(
                 feature_df,
-                lag_days=lag_days_to_use,
-                rolling_windows=rolling_windows_to_use
+                lag_days=ESSENTIAL_LAGS,
+                rolling_windows=ESSENTIAL_WINDOWS
             )
             
             # Get unique work types
             work_types = lag_features_df['WorkType'].unique()
             logger.info(f"Found {len(work_types)} unique work types")
             
-            # Build and save models
+            # Build and save models with enterprise tracking
             models, feature_importances, metrics = build_models(lag_features_df, work_types, n_splits=5)
             save_models(models, feature_importances, metrics)
         
-        logger.info("Model training completed successfully")
+        enterprise_logger.info("Enterprise model training completed successfully")
         return True
     
     except Exception as e:
         logger.error(f"Error in main training process: {str(e)}")
         logger.error(traceback.format_exc())
         return False
+    finally:
+        # Cleanup MLflow resources
+        if 'mlflow_manager' in globals():
+            mlflow_manager.cleanup()
 
 if __name__ == "__main__":
     main()
