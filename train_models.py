@@ -15,6 +15,8 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import TimeSeriesSplit
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
 
 # Import feature engineering functions from utils
 from utils.feature_engineering import engineer_features, create_lag_features
@@ -203,7 +205,11 @@ def build_models(processed_data, work_types=None, n_splits=5):
                 
                 transformers = []
                 if available_numeric:
-                    transformers.append(('num', SimpleImputer(strategy='median'), available_numeric))
+                    numeric_pipeline = Pipeline([
+                        ('imputer', SimpleImputer(strategy='median')),
+                        ('scaler', StandardScaler())  # Critical for productivity features
+                    ])
+                transformers.append(('num', numeric_pipeline, available_numeric))
                 if available_categorical:
                     transformers.append(('cat', OneHotEncoder(handle_unknown='ignore'), available_categorical))
                 

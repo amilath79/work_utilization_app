@@ -41,14 +41,15 @@ DATE_FORMAT = "%Y-%m-%d"
 # Performance settings
 CHUNK_SIZE = 10000  # Number of rows to process at once for large datasets
 
-# Model settings
 DEFAULT_MODEL_PARAMS = {
-    "n_estimators": 200,
-    "max_depth": 12,
-    "min_samples_split": 5,
-    "min_samples_leaf": 2,
+    "n_estimators": 500,  # More trees for better accuracy
+    "max_depth": 15,      # Deeper trees for complex patterns
+    "min_samples_split": 3,  # More sensitive to patterns
+    "min_samples_leaf": 1,   # Allow finer granularity
     "random_state": 42,
-    "max_features": 0.7, # this to focus on most important features
+    "max_features": 0.8,     # Use more features
+    "bootstrap": True,
+    "oob_score": True,       # Out-of-bag scoring
 }
 
 # Feature engineering settingsa

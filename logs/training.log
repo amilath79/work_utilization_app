@@ -15916,3 +15916,41 @@ PermissionError: [Errno 13] Permission denied: 'C:/forlogssystems/Models\\model_
 2025-06-07 20:58:24,757 - train_models - INFO - Performance summary saved to C:/forlogssystems/Models\model_performance_summary.xlsx
 2025-06-07 20:58:24,758 - train_models - INFO - Training configuration saved to C:/forlogssystems/Models\training_config.json
 2025-06-07 20:58:24,764 - train_models - INFO - Model training completed successfully
+2025-06-07 21:21:23,903 - train_models - INFO - Starting the model training process
+2025-06-07 21:21:23,904 - train_models - INFO - Feature tiers enabled: ['BASIC', 'INTERMEDIATE']
+2025-06-07 21:21:23,904 - train_models - INFO - Training from SQL database (command line argument)
+2025-06-07 21:21:23,909 - train_models - INFO - Connecting to database ABC on server 192.168.1.43
+2025-06-07 21:21:24,552 - train_models - INFO - Executing SQL query: 
+                SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
+                FROM WorkUtilizationData 
+                WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 210, 217) 
+                AND Hours > 0 
+                AND NoOfMan > 0 
+                AND SystemHours > 0 
+                AND Quantity > 0
+                ORDER BY Date
+            
+2025-06-07 21:21:25,485 - train_models - INFO - Read chunk of 10000 rows
+2025-06-07 21:21:25,603 - train_models - INFO - Read chunk of 5326 rows
+2025-06-07 21:21:25,649 - train_models - INFO - Data loaded successfully. Total rows: 15326
+2025-06-07 21:21:25,650 - train_models - INFO - Converting Date column to datetime format
+2025-06-07 21:21:25,672 - train_models - INFO - Engineering features...
+2025-06-07 21:21:26,457 - train_models - INFO - Creating lag features with tiered configuration...
+2025-06-07 21:21:26,457 - train_models - INFO - Using lag days: [1, 2, 3, 7, 14, 30]
+2025-06-07 21:21:26,457 - train_models - INFO - Using rolling windows: [7, 14, 30]
+2025-06-07 21:21:26,623 - utils.feature_engineering - INFO - Lag features created. Dropped 0 rows with NaN values.
+2025-06-07 21:21:26,624 - utils.feature_engineering - INFO - Final shape: (15326, 60)
+2025-06-07 21:21:26,636 - train_models - INFO - Found 10 unique work types
+2025-06-07 21:21:26,636 - train_models - INFO - Building models for 10 work types
+2025-06-07 21:21:26,637 - train_models - INFO - Using feature tiers: ['BASIC', 'INTERMEDIATE']
+2025-06-07 21:21:26,637 - utils.feature_builder - INFO - Built feature set: 15 numeric, 3 categorical
+2025-06-07 21:21:26,637 - train_models - INFO - Tiered feature system generated 15 numeric features and 3 categorical features
+2025-06-07 21:21:26,637 - train_models - INFO - Numeric features: ['IsWeekend_feat', 'NoOfMan_lag_1', 'NoOfMan_lag_7', 'Quantity_lag_1', 'Quantity_lag_7', 'ResourceKPI_lag_1', 'NoOfMan_rolling_mean_7', 'Quantity_rolling_mean_7', 'DayOfMonth', 'NoOfMan_lag_2', 'NoOfMan_lag_3', 'NoOfMan_lag_14', 'NoOfMan_rolling_mean_30', 'NoOfMan_same_dow_lag', 'NoOfMan_same_dom_lag']
+2025-06-07 21:21:26,637 - train_models - INFO - Categorical features: ['DayOfWeek_feat', 'Month_feat', 'Quarter']
+2025-06-07 21:21:26,638 - train_models - INFO - Building model for WorkType: 202
+2025-06-07 21:21:26,651 - train_models - INFO - Available features for 202: 15 numeric, 3 categorical
+2025-06-07 21:21:26,651 - train_models - INFO - === FEATURE COUNT TRAINING - 202 ===
+2025-06-07 21:21:26,651 - train_models - INFO - Total available features: 18
+2025-06-07 21:21:26,651 - train_models - INFO - Numeric features: 15
+2025-06-07 21:21:26,652 - train_models - INFO - Categorical features: 3
+2025-06-07 21:21:26,652 - train_models - INFO - Features: ['IsWeekend_feat', 'NoOfMan_lag_1', 'NoOfMan_lag_7', 'Quantity_lag_1', 'Quantity_lag_7', 'ResourceKPI_lag_1', 'NoOfMan_rolling_mean_7', 'Quantity_rolling_mean_7', 'DayOfMonth', 'NoOfMan_lag_2', 'NoOfMan_lag_3', 'NoOfMan_lag_14', 'NoOfMan_rolling_mean_30', 'NoOfMan_same_dow_lag', 'NoOfMan_same_dom_lag', 'DayOfWeek_feat', 'Month_feat', 'Quarter']

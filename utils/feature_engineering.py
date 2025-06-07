@@ -66,6 +66,7 @@ def engineer_features(df):
         min_date = data['Date'].min()
         data['DaysSinceStart'] = (data['Date'] - min_date).dt.days
         
+        
         # Convert WorkType to string to handle mixed numeric and string types
         data['WorkType'] = data['WorkType'].astype(str)
         
@@ -118,6 +119,19 @@ def engineer_features(df):
             # print(data[['Date', 'Relative_Quantity']])
             # Fill any remaining NaN values
             data = data.fillna(0)
+
+            # === HIGH-IMPACT PRODUCTIVITY FEATURES ===
+            # 1. EFFICIENCY RATIOS
+            data['Workers_per_Hour'] = np.where(data['Hours'] > 0, data['NoOfMan'] / data['Hours'], 0)
+            data['Quantity_per_Hour'] = np.where(data['Hours'] > 0, data['Quantity'] / data['Hours'], 0)
+            data['Efficiency_Ratio'] = np.where(data['SystemHours'] > 0, data['Hours'] / data['SystemHours'], 1)
+            
+            # 2. WORKLOAD INTENSITY  
+            data['Workload_Density'] = np.where(data['NoOfMan'] > 0, data['Quantity'] / data['NoOfMan'], 0)
+            data['KPI_Performance'] = np.where(data['SystemKPI'] > 0, data['ResourceKPI'] / data['SystemKPI'], 1)
+            
+            # 3. CAPACITY UTILIZATION
+            data['Capacity_Ratio'] = np.where(data['SystemHours'] > 0, (data['NoOfMan'] * data['Hours']) / data['SystemHours'], 1)
         
         # logger.info(f"Feature engineering completed. Added {len(data.columns) - len(df.columns)} new features.")
         return data
