@@ -271,7 +271,7 @@ def create_resource_plan_table(predictions_dict, hours_dict, selected_work_types
                 # For working days, use the predicted values from the dictionaries
                 if date in predictions_dict and wt in predictions_dict[date]:
                     man_value = predictions_dict[date][wt]
-                    logger.info(f"Found prediction for {date}, {wt}: {man_value}")
+                    # logger.info(f"Found prediction for {date}, {wt}: {man_value}")
                     
                     # Also get hours value
                     if date in hours_dict and wt in hours_dict[date]:
@@ -338,7 +338,7 @@ def main():
     
     # Get available work types from models
     available_work_types = list(st.session_state.models.keys())
-    logger.info(f"Available models: {available_work_types}")
+    # logger.info(f"Available models: {available_work_types}")
     
     # Prediction options
     st.subheader("Prediction Options")

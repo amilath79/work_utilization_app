@@ -141,12 +141,30 @@ class FeatureBuilder:
                 for func in ext_config['functions']:
                     numeric.append(f'{base_feature}_rolling_{func}_{ext_config["window"]}')
         
+                    if self.available_features.get('HAS_PRODUCTIVITY', False):
+                        prod_features = INTERMEDIATE_FEATURES.get('PRODUCTIVITY_FEATURES', {})
+                        
+                        # Add productivity lag features
+                        for base_feature, lags in prod_features.get('LAG_FEATURES', {}).items():
+                            for lag in lags:
+                                numeric.append(f'{base_feature}_lag_{lag}')
+                        
+                        # Add productivity rolling features
+                        for base_feature, config in prod_features.get('ROLLING_FEATURES', {}).items():
+                            for window in config['windows']:
+                                for func in config['functions']:
+                                    numeric.append(f'{base_feature}_rolling_{func}_{window}')
+                        
+                        # Add derived productivity features
+                        numeric.extend(prod_features.get('DERIVED_FEATURES', []))
         # Pattern features
         numeric.extend(INTERMEDIATE_FEATURES['PATTERN_FEATURES'])
         
         # Trend features (add if required lags exist)
-        for trend_name, base_feature, lag1, lag2 in INTERMEDIATE_FEATURES['TREND_FEATURES']:
-            numeric.append(trend_name)
+        # for trend_name, base_feature, lag1, lag2 in INTERMEDIATE_FEATURES['TREND_FEATURES']:
+        #     numeric.append(trend_name)
+
+
             
         return numeric, categorical
     
@@ -211,8 +229,9 @@ class FeatureBuilder:
         numeric.extend(prod_config['PATTERN_FEATURES'])
         
         # Trend features
-        for trend_name, base_feature, lag1, lag2 in prod_config['TREND_FEATURES']:
-            numeric.append(trend_name)
+        # for trend_name, base_feature, lag1, lag2 in prod_config['TREND_FEATURES']:
+        #     numeric.append(trend_name)
+
         
         return numeric, categorical
 

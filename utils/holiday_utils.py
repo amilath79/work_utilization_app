@@ -211,9 +211,7 @@ def is_non_working_day(date_to_check):
         else:
             date_obj = date_to_check
             
-        # Add debug logging
-        logger.info(f"Checking if date {date_obj.strftime('%Y-%m-%d')} (weekday: {date_obj.weekday()}) is a non-working day")
-        
+       
         # Check if it's a holiday
         is_holiday, holiday_name = is_swedish_holiday(date_to_check)
         if is_holiday:
@@ -226,7 +224,7 @@ def is_non_working_day(date_to_check):
             return True, "Saturday (Weekend)"
         
         # It's a working day
-        logger.info(f"Date {date_obj.strftime('%Y-%m-%d')} is a normal working day")
+        # logger.info(f"Date {date_obj.strftime('%Y-%m-%d')} is a normal working day")
         return False, None
         
     except Exception as e:

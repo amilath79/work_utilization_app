@@ -155,37 +155,67 @@ INTERMEDIATE_FEATURES = {
     # Extended date features
     'DATE_FEATURES': {
         'categorical': ['Quarter'],
-        'numeric': ['Year_feat', 'DayOfMonth', 'WeekOfYear']
+        'numeric': ['DayOfMonth'] ,
+        # 'numeric': ['Year_feat', 'DayOfMonth', 'WeekOfYear']
     },
     
     # More comprehensive lag patterns
     'LAG_FEATURES': {
-        'NoOfMan': [2, 3, 14, 30],  # Short to medium term patterns
+        'NoOfMan': [2, 3, 14],  # Short to medium term patterns
     },
     
     # Enhanced rolling statistics
+    # 'ROLLING_FEATURES': {
+    #     'NoOfMan': {
+    #         'windows': [14],  # Bi-weekly and monthly patterns
+    #         'functions': ['mean'],
+    #         'extended_stats': {  # Additional stats for first window only
+    #             'window': 7,
+    #             'functions': ['max', 'min', 'std']
+    #         }
+    #     }
+    # },
+    
+
     'ROLLING_FEATURES': {
         'NoOfMan': {
-            'windows': [14, 30],  # Bi-weekly and monthly patterns
-            'functions': ['mean'],
-            'extended_stats': {  # Additional stats for first window only
-                'window': 7,
-                'functions': ['max', 'min', 'std']
-            }
+            'windows': [7, 30],  # Weekly and monthly averages
+            'functions': ['mean']  # Only mean, remove max/min/std noise
+        },
+        'Quantity': {
+            'windows': [7],
+            'functions': ['mean']
         }
     },
-    
+
     # Pattern recognition features
     'PATTERN_FEATURES': [
         'NoOfMan_same_dow_lag',    # Same day of week pattern
         'NoOfMan_same_dom_lag',    # Same day of month pattern
     ],
     
-    # Trend features
-    'TREND_FEATURES': [
-        ('NoOfMan_7day_trend', 'NoOfMan', 1, 7),   # Week-over-week trend
-        ('NoOfMan_1day_trend', 'NoOfMan', 1, 2),   # Day-over-day trend
+    # # Trend features
+    # 'TREND_FEATURES': [
+    #     ('NoOfMan_7day_trend', 'NoOfMan', 1, 7),   # Week-over-week trend
+    #     ('NoOfMan_1day_trend', 'NoOfMan', 1, 2),   # Day-over-day trend
+    # ]
+
+    'PRODUCTIVITY_FEATURES': {
+    'LAG_FEATURES': {
+        'Quantity': [1, 7],      # Workload volume context
+        'ResourceKPI': [1],      # Recent efficiency
+    },
+    'ROLLING_FEATURES': {
+        'Quantity': {
+            'windows': [7],
+            'functions': ['mean']
+        }
+    },
+    'DERIVED_FEATURES': [
+        'Quantity_per_Worker',   # Key business metric
+        'Combined_KPI',          # Efficiency indicator
     ]
+    }
 }
 
 # ==========================================
@@ -241,10 +271,10 @@ ADVANCED_FEATURES = {
         'PATTERN_FEATURES': [
             'Quantity_same_dow_lag'
         ],
-        'TREND_FEATURES': [
-            ('Quantity_7day_trend', 'Quantity', 1, 7),
-            ('Hours_7day_trend', 'Hours', 1, 7)
-        ]
+        # 'TREND_FEATURES': [
+        #     ('Quantity_7day_trend', 'Quantity', 1, 7),
+        #     ('Hours_7day_trend', 'Hours', 1, 7)
+        # ]
     },
     
     # Business logic features

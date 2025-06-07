@@ -443,8 +443,8 @@ def create_prediction_features(df, work_type, next_date, latest_date):
         lag_days_to_use = sorted(list(set(lag_days_to_use)))
         rolling_windows_to_use = sorted(list(set(rolling_windows_to_use)))
         
-        logger.info(f"Using config lag days: {lag_days_to_use}")
-        logger.info(f"Using config rolling windows: {rolling_windows_to_use}")
+        # logger.info(f"Using config lag days: {lag_days_to_use}")
+        # logger.info(f"Using config rolling windows: {rolling_windows_to_use}")
         
         # 4. Create lag features using config values
         features_df = create_lag_features(
@@ -538,7 +538,7 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
                 for col in ['NoOfMan_lag_1', 'NoOfMan_lag_7', 'NoOfMan_rolling_mean_7']:
                     if col in prediction_features.columns:
                         val = prediction_features[col].iloc[0]
-                        logger.info(f"  {col}: {val}")
+                        # logger.info(f"  {col}: {val}")
 
                 # Create prediction dataframe with only the available required features
                 X_pred = prediction_features[available_features].copy()
@@ -553,7 +553,7 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
                 
                 # Ensure prediction is not negative
                 prediction = max(0, prediction)
-                
+
                 predictions[work_type] = prediction
                 hours_predictions[work_type] = calculate_hours_prediction(df, work_type, prediction, next_date)
                 

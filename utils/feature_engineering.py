@@ -28,7 +28,7 @@ def engineer_features(df):
         DataFrame with engineered features
     """
     try:
-        logger.info("Engineering features")
+        # logger.info("Engineering features")
         
         # Create a copy to avoid modifying the original dataframe
         data = df.copy()
@@ -119,7 +119,7 @@ def engineer_features(df):
             # Fill any remaining NaN values
             data = data.fillna(0)
         
-        logger.info(f"Feature engineering completed. Added {len(data.columns) - len(df.columns)} new features.")
+        # logger.info(f"Feature engineering completed. Added {len(data.columns) - len(df.columns)} new features.")
         return data
     
     except Exception as e:
@@ -151,7 +151,7 @@ def create_lag_features(data, group_col='WorkType', target_col='NoOfMan', lag_da
         DataFrame with lag features
     """
     try:
-        logger.info(f"Creating lag features for {target_col} grouped by {group_col}")
+        # logger.info(f"Creating lag features for {target_col} grouped by {group_col}")
 
         # Set default values from config if not provided
         if lag_days is None:
@@ -240,16 +240,16 @@ def create_lag_features(data, group_col='WorkType', target_col='NoOfMan', lag_da
         if 'Quantity' in existing_metrics:
             daily_data['Quantity_same_dow_lag'] = daily_data.groupby([group_col, 'DayOfWeek_feat'])['Quantity'].shift(1)
         
-        # Add trend indicators
-        if 7 in lag_days and 1 in lag_days:
-            # Workforce trends
-            daily_data[f'{target_col}_7day_trend'] = daily_data[target_col] - daily_data[f'{target_col}_lag_7']
-            daily_data[f'{target_col}_1day_trend'] = daily_data[target_col] - daily_data[f'{target_col}_lag_1']
+        # # Add trend indicators
+        # if 7 in lag_days and 1 in lag_days:
+        #     # Workforce trends
+        #     daily_data[f'{target_col}_7day_trend'] = daily_data[target_col] - daily_data[f'{target_col}_lag_7']
+        #     daily_data[f'{target_col}_1day_trend'] = daily_data[target_col] - daily_data[f'{target_col}_lag_1']
             
-            # Quantity trends if available
-            if 'Quantity' in existing_metrics:
-                daily_data['Quantity_7day_trend'] = daily_data['Quantity'] - daily_data['Quantity_lag_7']
-                daily_data['Quantity_1day_trend'] = daily_data['Quantity'] - daily_data['Quantity_lag_1']
+        #     # Quantity trends if available
+        #     if 'Quantity' in existing_metrics:
+        #         daily_data['Quantity_7day_trend'] = daily_data['Quantity'] - daily_data['Quantity_lag_7']
+        #         daily_data['Quantity_1day_trend'] = daily_data['Quantity'] - daily_data['Quantity_lag_1']
         
         # Create workforce prediction based on quantity if available
         if 'Quantity' in existing_metrics and 'Quantity_lag_1' in daily_data.columns:
