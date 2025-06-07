@@ -32,6 +32,30 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+def diagnose_training_data(df):
+    """
+    Diagnose potential issues with training data
+    """
+    print("=== TRAINING DATA DIAGNOSIS ===")
+    
+    for work_type in df['WorkType'].unique():
+        wt_data = df[df['WorkType'] == work_type]
+        
+        print(f"\nWorkType {work_type}:")
+        print(f"  Records: {len(wt_data)}")
+        print(f"  NoOfMan - Mean: {wt_data['NoOfMan'].mean():.2f}")
+        print(f"  NoOfMan - Median: {wt_data['NoOfMan'].median():.2f}")
+        print(f"  NoOfMan - Max: {wt_data['NoOfMan'].max():.2f}")
+        print(f"  NoOfMan - Min: {wt_data['NoOfMan'].min():.2f}")
+        
+        # Check for data quality issues
+        zero_count = (wt_data['NoOfMan'] == 0).sum()
+        low_count = (wt_data['NoOfMan'] < 1).sum()
+        
+        print(f"  Zero values: {zero_count} ({zero_count/len(wt_data)*100:.1f}%)")
+        print(f"  Values < 1: {low_count} ({low_count/len(wt_data)*100:.1f}%)")
+
+
 # Configure page
 st.set_page_config(
     page_title="Workforce Predictions",
@@ -305,6 +329,12 @@ def main():
     # Check data and models
     if not ensure_data_and_models():
         return
+    
+    st.write("### Data Quality Diagnosis")
+    if st.button("Run Data Diagnosis"):
+        with st.spinner("Analyzing training data..."):
+            diagnose_training_data(st.session_state.ts_data)
+            st.success("Check the console/logs for detailed diagnosis results")
     
     # Get available work types from models
     available_work_types = list(st.session_state.models.keys())

@@ -154,7 +154,8 @@ def build_models(processed_data, work_types=None, n_splits=5):
         for work_type in work_types:
             try:
                 logger.info(f"Building model for WorkType: {work_type}")
-                
+                avg_value = diagnose_training_data(processed_data, work_type)
+                print(f'Work Type : {work_type} - Avarage Value : {avg_value}')
                 # Filter data for this WorkType
                 work_type_data = processed_data[processed_data['WorkType'] == work_type] 
                 
@@ -226,6 +227,9 @@ def build_models(processed_data, work_types=None, n_splits=5):
                     # Train model
                     pipeline.fit(X_train, y_train)
                     
+
+                    bias_ratio = validate_model_performance(pipeline, X, y, work_type)
+                    print(f'Basic Ratio for {work_type} : {bias_ratio}')
                     # Make predictions
                     y_pred = pipeline.predict(X_test)
                     
@@ -318,6 +322,28 @@ def build_models(processed_data, work_types=None, n_splits=5):
         logger.error(traceback.format_exc())
         return {}, {}, {}
 
+
+def validate_model_performance(model, X, y, work_type):
+    """Check if model is learning properly"""
+    
+    # Check training performance
+    train_pred = model.predict(X)
+    train_mae = mean_absolute_error(y, train_pred)
+    train_r2 = r2_score(y, train_pred)
+    
+    print(f"\n{work_type} Training Performance:")
+    print(f"  Training MAE: {train_mae:.3f}")
+    print(f"  Training R²: {train_r2:.3f}")
+    print(f"  Target mean: {y.mean():.3f}")
+    print(f"  Prediction mean: {train_pred.mean():.3f}")
+    print(f"  Prediction/Target ratio: {train_pred.mean()/y.mean():.3f}")
+    
+    # Check if predictions are systematically biased
+    bias = train_pred.mean() - y.mean()
+    print(f"  Systematic bias: {bias:.3f}")
+    
+    return train_pred.mean() / y.mean()
+
 def train_from_sql(connection_string=None, sql_query=None):
     """
     Train models using data from a SQL query with tiered feature system
@@ -407,6 +433,7 @@ def train_from_sql(connection_string=None, sql_query=None):
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
         
+            
         # Process data and train models using tiered feature system
         logger.info("Engineering features...")
         feature_df = engineer_features(df)
@@ -522,6 +549,35 @@ def save_models(models, feature_importances, metrics):
         logger.error(f"Error saving models: {str(e)}")
         logger.error(traceback.format_exc())
         return False
+    
+# In train_models.py, add this after loading data:
+def diagnose_training_data(df, work_type):
+    """Diagnose potential issues in training data"""
+    wt_data = df[df['WorkType'] == work_type]
+    
+    print(f"\n=== Diagnosis for {work_type} ===")
+    print(f"Total records: {len(wt_data)}")
+    print(f"Date range: {wt_data['Date'].min()} to {wt_data['Date'].max()}")
+    print(f"NoOfMan stats:")
+    print(f"  Mean: {wt_data['NoOfMan'].mean():.2f}")
+    print(f"  Median: {wt_data['NoOfMan'].median():.2f}")
+    print(f"  Min: {wt_data['NoOfMan'].min():.2f}")
+    print(f"  Max: {wt_data['NoOfMan'].max():.2f}")
+    print(f"  Std: {wt_data['NoOfMan'].std():.2f}")
+    
+    # Check for outliers
+    q1 = wt_data['NoOfMan'].quantile(0.25)
+    q3 = wt_data['NoOfMan'].quantile(0.75)
+    iqr = q3 - q1
+    outliers = wt_data[(wt_data['NoOfMan'] < q1 - 1.5*iqr) | (wt_data['NoOfMan'] > q3 + 1.5*iqr)]
+    print(f"  Outliers: {len(outliers)} ({len(outliers)/len(wt_data)*100:.1f}%)")
+    
+    # Check recent trend
+    recent = wt_data.tail(30)
+    print(f"Recent 30 days average: {recent['NoOfMan'].mean():.2f}")
+    
+    return wt_data['NoOfMan'].mean()
+
 
 def main():
     """Main function to run the training process"""
@@ -559,7 +615,7 @@ def main():
             
             # Load the data
             df = load_data(file_path)
-            
+
             # Use the feature engineering utilities with tiered configuration
             logger.info("Engineering features...")
             feature_df = engineer_features(df)

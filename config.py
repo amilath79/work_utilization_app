@@ -44,10 +44,11 @@ CHUNK_SIZE = 10000  # Number of rows to process at once for large datasets
 # Model settings
 DEFAULT_MODEL_PARAMS = {
     "n_estimators": 200,
-    "max_depth": 15,
-    "min_samples_split": 2,
-    "min_samples_leaf": 1,
-    "random_state": 42
+    "max_depth": 12,
+    "min_samples_split": 5,
+    "min_samples_leaf": 2,
+    "random_state": 42,
+    "max_features": 0.7, # this to focus on most important features
 }
 
 # Feature engineering settingsa

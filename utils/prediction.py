@@ -571,11 +571,15 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
         logger.error(f"Error predicting next day: {str(e)}")
         logger.error(traceback.format_exc())
         raise Exception(f"Failed to predict next day: {str(e)}")
+
+
         
 def predict_multiple_days(df, models, num_days=7, use_neural_network=False):
     """
     Predict NoOfMan and Hours for multiple days for each WorkType
     """
+
+
     try:
         logger.info(f"Predicting for the next {num_days} days")
         
