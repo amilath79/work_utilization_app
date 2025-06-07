@@ -40,6 +40,7 @@ def load_data_from_database():
                 SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
                 FROM WorkUtilizationData 
                 WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 210, 217) 
+                AND Date > '2024-05-01'
                 AND Hours > 0 
                 AND NoOfMan > 0 
                 AND SystemHours > 0 

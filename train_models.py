@@ -386,6 +386,7 @@ def train_from_sql(connection_string=None, sql_query=None):
                 AND NoOfMan > 0 
                 AND SystemHours > 0 
                 AND Quantity > 0
+                AND Date > '2024-05-01'
                 ORDER BY Date
             """
         
