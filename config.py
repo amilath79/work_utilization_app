@@ -141,6 +141,22 @@ DATE_FEATURES = {
 
 
 # ==============================================
+# BASIC LOGGING SETUP (SIMPLIFIED)
+# ==============================================
+
+import logging
+
+# Create basic logger early to avoid NameError
+enterprise_logger = logging.getLogger('enterprise')
+audit_logger = logging.getLogger('audit')
+
+# Basic configuration - will be enhanced later
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s | %(name)s | %(levelname)s | %(message)s'
+)
+
+# ==============================================
 # MLFLOW CONFIGURATION (Simple)
 # ==============================================
 

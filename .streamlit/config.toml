@@ -7,37 +7,14 @@ font = "sans serif"
 
 [server]
 fileWatcherType = "none"
-
-
-[theme]
-primaryColor = "#1E88E5"
-backgroundColor = "#121212"
-secondaryBackgroundColor = "#1E1E1E"
-textColor = "#FFFFFF"
-font = "sans serif"
-
-[server]
-# Enterprise security settings
-fileWatcherType = "none"
 headless = true
 enableCORS = false
 enableXsrfProtection = true
 maxUploadSize = 200
-maxMessageSize = 200
-
-# Enterprise logging
-enableStaticServing = false
 
 [browser]
 gatherUsageStats = false
-serverAddress = "localhost"
-serverPort = 8501
 
 [global]
-# Enterprise data handling
 developmentMode = false
 logLevel = "info"
-unitTest = false
-
-# Enterprise caching
-maxCachedMessageAge = 2

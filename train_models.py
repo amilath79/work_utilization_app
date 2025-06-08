@@ -17,8 +17,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
-import mlflow
-import mlflow.sklearn
+
 
 # Import feature engineering functions from utils
 from utils.feature_engineering import engineer_features, create_lag_features
@@ -29,10 +28,10 @@ from config import (
     SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION,
     SQL_USERNAME, SQL_PASSWORD,
     FEATURE_GROUPS, PRODUCTIVITY_FEATURES, DATE_FEATURES, ESSENTIAL_LAGS, ESSENTIAL_WINDOWS,
-    MLFLOW_CONFIG, ENTERPRISE_CONFIG, enterprise_logger
+    enterprise_logger
 )
 
-# Enterprise MLflow integration
+# Enterprise MLflow integration - simplified
 from utils.enterprise_mlflow import mlflow_manager
 
 # Configure logging
@@ -146,7 +145,7 @@ def build_models(processed_data, work_types=None, n_splits=5):
             "total_work_types": len(work_types),
             "feature_groups": active_groups,
             "model_params": DEFAULT_MODEL_PARAMS,
-            "environment": ENTERPRISE_CONFIG.environment.value,
+            "environment": "production",
             "data_shape": processed_data.shape,
             "training_timestamp": datetime.now().isoformat()
         }
@@ -332,6 +331,7 @@ def build_models(processed_data, work_types=None, n_splits=5):
                         # Train final model on all data
                         pipeline.fit(X, y)
                         models[work_type] = pipeline
+                        logger.info(f"✅ Model stored for {work_type}")
                         
                         # Get feature importances from the final model
                         model = pipeline.named_steps['model']
@@ -372,55 +372,76 @@ def build_models(processed_data, work_types=None, n_splits=5):
                             feature_names = [f"feature_{i}" for i in range(len(importances))]
                         
                         # Create dictionary of feature importances
-                        feature_importances[work_type] = dict(zip(feature_names, importances))
-                        
-                        # Store average metrics
-                        work_type_metrics = {
-                            'MAE': np.mean(mae_scores),
-                            'RMSE': np.mean(rmse_scores), 
-                            'R²': np.mean(r2_scores),
-                            'MAPE': np.mean(mape_scores)
-                        }
-                        metrics[work_type] = work_type_metrics
-                        
-                        # Enterprise MLflow logging
-                        if model_run:
-                            # Log metrics with cross-validation scores
-                            cv_scores = {
-                                'MAE': mae_scores,
-                                'RMSE': rmse_scores,
-                                'R2': r2_scores,
-                                'MAPE': mape_scores
+                        try:
+                            feature_importances[work_type] = dict(zip(feature_names, importances))
+                            
+                            # Store average metrics
+                            work_type_metrics = {
+                                'MAE': np.mean(mae_scores),
+                                'RMSE': np.mean(rmse_scores), 
+                                'R²': np.mean(r2_scores),
+                                'MAPE': np.mean(mape_scores)
                             }
+                            metrics[work_type] = work_type_metrics
                             
-                            mlflow_manager.log_model_metrics(work_type, work_type_metrics, cv_scores)
-                            mlflow_manager.log_model_artifact(pipeline, work_type, feature_importances.get(work_type))
-                        
-                        enterprise_logger.info(f"Enterprise model completed for {work_type} - MAE: {work_type_metrics['MAE']:.4f}")
-                        
-                        # Print top 10 most important features
-                        importances_dict = feature_importances[work_type]
-                        sorted_importances = sorted(importances_dict.items(), key=lambda x: x[1], reverse=True)
-                        logger.info(f"Top 10 most important features for {work_type}:")
-                        for feature, importance in sorted_importances[:10]:
-                            logger.info(f"  {feature}: {importance:.4f}")
-                        
-                        # Also print individual fold scores for detailed analysis
-                        logger.info(f"Cross-validation details for {work_type}:")
-                        for i in range(len(mae_scores)):
-                            logger.info(f"  Fold {i+1}: MAE={mae_scores[i]:.4f}, RMSE={rmse_scores[i]:.4f}, R²={r2_scores[i]:.4f}, MAPE={mape_scores[i]:.2f}%")
+                            # ✅ CRITICAL: Store the trained model HERE inside try block
+                            models[work_type] = pipeline
+                            logger.info(f"✅ Model successfully stored for {work_type}")
                             
+                            # Enterprise MLflow logging
+                            if model_run:
+                                # Log metrics with cross-validation scores
+                                cv_scores = {
+                                    'MAE': mae_scores,
+                                    'RMSE': rmse_scores,
+                                    'R2': r2_scores,
+                                    'MAPE': mape_scores
+                                }
+                                
+                                try:
+                                    mlflow_manager.log_model_metrics(work_type, work_type_metrics, cv_scores)
+                                    mlflow_manager.log_model_artifact(pipeline, work_type, feature_importances.get(work_type))
+                                except Exception as mlflow_error:
+                                    logger.warning(f"MLflow logging failed for {work_type}: {mlflow_error}")
+                                    # Don't fail the entire training for MLflow issues
+                            
+                            enterprise_logger.info(f"Enterprise model completed for {work_type} - MAE: {work_type_metrics['MAE']:.4f}")
+                            
+                            # Print top 10 most important features
+                            importances_dict = feature_importances[work_type]
+                            sorted_importances = sorted(importances_dict.items(), key=lambda x: x[1], reverse=True)
+                            logger.info(f"Top 10 most important features for {work_type}:")
+                            for feature, importance in sorted_importances[:10]:
+                                logger.info(f"  {feature}: {importance:.4f}")
+                            
+                            # Also print individual fold scores for detailed analysis
+                            logger.info(f"Cross-validation details for {work_type}:")
+                            for i in range(len(mae_scores)):
+                                logger.info(f"  Fold {i+1}: MAE={mae_scores[i]:.4f}, RMSE={rmse_scores[i]:.4f}, R²={r2_scores[i]:.4f}, MAPE={mape_scores[i]:.2f}%")
+                        
+                        except Exception as storage_error:
+                            logger.error(f"Error storing results for {work_type}: {storage_error}")
+                            # Even if storage fails, try to save the basic model
+                            try:
+                                models[work_type] = pipeline
+                                logger.info(f"⚠️  Basic model saved for {work_type} despite storage error")
+                            except Exception as basic_error:
+                                logger.error(f"Failed to save even basic model for {work_type}: {basic_error}")
+                                
                     except Exception as e:
                         logger.error(f"Error training model for WorkType {work_type}: {str(e)}")
                         logger.error(traceback.format_exc())
                         # Continue with next work type instead of failing completely
                         continue
+                    else:
+                        # THIS IS CRITICAL - Move model storage inside the try block
+                        logger.info(f"Successfully trained and stored model for {work_type}")
             
             # Log final training session metrics
             if parent_run:
                 mlflow_manager.log_training_parameters({
                     "total_models_trained": len(models),
-                    "training_success_rate": len(models) / len(work_types) if work_types else 0
+                    "training_success_rate": len(models) / len(work_types) if len(work_types) > 0 else 0
                 })
             
             return models, feature_importances, metrics

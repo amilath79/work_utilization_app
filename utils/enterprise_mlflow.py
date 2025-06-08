@@ -69,7 +69,6 @@ class EnterpriseMLflowManager:
     
     @contextmanager
     def start_run(self, run_name: str, nested: bool = False, tags: Optional[Dict[str, str]] = None):
-        """Start MLflow run context manager"""
         if not self.initialized:
             self.logger.warning("MLflow not initialized, skipping run tracking")
             yield None
@@ -79,7 +78,7 @@ class EnterpriseMLflowManager:
         try:
             # Add enterprise tags
             enterprise_tags = {
-                "environment": ENTERPRISE_CONFIG.environment.value,
+                "environment": "production",  # Simplified
                 "timestamp": datetime.now().isoformat()
             }
             
@@ -87,7 +86,7 @@ class EnterpriseMLflowManager:
                 enterprise_tags.update(tags)
             
             run = mlflow.start_run(run_name=run_name, nested=nested, tags=enterprise_tags)
-            self.logger.info(f"Started MLflow run: {run_name}")
+            self.logger.info(f"Started MLflow run: {run_name} | Run ID: {run.info.run_id}")
             
             yield run
             
@@ -97,8 +96,9 @@ class EnterpriseMLflowManager:
         finally:
             if run:
                 try:
-                    mlflow.end_run()
-                    self.logger.info(f"Ended MLflow run: {run_name}")
+                    # ✅ EXPLICIT SAVE AND END
+                    mlflow.end_run(status='FINISHED')  # Ensure proper status
+                    self.logger.info(f"Ended and saved MLflow run: {run_name} | Run ID: {run.info.run_id}")
                 except Exception as e:
                     self.logger.error(f"Error ending MLflow run: {e}")
     

@@ -13,9 +13,22 @@ from config import (
     ESSENTIAL_LAGS, ESSENTIAL_WINDOWS, DATE_FEATURES
 )
 
+try:
+    import streamlit as st
+    STREAMLIT_AVAILABLE = True
+except ImportError:
+    STREAMLIT_AVAILABLE = False
+
+# Then use conditional decorator
+def _cache_if_available(func):
+    """Apply Streamlit cache only if available"""
+    if STREAMLIT_AVAILABLE:
+        return st.cache_data(ttl=3600)(func)
+    return func
+
 logger = logging.getLogger(__name__)
 
-@st.cache_data(ttl=CACHE_TTL)
+@_cache_if_available
 def engineer_features(df):
     """Config-driven feature engineering to prevent overfitting"""
     try:
@@ -69,7 +82,7 @@ def engineer_features(df):
         logger.error(f"Error engineering features: {str(e)}")
         raise Exception(f"Failed to engineer features: {str(e)}")
 
-@st.cache_data(ttl=CACHE_TTL)
+@_cache_if_available
 def create_lag_features(data, group_col='WorkType', target_col='NoOfMan', lag_days=None, rolling_windows=None):
     """Config-driven lag feature creation"""
     try:
