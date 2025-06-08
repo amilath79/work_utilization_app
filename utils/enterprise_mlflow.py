@@ -53,9 +53,14 @@ class EnterpriseMLflowManager:
             try:
                 experiment = mlflow.get_experiment_by_name(MLFLOW_EXPERIMENT_NAME)
                 if experiment is None:
-                    mlflow.create_experiment(MLFLOW_EXPERIMENT_NAME)
-            except:
-                mlflow.create_experiment(MLFLOW_EXPERIMENT_NAME)
+                    experiment_id = mlflow.create_experiment(MLFLOW_EXPERIMENT_NAME)
+                    self.logger.info(f"✅ Created experiment: {MLFLOW_EXPERIMENT_NAME} (ID: {experiment_id})")
+                else:
+                    self.logger.info(f"✅ Using existing experiment: {MLFLOW_EXPERIMENT_NAME} (ID: {experiment.experiment_id})")
+            except Exception as e:
+                self.logger.warning(f"Experiment setup issue: {e}")
+                experiment_id = mlflow.create_experiment(MLFLOW_EXPERIMENT_NAME)
+                self.logger.info(f"✅ Fallback: Created experiment: {MLFLOW_EXPERIMENT_NAME} (ID: {experiment_id})")
             
             mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
             self.initialized = True

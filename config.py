@@ -161,18 +161,11 @@ logging.basicConfig(
 # ==============================================
 
 # MLflow settings
-MLFLOW_TRACKING_URI = os.getenv('MLFLOW_TRACKING_URI', f'file:///{MODELS_DIR}/mlflow-runs')
+MLFLOW_TRACKING_URI = os.getenv('MLFLOW_TRACKING_URI', 'http://localhost:5000')
 MLFLOW_EXPERIMENT_NAME = os.getenv('MLFLOW_EXPERIMENT_NAME', 'workforce_prediction')
 MLFLOW_ENABLE_TRACKING = os.getenv('MLFLOW_ENABLE_TRACKING', 'true').lower() == 'true'
 
 # Create MLflow directories (without logging - will log later)
 if MLFLOW_ENABLE_TRACKING:
-    mlflow_dir = MLFLOW_TRACKING_URI.replace('file:///', '').replace('file://', '')
+    mlflow_dir = os.path.join(MODELS_DIR, 'mlflow-runs')
     os.makedirs(mlflow_dir, exist_ok=True)
-
-
-
-# Log MLflow setup now that logger is available
-if MLFLOW_ENABLE_TRACKING:
-    mlflow_dir = MLFLOW_TRACKING_URI.replace('file:///', '').replace('file://', '')
-    enterprise_logger.info(f"MLflow tracking directory: {mlflow_dir}")
