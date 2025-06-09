@@ -80,32 +80,55 @@ class EnterpriseMLflowManager:
             return
         
         run = None
+        run_ended = False
+        
         try:
             # Add enterprise tags
             enterprise_tags = {
-                "environment": "production",  # Simplified
+                "environment": "production",
                 "timestamp": datetime.now().isoformat()
             }
             
             if tags:
                 enterprise_tags.update(tags)
             
+            # ✅ FIX 1: Proper run creation with nested handling
             run = mlflow.start_run(run_name=run_name, nested=nested, tags=enterprise_tags)
-            self.logger.info(f"Started MLflow run: {run_name} | Run ID: {run.info.run_id}")
+            self.logger.info(f"✅ Started MLflow run: {run_name} | Run ID: {run.info.run_id} | Nested: {nested}")
             
             yield run
             
+            # ✅ FIX 2: Successful completion - end run with SUCCESS status
+            if run and mlflow.active_run() and mlflow.active_run().info.run_id == run.info.run_id:
+                mlflow.end_run(status='FINISHED')
+                run_ended = True
+                self.logger.info(f"✅ Successfully ended MLflow run: {run_name} | Run ID: {run.info.run_id}")
+            
         except Exception as e:
-            self.logger.error(f"Error in MLflow run {run_name}: {e}")
-            raise
-        finally:
-            if run:
+            self.logger.error(f"❌ Error in MLflow run {run_name}: {e}")
+            
+            # ✅ FIX 3: Proper error handling - end run with FAILED status
+            if run and not run_ended and mlflow.active_run() and mlflow.active_run().info.run_id == run.info.run_id:
                 try:
-                    # ✅ EXPLICIT SAVE AND END
-                    mlflow.end_run(status='FINISHED')  # Ensure proper status
-                    self.logger.info(f"Ended and saved MLflow run: {run_name} | Run ID: {run.info.run_id}")
+                    mlflow.end_run(status='FAILED')
+                    run_ended = True
+                    self.logger.info(f"❌ Ended failed MLflow run: {run_name} | Run ID: {run.info.run_id}")
+                except Exception as end_error:
+                    self.logger.error(f"Error ending failed run: {end_error}")
+            
+            raise  # Re-raise the original exception
+            
+        finally:
+            # ✅ FIX 4: Safety net - only end if not already ended and is active run
+            if run and not run_ended:
+                try:
+                    if mlflow.active_run() and mlflow.active_run().info.run_id == run.info.run_id:
+                        mlflow.end_run(status='FINISHED')
+                        self.logger.info(f"🔧 Safety-ended MLflow run: {run_name} | Run ID: {run.info.run_id}")
                 except Exception as e:
-                    self.logger.error(f"Error ending MLflow run: {e}")
+                    self.logger.error(f"Error in safety run ending: {e}")
+
+
     
     def log_model_metrics(self, work_type: str, metrics: Dict[str, float], 
                          cv_scores: Optional[Dict[str, list]] = None) -> None:
