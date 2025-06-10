@@ -120,7 +120,7 @@ DEFAULT_PUNCH_CODE_WORKING_DAYS = [0, 1, 2, 3, 4]
 
 # Core feature categories - Enable/Disable groups to prevent overfitting
 FEATURE_GROUPS = {
-    'LAG_FEATURES': False,           # Essential: NoOfMan_lag_1, lag_7, etc.
+    'LAG_FEATURES': True,           # Essential: NoOfMan_lag_1, lag_7, etc.
     'ROLLING_FEATURES': False,       # Essential: rolling_mean_7, etc.
     'DATE_FEATURES': True,          # Essential: DayOfWeek, Month, etc.
     # 'PRODUCTIVITY_FEATURES': False,  # New: Workers_per_Hour, etc.
