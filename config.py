@@ -51,15 +51,25 @@ DATE_FORMAT = "%Y-%m-%d"
 # Performance settings
 CHUNK_SIZE = 10000  # Number of rows to process at once for large datasets
 
+# DEFAULT_MODEL_PARAMS = {
+#     "n_estimators": 500,  # More trees for better accuracy
+#     "max_depth": 15,      # Deeper trees for complex patterns
+#     "min_samples_split": 3,  # More sensitive to patterns
+#     "min_samples_leaf": 1,   # Allow finer granularity
+#     "random_state": 42,
+#     "max_features": 0.8,     # Use more features
+#     "bootstrap": True,
+#     "oob_score": True,       # Out-of-bag scoring
+# }
+
 DEFAULT_MODEL_PARAMS = {
-    "n_estimators": 500,  # More trees for better accuracy
-    "max_depth": 15,      # Deeper trees for complex patterns
-    "min_samples_split": 3,  # More sensitive to patterns
-    "min_samples_leaf": 1,   # Allow finer granularity
-    "random_state": 42,
-    "max_features": 0.8,     # Use more features
+    "n_estimators": 300,      # ✅ Fewer trees to prevent memorization
+    "max_depth": 6,           # ✅ Shallow trees for generalization
+    "min_samples_split": 10,  # ✅ Conservative splitting
+    "min_samples_leaf": 5,    # ✅ Larger leaves for stability
+    "max_features": "sqrt",   # ✅ Feature subsampling
     "bootstrap": True,
-    "oob_score": True,       # Out-of-bag scoring
+    "random_state": 42,
 }
 
 # Feature engineering settingsa
@@ -110,14 +120,15 @@ DEFAULT_PUNCH_CODE_WORKING_DAYS = [0, 1, 2, 3, 4]
 
 # Core feature categories - Enable/Disable groups to prevent overfitting
 FEATURE_GROUPS = {
-    'LAG_FEATURES': True,           # Essential: NoOfMan_lag_1, lag_7, etc.
-    'ROLLING_FEATURES': True,       # Essential: rolling_mean_7, etc.
+    'LAG_FEATURES': False,           # Essential: NoOfMan_lag_1, lag_7, etc.
+    'ROLLING_FEATURES': False,       # Essential: rolling_mean_7, etc.
     'DATE_FEATURES': True,          # Essential: DayOfWeek, Month, etc.
-    'PRODUCTIVITY_FEATURES': True,  # New: Workers_per_Hour, etc.
-    'CYCLICAL_FEATURES': True,     # Optional: Sin/Cos transforms ENABLE for better patterns
+    # 'PRODUCTIVITY_FEATURES': False,  # New: Workers_per_Hour, etc.
+    'CYCLICAL_FEATURES': False,     # Optional: Sin/Cos transforms ENABLE for better patterns
     'TREND_FEATURES': False,        # Optional: Trend calculations ENABLE for momentum
     'PATTERN_FEATURES': False,      # Optional: Same day patterns ENABLE for seasonality
 }
+
 
 # Productivity features to create (only if PRODUCTIVITY_FEATURES=True)
 PRODUCTIVITY_FEATURES = [
@@ -127,11 +138,18 @@ PRODUCTIVITY_FEATURES = [
     'KPI_Performance'
 ]
 
-# Essential lag features (reduce from current LAG_DAYS to prevent overfitting)
-ESSENTIAL_LAGS = [1, 7, 28]  # Only most important: yesterday, last week, last month
+# # Essential lag features (reduce from current LAG_DAYS to prevent overfitting)
+# ESSENTIAL_LAGS = [1, 7, 28]  # Only most important: yesterday, last week, last month
 
-# Essential rolling windows (reduce from current ROLLING_WINDOWS)
-ESSENTIAL_WINDOWS = [7, 30]  # Only weekly and monthly averages
+# # Essential rolling windows (reduce from current ROLLING_WINDOWS)
+# ESSENTIAL_WINDOWS = [7, 30]  # Only weekly and monthly averages
+
+ESSENTIAL_LAGS = [1, 2, 3, 7, 14, 21, 28]  # More granular lags
+ESSENTIAL_WINDOWS = [3, 7, 14, 30]     
+
+LAG_FEATURES_COLUMNS = ['Hours', 'Quantity', 'SystemHours']
+ROLLING_FEATURES_COLUMNS = ['Hours', 'Quantity', 'SystemHours']
+CYCLICAL_FEATURES = {'DayOfWeek': 7, 'Month': 12}
 
 # Date features to include
 DATE_FEATURES = {
@@ -155,6 +173,24 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s | %(name)s | %(levelname)s | %(message)s'
 )
+
+
+# ==============================================
+# ENTERPRISE CONFIGURATION (Simple)
+# ==============================================
+
+@dataclass
+class EnterpriseConfig:
+    """Simple enterprise configuration"""
+    enterprise_mode: bool = os.getenv('ENTERPRISE_MODE', 'false').lower() == 'true'
+    
+    class Environment:
+        value: str = os.getenv('ENVIRONMENT', 'development')
+    
+    environment = Environment()
+
+# Create enterprise config instance
+ENTERPRISE_CONFIG = EnterpriseConfig()
 
 # ==============================================
 # MLFLOW CONFIGURATION (Simple)

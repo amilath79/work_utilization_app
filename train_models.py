@@ -576,6 +576,8 @@ def build_models(processed_data, work_types=None, n_splits=5):
         (models, feature_importances, metrics)
     """
     try:
+        print('XXXXXX')
+        processed_data.to_excel('work_type_data.xlsx')
         # Initialize enterprise MLflow tracking
         mlflow_initialized = mlflow_manager.initialize()
         
@@ -1021,11 +1023,12 @@ def train_from_sql(connection_string=None, sql_query=None):
             sql_query = """
                 SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
                 FROM WorkUtilizationData 
-                WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 210, 217) 
+                WHERE PunchCode IN (206, 213) 
                 AND Hours > 0 
                 AND NoOfMan > 0 
                 AND SystemHours > 0 
                 AND Quantity > 0
+                AND Date > '2025-05-01'
                 ORDER BY Date
             """
         

@@ -10,7 +10,8 @@ import traceback
 from config import (
     LAG_DAYS, ROLLING_WINDOWS, CACHE_TTL, 
     FEATURE_GROUPS, PRODUCTIVITY_FEATURES, 
-    ESSENTIAL_LAGS, ESSENTIAL_WINDOWS, DATE_FEATURES
+    ESSENTIAL_LAGS, ESSENTIAL_WINDOWS, DATE_FEATURES,
+    LAG_FEATURES_COLUMNS, ROLLING_FEATURES_COLUMNS, CYCLICAL_FEATURES
 )
 
 try:
@@ -142,3 +143,81 @@ def create_lag_features(data, group_col='WorkType', target_col='NoOfMan', lag_da
     except Exception as e:
         logger.error(f"Error creating lag features: {str(e)}")
         raise Exception(f"Failed to create lag features: {str(e)}")
+    
+
+
+
+def add_rolling_features_by_group(df):
+    """
+    Adds rolling mean and std features for selected columns grouped by WorkType and ordered by Date.
+    """
+    df = df.sort_values(['WorkType', 'Date']).copy()
+    
+    for col in ROLLING_FEATURES_COLUMNS:
+        for window in ROLLING_WINDOWS:
+            roll_mean_col = f"{col}_roll_{window}_mean"
+            roll_std_col = f"{col}_roll_{window}_std"
+            
+            df[roll_mean_col] = df.groupby('WorkType')[col].shift(1).rolling(window).mean()
+            df[roll_std_col] = df.groupby('WorkType')[col].shift(1).rolling(window).std()
+    
+    return df
+
+
+def add_lag_features_by_group(df):
+    """
+    Adds lag features for selected columns grouped by WorkType and ordered by Date.
+    """
+    df = df.sort_values(['WorkType', 'Date']).copy()
+    
+    for col in LAG_FEATURES_COLUMNS:
+        for lag in ESSENTIAL_LAGS:
+            lag_col = f"{col}_lag_{lag}"
+            df[lag_col] = df.groupby('WorkType')[col].shift(lag)
+    
+    return df
+
+
+def add_rolling_features_by_group(df):
+    """
+    Adds rolling mean and std features for selected columns grouped by WorkType and ordered by Date.
+    """
+    df = df.sort_values(['WorkType', 'Date']).copy()
+    
+    for col in ROLLING_FEATURES_COLUMNS:
+        for window in ROLLING_WINDOWS:
+            roll_mean_col = f"{col}_roll_{window}_mean"
+            roll_std_col = f"{col}_roll_{window}_std"
+            
+            df[roll_mean_col] = df.groupby('WorkType')[col].shift(1).rolling(window).mean()
+            df[roll_std_col] = df.groupby('WorkType')[col].shift(1).rolling(window).std()
+    
+    return df
+
+def add_cyclical_features(df):
+    """
+    Adds cyclical encodings (sin, cos) for features defined in config.CYCLICAL_FEATURES.
+    Example: 'DayOfWeek' with period 7 will produce 'DayOfWeek_sin' and 'DayOfWeek_cos'.
+    """
+    for feature, period in CYCLICAL_FEATURES.items():
+        sin_col = f"{feature}_sin"
+        cos_col = f"{feature}_cos"
+
+        df[sin_col] = np.sin(2 * np.pi * df[feature] / period)
+        df[cos_col] = np.cos(2 * np.pi * df[feature] / period)
+    
+    return df
+
+def add_trend_features(df):
+    # Example: cumulative sum of quantity to reflect trend
+    df = df.sort_values('Date')
+    df['Cumulative_Quantity'] = df['Quantity'].cumsum()
+    return df
+
+
+def add_pattern_features(df):
+    # Example: simple rolling mean to identify patterns
+    df = df.sort_values('Date')
+    df['Quantity_3d_avg'] = df['Quantity'].rolling(window=3, min_periods=1).mean()
+    return df
+

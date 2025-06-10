@@ -19,13 +19,21 @@ from utils.feature_engineering import engineer_features, create_lag_features
 from utils.state_manager import StateManager
 from config import DATA_DIR, MODELS_DIR, LOGO_PATH, APP_TITLE, SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION, APP_ICON
 
-# Configure page
-st.set_page_config(
-    page_title=APP_TITLE,
-    page_icon=APP_ICON,
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# Configure page - SINGLE CONFIG ONLY
+if ENTERPRISE_CONFIG.enterprise_mode:
+    st.set_page_config(
+        page_title=f"Enterprise - {APP_TITLE}",
+        page_icon="🏢",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
+else:
+    st.set_page_config(
+        page_title=APP_TITLE,
+        page_icon=APP_ICON,
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -40,7 +48,7 @@ def load_data_from_database():
         sql_query = """
                 SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
                 FROM WorkUtilizationData 
-                WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 210, 217) 
+                WHERE PunchCode IN (206, 213) 
                 AND Hours > 0 
                 AND NoOfMan > 0 
                 AND SystemHours > 0 
@@ -79,23 +87,11 @@ def main():
 
     # Simple enterprise page configuration
     if ENTERPRISE_CONFIG.enterprise_mode:
-        st.set_page_config(
-            page_title=f"Enterprise - {APP_TITLE}",
-            page_icon="🏢",
-            layout="wide",
-            initial_sidebar_state="expanded"
-        )
-        # Add enterprise info to sidebar
+
         st.sidebar.markdown("---")
         st.sidebar.markdown("### 🏢 Enterprise Mode")
         st.sidebar.markdown(f"🔒 Environment: {ENTERPRISE_CONFIG.environment.value}")
-    else:
-        st.set_page_config(
-            page_title=APP_TITLE,
-            page_icon=APP_ICON,
-            layout="wide",
-            initial_sidebar_state="expanded"
-        )
+
         
     # Display logo if available
     if os.path.exists(LOGO_PATH):
