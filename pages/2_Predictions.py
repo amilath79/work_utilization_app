@@ -17,7 +17,7 @@ import plotly.graph_objects as go
 # Add parent directory to path to import from utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.feature_engineering import engineer_features, create_lag_features
+from utils.feature_engineering import EnhancedFeatureTransformer
 from utils.prediction import predict_next_day, predict_multiple_days, evaluate_predictions
 from utils.data_loader import export_predictions, load_models, load_data, load_enhanced_models
 from utils.sql_data_connector import extract_sql_data, save_predictions_to_db
@@ -84,7 +84,7 @@ if 'current_hours_predictions' not in st.session_state:
 if 'save_button_clicked' not in st.session_state:
     st.session_state.save_button_clicked = False
 if 'save_success_message' not in st.session_state:
-    st.session_state.save_success_message = None
+    st.session_state.save_success_message = ""
 
 def set_save_clicked():
     st.session_state.save_button_clicked = True
@@ -229,8 +229,13 @@ def ensure_data_and_models():
     # Process the dataset
     if st.session_state.df is not None and st.session_state.processed_df is None:
         with st.spinner("Processing data..."):
-            st.session_state.processed_df = engineer_features(st.session_state.df)
-            st.session_state.ts_data = create_lag_features(st.session_state.processed_df)
+            # Initialize and use the transformer
+            feature_transformer = EnhancedFeatureTransformer()
+            
+            # Fit and transform the data
+            feature_transformer.fit(st.session_state.df)
+            st.session_state.processed_df = feature_transformer.transform(st.session_state.df)
+            st.session_state.ts_data = st.session_state.processed_df  # Already includes lag features
     
     # Load models
     if st.session_state.models is None:
@@ -381,7 +386,8 @@ def main():
     
     with col1:
         # Find the latest date from the dataset
-        latest_date = st.session_state.ts_data['Date'].max().date()
+
+        latest_date = pd.to_datetime(st.session_state.ts_data[['Year', 'Month', 'Day']]).max().date()
         next_date = latest_date + timedelta(days=1)
         
         pred_start_date = st.date_input(
@@ -412,7 +418,7 @@ def main():
         default=available_work_types,
         help="Select the work types for which you want to make predictions"
     )
-    
+    # st.session_state.ts_data.to_excel('ts_data.xlsx')
     # Button to trigger prediction
     if st.button("Generate Predictions", type="primary"):
         if not selected_work_types:
@@ -434,6 +440,7 @@ def main():
                     predictions, hours_predictions, holiday_info = predict_multiple_days(
                         st.session_state.ts_data,
                         filtered_models,
+                        start_date=pred_start_date,  # Add missing start_date parameter
                         num_days=num_days,
                         use_neural_network=use_neural
                     )

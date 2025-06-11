@@ -14,6 +14,103 @@ from config import (
 
 logger = logging.getLogger(__name__)
 
+def create_lag_features(df, group_col='WorkType', target_col='NoOfMan', lag_days=None, rolling_windows=None):
+    """
+    Create lag features while preserving essential columns for UI
+    
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        Input dataframe with Date, WorkType, NoOfMan columns
+    group_col : str
+        Column to group by (default: 'WorkType')  
+    target_col : str
+        Target column for lag features (default: 'NoOfMan')
+    lag_days : list, optional
+        List of lag days (uses ESSENTIAL_LAGS if None)
+    rolling_windows : list, optional
+        List of rolling windows (uses ESSENTIAL_WINDOWS if None)
+        
+    Returns:
+    --------
+    pd.DataFrame
+        DataFrame with original columns + lag features
+    """
+    try:
+        logger.info("🔧 Creating lag features while preserving UI columns")
+        
+        # Set defaults
+        if lag_days is None:
+            lag_days = ESSENTIAL_LAGS
+        if rolling_windows is None:
+            rolling_windows = ESSENTIAL_WINDOWS
+            
+        # Create a copy to avoid modifying original
+        result_df = df.copy()
+        
+        # Ensure Date is datetime
+        if 'Date' in result_df.columns:
+            result_df['Date'] = pd.to_datetime(result_df['Date'])
+            
+        # Sort by group and date for proper lag calculation
+        if 'Date' in result_df.columns and group_col in result_df.columns:
+            result_df = result_df.sort_values([group_col, 'Date'])
+        
+        # Add lag features for the target column
+        if FEATURE_GROUPS.get('LAG_FEATURES', False) and target_col in result_df.columns:
+            for lag in lag_days:
+                result_df[f'{target_col}_lag_{lag}'] = result_df.groupby(group_col)[target_col].shift(lag)
+                
+        # Add rolling features for the target column  
+        if FEATURE_GROUPS.get('ROLLING_FEATURES', False) and target_col in result_df.columns:
+            for window in rolling_windows:
+                rolling_group = result_df.groupby(group_col)[target_col].rolling(window, min_periods=1)
+                result_df[f'{target_col}_rolling_mean_{window}'] = rolling_group.mean().reset_index(0, drop=True)
+                result_df[f'{target_col}_rolling_std_{window}'] = rolling_group.std().reset_index(0, drop=True)
+        
+        # Add lag features for other configured columns
+        if FEATURE_GROUPS.get('LAG_FEATURES', False):
+            lag_columns = LAG_FEATURES_COLUMNS if hasattr(config, 'LAG_FEATURES_COLUMNS') else []
+            for col in lag_columns:
+                if col in result_df.columns and col != target_col:
+                    for lag in lag_days:
+                        result_df[f'{col}_lag_{lag}'] = result_df.groupby(group_col)[col].shift(lag)
+        
+        # Add rolling features for other configured columns
+        if FEATURE_GROUPS.get('ROLLING_FEATURES', False):
+            rolling_columns = ROLLING_FEATURES_COLUMNS if hasattr(config, 'ROLLING_FEATURES_COLUMNS') else []
+            for col in rolling_columns:
+                if col in result_df.columns and col != target_col:
+                    for window in rolling_windows:
+                        rolling_group = result_df.groupby(group_col)[col].rolling(window, min_periods=1)
+                        result_df[f'{col}_rolling_mean_{window}'] = rolling_group.mean().reset_index(0, drop=True)
+                        result_df[f'{col}_rolling_std_{window}'] = rolling_group.std().reset_index(0, drop=True)
+        
+        # Add basic date features if enabled
+        if FEATURE_GROUPS.get('DATE_FEATURES', False) and 'Date' in result_df.columns:
+            result_df['DayOfWeek_feat'] = result_df['Date'].dt.dayofweek
+            result_df['Month_feat'] = result_df['Date'].dt.month  
+            result_df['IsWeekend_feat'] = (result_df['Date'].dt.dayofweek >= 5).astype(int)
+            result_df['DayOfMonth'] = result_df['Date'].dt.day
+            result_df['Quarter'] = result_df['Date'].dt.quarter
+            result_df['Year'] = result_df['Date'].dt.year
+            result_df['Day'] = result_df['Date'].dt.day
+        # Fill NaN values created by lag/rolling operations
+        numeric_columns = result_df.select_dtypes(include=[np.number]).columns
+        for col in numeric_columns:
+            if result_df[col].isna().any():
+                result_df[col] = result_df[col].fillna(0)
+        
+        logger.info(f"✅ Created lag features. Shape: {result_df.shape}")
+        logger.info(f"📊 Columns include: Date={('Date' in result_df.columns)}, WorkType={('WorkType' in result_df.columns)}")
+        
+        return result_df
+        
+    except Exception as e:
+        logger.error(f"❌ Error in create_lag_features: {str(e)}")
+        logger.error(traceback.format_exc())
+        return df  # Return original on error
+
 class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
     """
     Config-driven transformer for enhanced feature engineering
@@ -73,8 +170,17 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
             if feature not in X_transformed.columns:
                 X_transformed[feature] = 0  # Fill missing features with 0
         
-        # Return only the expected features in the same order
-        return X_transformed[self.fitted_features_].fillna(0)
+            # Step 1: Get model features (exclude pipeline columns)
+            model_features = [col for col in self.fitted_features_ if col in X_transformed.columns]
+
+            # Step 2: Get essential pipeline columns (NOT model features)
+            essential_cols = ['WorkType', 'Quantity']
+            preserved_cols = [col for col in essential_cols if col in X_transformed.columns]
+
+            # Step 3: Combine without duplicates (preserved first, then model features)
+            all_output_cols = preserved_cols + [col for col in model_features if col not in preserved_cols]
+
+            return X_transformed[all_output_cols].fillna(0)
     
     def _get_expected_features(self, X):
         """
@@ -85,7 +191,7 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
         
         # Date features (config-driven)
         if FEATURE_GROUPS.get('DATE_FEATURES', False):
-            features.extend(['DayOfWeek', 'Month', 'WeekNo', 'IsWeekend', 'Quarter', 'Year'])
+            features.extend(['DayOfWeek', 'Month', 'WeekNo', 'IsWeekend', 'Quarter', 'Year', 'Day'])
             # Add categorical date features if defined in config
             if hasattr(config, 'DATE_FEATURES') and isinstance(DATE_FEATURES, dict):
                 features.extend(DATE_FEATURES.get('categorical', []))
@@ -126,7 +232,7 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
             features.extend(['Quantity_3d_avg'])  # Example from your pattern
         
         # Keep original features that might be needed
-        original_features = ['NoOfMan', 'Quantity']
+        original_features = []
         for feat in original_features:
             if feat in X.columns:
                 features.append(feat)
@@ -144,6 +250,7 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
                 df['IsWeekend'] = (df['Date'].dt.dayofweek >= 5).astype(int)
                 df['Quarter'] = df['Date'].dt.quarter
                 df['Year'] = df['Date'].dt.year
+                df['Day'] = df['Date'].dt.day
             else:
                 # For prediction, use current date if Date not provided
                 from datetime import datetime
@@ -154,6 +261,7 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
                 df['IsWeekend'] = 1 if current_date.weekday() >= 5 else 0
                 df['Quarter'] = current_date.quarter
                 df['Year'] = current_date.year
+                df['Day'] = df['Date'].dt.day
             
         return df
     

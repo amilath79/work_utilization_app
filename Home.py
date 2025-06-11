@@ -12,7 +12,7 @@ from config import ENTERPRISE_CONFIG, enterprise_logger
 
 # Add parent directory to path to import from utils
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
+from utils.feature_engineering import EnhancedFeatureTransformer
 from utils.data_loader import load_data, load_combined_models
 from utils.sql_data_connector import extract_sql_data
 from utils.feature_engineering import EnhancedFeatureTransformer

@@ -364,7 +364,11 @@ def predict_multiple_days(df, models, start_date, num_days, use_neural_network=F
     
     try:
         all_predictions = {}
+        all_hours = {}
         current_df = df.copy()
+        
+        # Reset index to avoid duplicate label issues
+        current_df = current_df.reset_index(drop=True)
         
         current_date = pd.to_datetime(start_date)
         
@@ -376,16 +380,40 @@ def predict_multiple_days(df, models, start_date, num_days, use_neural_network=F
             
             if pred_date and daily_predictions:
                 all_predictions[pred_date] = daily_predictions
+                all_hours[pred_date] = daily_hours
                 
-                # Add predictions to dataframe for next iteration
+                # Collect new rows to add at once (more efficient)
+                new_rows = []
                 for work_type, prediction in daily_predictions.items():
-                    new_row = pd.DataFrame({
-                        'Date': [pred_date],
-                        'WorkType': [work_type], 
-                        'NoOfMan': [prediction],
-                        'Quantity': [current_df[current_df['WorkType'] == work_type]['Quantity'].iloc[-1] if len(current_df[current_df['WorkType'] == work_type]) > 0 else 0]
+                    # Get last quantity safely
+                    last_quantity = 0  # Default value
+                    
+                    try:
+                        # Check if required columns exist
+                        if 'WorkType' in current_df.columns and 'Quantity' in current_df.columns:
+                            # Filter for this work type
+                            work_type_data = current_df[current_df['WorkType'] == work_type]
+                            
+                            # Check if any rows match
+                            if len(work_type_data) > 0:
+                                last_quantity = work_type_data['Quantity'].iloc[-1]
+                                
+                    except Exception as e:
+                        logger.warning(f"Could not get quantity for {work_type}: {str(e)}")
+                        last_quantity = 0
+                    
+                    new_rows.append({
+                        'Date': pred_date,
+                        'WorkType': work_type, 
+                        'NoOfMan': prediction,
+                        'Quantity': last_quantity
                     })
-                    current_df = pd.concat([current_df, new_row], ignore_index=True)
+                
+                # Add all new rows at once and reset index
+                if new_rows:
+                    new_df = pd.DataFrame(new_rows)
+                    current_df = pd.concat([current_df, new_df], ignore_index=True)
+                    current_df = current_df.reset_index(drop=True)  # Ensure clean index
             
             current_date += timedelta(days=1)
             
@@ -393,12 +421,12 @@ def predict_multiple_days(df, models, start_date, num_days, use_neural_network=F
             while current_date.weekday() >= 5:
                 current_date += timedelta(days=1)
         
-        return all_predictions
+        return all_predictions, all_hours, {}  # Return 3 values as expected
         
     except Exception as e:
         logger.error(f"Error in predict_multiple_days: {str(e)}")
         logger.error(traceback.format_exc())
-        return {}
+        return {}, {}, {}  # Return 3 empty values on error
     
 
 def evaluate_predictions(y_true, y_pred):
