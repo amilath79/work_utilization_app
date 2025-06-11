@@ -18,7 +18,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.data_loader import load_data
 from utils.sql_data_connector import extract_sql_data
-from utils.feature_engineering import engineer_features, create_lag_features
+from utils.feature_engineering import EnhancedFeatureTransformer
 from config import DATA_DIR, SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION
 
 # Configure page
@@ -29,9 +29,26 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+
+
 # Configure logger
 import logging
 logger = logging.getLogger(__name__)
+
+# Initialize session state variables
+if 'df' not in st.session_state:
+    st.session_state.df = None
+if 'processed_df' not in st.session_state:
+    st.session_state.processed_df = None
+if 'ts_data' not in st.session_state:
+    st.session_state.ts_data = None
+if 'models' not in st.session_state:
+    st.session_state.models = None
+if 'feature_importances' not in st.session_state:
+    st.session_state.feature_importances = None
+if 'metrics' not in st.session_state:
+    st.session_state.metrics = None
+
 
 def load_workutilizationdata():
     """
@@ -74,54 +91,72 @@ def load_workutilizationdata():
         return None
 
 # Check if we have data and load if needed
-def ensure_data():
-    # Initialize session state variables if not present
-    if 'df' not in st.session_state:
-        st.session_state.df = None
-    if 'processed_df' not in st.session_state:
-        st.session_state.processed_df = None
-    if 'ts_data' not in st.session_state:
-        st.session_state.ts_data = None
+def ensure_data_loaded():
+    """Ensure data is loaded from database or file"""
+    # Check if we already have data
+    if st.session_state.df is not None:
+        return True
     
-    # First try to load from database
-    if st.session_state.df is None:
-        st.session_state.df = load_workutilizationdata()
+    # Try loading from database first
+    st.header("📊 Data Loading")
     
-    # If database load failed, offer Excel options
+    # Database connection section
+    st.subheader("Database Connection")
+    
+    # Try to connect to database
+    try:
+        with st.spinner("Connecting to database..."):
+            df_db = load_workutilizationdata()
+            
+            if df_db is not None and not df_db.empty:
+                st.session_state.df = df_db
+                st.success(f"✅ Database connection successful! Loaded {len(df_db):,} records from WorkUtilizationData table")
+                return True
+            else:
+                st.warning("❌ Database connection failed or no data available.")
+    except Exception as e:
+        st.error(f"❌ Database connection error: {str(e)}")
+    
+    # File upload fallback
+    st.subheader("File Upload (Fallback)")
+    
     if st.session_state.df is None:
-        st.error("Could not load data from database. Please upload Excel file instead.")
+        st.info("Database connection failed. Please upload an Excel file with your work utilization data.")
         
         uploaded_file = st.file_uploader(
             "Upload Work Utilization Excel File", 
             type=["xlsx", "xls"],
-            help="Upload Excel file with work utilization data (Hours, NoOfMan, SystemHours, Quantity, etc.)"
-        )
-        
-        use_sample_data = st.checkbox(
-            "Use Sample Data", 
-            value=False,
-            help="Use sample data if you don't have your own file"
+            help="Upload Excel file with columns: Date, WorkType, NoOfMan, Hours, etc."
         )
         
         if uploaded_file is not None:
-            st.session_state.df = load_data(uploaded_file)
-            
-        if use_sample_data:
-            sample_path = os.path.join(DATA_DIR, "sample_work_utilization.xlsx")
-            
-            if os.path.exists(sample_path):
-                st.session_state.df = load_data(sample_path)
-        
-        # Check if we have data after trying upload options
-        if st.session_state.df is None:
-            st.warning("No data available. Please upload a file or connect to the database.")
-            return False
+            try:
+                with st.spinner("Loading data from uploaded file..."):
+                    st.session_state.df = load_data(uploaded_file)
+                    
+                if st.session_state.df is not None:
+                    st.success(f"✅ File uploaded successfully! Loaded {len(st.session_state.df):,} records")
+                    return True
+                else:
+                    st.error("❌ Failed to load data from uploaded file.")
+            except Exception as e:
+                st.error(f"❌ Error loading file: {str(e)}")
+    
+    # If still no data
+    if st.session_state.df is None:
+        st.warning("No data available. Please upload a file or connect to the database.")
+        return False
     
     # Process data if available
     if st.session_state.df is not None and st.session_state.processed_df is None:
         with st.spinner("Processing data..."):
-            st.session_state.processed_df = engineer_features(st.session_state.df)
-            st.session_state.ts_data = create_lag_features(st.session_state.processed_df)
+            # Initialize and use the transformer
+            feature_transformer = EnhancedFeatureTransformer()
+            
+            # Fit and transform the data
+            feature_transformer.fit(st.session_state.df)
+            st.session_state.processed_df = feature_transformer.transform(st.session_state.df)
+            st.session_state.ts_data = st.session_state.processed_df  # Already includes lag features
     
     return True
 
@@ -307,7 +342,7 @@ def main():
     st.header("Data Overview")
     
     # Check if data is loaded
-    if not ensure_data():
+    if not ensure_data_loaded():
         return
     
     # Success message when data is loaded

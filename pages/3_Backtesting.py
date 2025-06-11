@@ -23,7 +23,7 @@ warnings.filterwarnings('ignore')
 # Add parent directory to path to import from utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.feature_engineering import engineer_features, create_lag_features
+from utils.feature_engineering import EnhancedFeatureTransformer
 from utils.prediction import predict_multiple_days, evaluate_predictions
 from utils.data_loader import load_combined_models, load_data
 from utils.sql_data_connector import extract_sql_data
@@ -230,12 +230,13 @@ def ensure_data_and_models():
     # Process data if available
     if st.session_state.df is not None and st.session_state.processed_df is None:
         with st.spinner("Processing data..."):
-            st.session_state.processed_df = engineer_features(st.session_state.df)
-            st.session_state.ts_data = create_lag_features(
-                st.session_state.processed_df,
-                lag_days=LAG_DAYS,
-                rolling_windows=ROLLING_WINDOWS
-            )
+            # Initialize and use the transformer
+            feature_transformer = EnhancedFeatureTransformer()
+            
+            # Fit and transform the data
+            feature_transformer.fit(st.session_state.df)
+            st.session_state.processed_df = feature_transformer.transform(st.session_state.df)
+            st.session_state.ts_data = st.session_state.processed_df  # Already includes lag features
     
     # Check if we have models
     if st.session_state.models is None:

@@ -22,7 +22,7 @@ from collections import defaultdict
 import json
 
 # Import feature engineering functions from utils
-from utils.feature_engineering import engineer_features, create_lag_features
+from utils.feature_engineering import EnhancedFeatureTransformer
 
 from config import (
     MODELS_DIR, DATA_DIR, LAG_DAYS, ROLLING_WINDOWS, 

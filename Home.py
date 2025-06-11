@@ -15,7 +15,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from utils.data_loader import load_data, load_combined_models
 from utils.sql_data_connector import extract_sql_data
-from utils.feature_engineering import engineer_features, create_lag_features
+from utils.feature_engineering import EnhancedFeatureTransformer
 from utils.state_manager import StateManager
 from config import DATA_DIR, MODELS_DIR, LOGO_PATH, APP_TITLE, SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION, APP_ICON
 
@@ -172,11 +172,13 @@ def main():
     if 'df' in st.session_state and st.session_state.df is not None:
         if 'processed_df' not in st.session_state or st.session_state.processed_df is None:
             with st.spinner("Processing data..."):
-                st.session_state.processed_df = engineer_features(st.session_state.df)
-        
-        if 'ts_data' not in st.session_state or st.session_state.ts_data is None:
-            with st.spinner("Creating time series features..."):
-                st.session_state.ts_data = create_lag_features(st.session_state.processed_df)
+                # Initialize and use the transformer
+                feature_transformer = EnhancedFeatureTransformer()
+                
+                # Fit and transform the data
+                feature_transformer.fit(st.session_state.df)
+                st.session_state.processed_df = feature_transformer.transform(st.session_state.df)
+                st.session_state.ts_data = st.session_state.processed_df  # Already includes lag features
     
     # Models Section
     st.header("🤖 Models")

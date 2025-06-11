@@ -1,6 +1,7 @@
 """
 Enhanced Model Training for Punch Codes 206 & 213
 Enterprise-Grade Time Series Model Training with Advanced Feature Engineering
+Uses Complete Pipeline Approach Only
 """
 
 import pandas as pd
@@ -11,33 +12,25 @@ import os
 import logging
 import traceback
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import TimeSeriesSplit
-from sklearn.feature_selection import SelectFromModel
-from sklearn.impute import SimpleImputer
-from collections import defaultdict
 import json
 
-# Import utilities
-from utils.feature_engineering import (
-    add_rolling_features_by_group, 
-    add_lag_features_by_group, 
-    add_cyclical_features,
-    add_trend_features,
-    add_pattern_features
-)
+
+
+# Import utilities - PIPELINE APPROACH ONLY
+from utils.feature_engineering import EnhancedFeatureTransformer
 from utils.holiday_utils import is_non_working_day
 from utils.sql_data_connector import extract_sql_data
-from config import ESSENTIAL_LAGS, ESSENTIAL_WINDOWS
-from utils.feature_engineering import EnhancedFeatureTransformer
 
 from config import (
     MODELS_DIR,
     DEFAULT_MODEL_PARAMS,
     FEATURE_GROUPS,
+    ESSENTIAL_LAGS, 
+    ESSENTIAL_WINDOWS,
     SQL_SERVER, 
     SQL_DATABASE, 
     SQL_TRUSTED_CONNECTION
@@ -83,23 +76,15 @@ def load_training_data():
         )
         
         if df is None or df.empty:
-            logger.error("No data returned from database")
+            logger.error("No data returned from SQL query")
             return None
-            
-        # Data preprocessing
+        
+        # Convert date column and work type
         df['Date'] = pd.to_datetime(df['Date'])
         df['WorkType'] = df['WorkType'].astype(str)
         
-        # Handle decimals appropriately
-        df['NoOfMan'] = df['NoOfMan'].round(0).astype(int)
-        df['SystemHours'] = df['SystemHours'].round(1)
-        df['SystemKPI'] = df['SystemKPI'].round(2)
-        df['Hours'] = df['Hours'].round(1)
-        df['Quantity'] = df['Quantity'].round(0).astype(int)
-        
-        logger.info(f"Loaded {len(df)} records for training")
+        logger.info(f"Loaded {len(df)} records for enhanced training")
         logger.info(f"Date range: {df['Date'].min()} to {df['Date'].max()}")
-        logger.info(f"Punch codes: {df['WorkType'].unique()}")
         
         return df
         
@@ -108,194 +93,6 @@ def load_training_data():
         logger.error(traceback.format_exc())
         return None
 
-def create_enhanced_features(df):
-    """Create enhanced features for model training"""
-    try:
-        logger.info("Starting enhanced feature creation")
-        df_enhanced = df.copy()
-
-        # Log enabled feature groups
-        enabled = [k for k, v in FEATURE_GROUPS.items() if v]
-        logger.info(f"Active Feature Groups: {enabled}")
-
-        # Temporal Features
-        if FEATURE_GROUPS.get('DATE_FEATURES'):
-            df_enhanced['DayOfWeek'] = df_enhanced['Date'].dt.dayofweek
-            df_enhanced['Month'] = df_enhanced['Date'].dt.month
-            df_enhanced['WeekNo'] = df_enhanced['Date'].dt.isocalendar().week
-            df_enhanced['Year'] = df_enhanced['Date'].dt.year
-            df_enhanced['Quarter'] = df_enhanced['Date'].dt.quarter
-
-        # Schedule-based Binary Features
-        df_enhanced['ScheduleType'] = np.where(df_enhanced['WorkType'] == '206', '6DAY', '5DAY')
-        df_enhanced['CanWorkSunday'] = np.where(df_enhanced['WorkType'] == '206', 1, 0)
-        df_enhanced['IsSunday'] = (df_enhanced['DayOfWeek'] == 6).astype(int)
-        df_enhanced['IsWeekend'] = (df_enhanced['DayOfWeek'] >= 5).astype(int)
-        df_enhanced['IsMonday'] = (df_enhanced['DayOfWeek'] == 0).astype(int)
-        df_enhanced['IsFriday'] = (df_enhanced['DayOfWeek'] == 4).astype(int)
-
-        # Apply Lag/Rolling/Trend/Pattern per WorkType
-        for work_type in ['206', '213']:
-            work_data = df_enhanced[df_enhanced['WorkType'] == work_type].copy()
-
-            if len(work_data) > 30:
-                if FEATURE_GROUPS.get('LAG_FEATURES'):
-                    work_data = add_lag_features_by_group(work_data)
-
-                if FEATURE_GROUPS.get('ROLLING_FEATURES'):
-                    work_data = add_rolling_features_by_group(work_data)
-
-                if FEATURE_GROUPS.get('TREND_FEATURES'):
-                    work_data = add_trend_features(work_data)
-
-                if FEATURE_GROUPS.get('PATTERN_FEATURES'):
-                    work_data = add_pattern_features(work_data)
-
-                df_enhanced.loc[df_enhanced['WorkType'] == work_type] = work_data
-
-        # Holiday Feature
-        df_enhanced['IsHoliday'] = df_enhanced['Date'].apply(lambda d: is_non_working_day(d.date()))
-
-        # Cyclical Encoding
-        if FEATURE_GROUPS.get('CYCLICAL_FEATURES'):
-            df_enhanced = add_cyclical_features(df_enhanced)
-
-        # Cleanup
-        df_enhanced.replace([np.inf, -np.inf], np.nan, inplace=True)
-
-        for col in df_enhanced.select_dtypes(include=[np.number]).columns:
-            if df_enhanced[col].isna().any():
-                median = df_enhanced[col].median() if not pd.isna(df_enhanced[col].median()) else 0.0
-                df_enhanced[col].fillna(median, inplace=True)
-                logger.info(f"Filled {col} NaNs with median: {median}")
-
-        # Convert boolean columns to int
-        bool_cols = ['IsHoliday', 'IsSunday', 'IsWeekend', 'IsMonday', 'IsFriday', 'CanWorkSunday']
-        for col in bool_cols:
-            if col in df_enhanced.columns:
-                try:
-                    df_enhanced[col] = df_enhanced[col].astype(int)
-                except (TypeError, ValueError):
-                    # If conversion fails, fill with 0 or handle appropriately
-                    df_enhanced[col] = 0
-                    logger.warning(f"Could not convert {col} to int, filled with 0")
-
-        # Convert categorical columns to string
-        cat_cols = ['ScheduleType']
-        for col in cat_cols:
-            df_enhanced[col] = df_enhanced[col].astype(str)
-
-        logger.info(f"Final enhanced DataFrame shape: {df_enhanced.shape}")
-
-        return df_enhanced
-
-    except Exception as e:
-        logger.error(f"Error in feature creation: {e}")
-        logger.error(traceback.format_exc())
-        return df
-
-def select_features_with_time_series_validation(X, y, work_type, n_splits=5, max_features=15):
-    try:
-        logger.info(f"Feature selection for WorkType {work_type} using TimeSeriesSplit")
-        
-        # Calculate actual max features we can select
-        n_available_features = len(X.columns)
-        actual_max_features = min(max_features, n_available_features)
-        
-        if actual_max_features < max_features:
-            logger.warning(f"Reducing max_features from {max_features} to {actual_max_features} (available features)")
-        
-        # Define numeric and categorical features
-        numeric_features = X.select_dtypes(include=[np.number]).columns.tolist()
-        categorical_features = X.select_dtypes(include=['object', 'category']).columns.tolist()
-        
-        # Ensure categorical features are properly formatted
-        for col in categorical_features:
-            X[col] = X[col].astype(str)
-        
-        # Create preprocessor
-        preprocessors = []
-        if numeric_features:
-            preprocessors.append(('num', StandardScaler(), numeric_features))
-        if categorical_features:
-            preprocessors.append(('cat', OneHotEncoder(drop='first', handle_unknown='ignore'), categorical_features))
-        
-        if not preprocessors:
-            logger.error("No valid features found for preprocessing")
-            return [], None, None, []  # Return empty results instead of continue
-                
-        preprocessor = ColumnTransformer(transformers=preprocessors)
-        
-        tscv = TimeSeriesSplit(n_splits=n_splits)
-        feature_scores = defaultdict(list)
-        fold_performance = []
-        
-        for fold, (train_idx, test_idx) in enumerate(tscv.split(X)):
-            logger.info(f"Processing fold {fold + 1}/{n_splits}")
-            
-            X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
-            y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
-            
-            # Create model pipeline
-            pipeline = Pipeline([
-                ('preprocessor', preprocessor),
-                ('feature_selection', SelectFromModel(
-                    RandomForestRegressor(**DEFAULT_MODEL_PARAMS),
-                    max_features=actual_max_features
-                )),
-                ('model', RandomForestRegressor(**DEFAULT_MODEL_PARAMS))
-            ])
-            
-           
-            # Fit and evaluate
-            pipeline.fit(X_train, y_train)
-            y_pred = pipeline.predict(X_test)
-            
-            mae = mean_absolute_error(y_test, y_pred)
-            r2 = r2_score(y_test, y_pred)
-            
-            fold_performance.append({'fold': fold + 1, 'MAE': mae, 'R2': r2})
-            
-            # Get feature importances
-            try:
-                selector = pipeline.named_steps['feature_selection']
-                selected_features = selector.get_support()
-                feature_importance = selector.estimator_.feature_importances_
-                
-                feature_names = numeric_features + categorical_features
-                for i, (feature, selected, importance) in enumerate(zip(feature_names, selected_features, feature_importance)):
-                    if selected:
-                        feature_scores[feature].append(importance)
-                        
-            except Exception as feat_error:
-                logger.warning(f"Could not extract feature importance for fold {fold + 1}: {feat_error}")
-        
-        # Calculate average performance
-        avg_mae = np.mean([fp['MAE'] for fp in fold_performance])
-        avg_r2 = np.mean([fp['R2'] for fp in fold_performance])
-        
-        logger.info(f"Cross-validation results - MAE: {avg_mae:.3f}, R²: {avg_r2:.3f}")
-        
-        # Select features based on average importance
-        avg_feature_scores = {
-            feature: np.mean(scores) 
-            for feature, scores in feature_scores.items()
-        }
-        
-        sorted_features = sorted(avg_feature_scores.items(), key=lambda x: x[1], reverse=True)
-        selected_features = [feature for feature, _ in sorted_features[:max_features]]
-        
-        logger.info(f"Selected {len(selected_features)} features for {work_type}")
-        logger.info(f"Top features: {selected_features[:5]}")
-        
-        return selected_features, avg_mae, avg_r2, fold_performance
-        
-    except Exception as e:
-        logger.error(f"Error in feature selection for {work_type}: {str(e)}")
-        logger.error(traceback.format_exc())
-        numeric_features = X.select_dtypes(include=[np.number]).columns.tolist()
-        return numeric_features[:max_features], None, None, []
-
 def train_enhanced_model(df, work_type):
     """
     Train enhanced model using COMPLETE PIPELINE approach
@@ -303,9 +100,6 @@ def train_enhanced_model(df, work_type):
     """
     try:
         logger.info(f"Training enhanced model for WorkType {work_type} using complete pipeline")
-        
-        # Import the custom transformer
-        from utils.feature_engineering import EnhancedFeatureTransformer
         
         # Prepare data
         y = df['NoOfMan'].values
@@ -425,14 +219,7 @@ def save_enhanced_models(models, metadata, features):
                 with open(model_path, 'wb') as f:
                     pickle.dump(model, f)
                 
-                # Also save with standard name for loading
-                standard_filename = f"enhanced_model_{work_type}.pkl"
-                standard_path = os.path.join(MODELS_DIR, standard_filename)
-                
-                with open(standard_path, 'wb') as f:
-                    pickle.dump(model, f)
-                
-                logger.info(f"Saved model for {work_type}: {model_filename}")
+                logger.info(f"  ✅ Saved model for {work_type}: {model_filename}")
         
         # Save metadata
         metadata_filename = f"enhanced_models_metadata_{timestamp}.json"
@@ -448,57 +235,36 @@ def save_enhanced_models(models, metadata, features):
         with open(features_path, 'w') as f:
             json.dump(features, f, indent=2)
         
-        # Save performance summary
-        performance_summary = []
-        for work_type, meta in metadata.items():
-            if meta:
-                performance_summary.append({
-                    'WorkType': work_type,
-                    'Final_MAE': meta['final_mae'],
-                    'Final_R2': meta['final_r2'],
-                    'MAPE': meta['mape'],
-                    'CV_MAE': meta['cv_mae'],
-                    'Training_Records': meta['training_records'],
-                    'Features_Count': len(meta['features'])
-                })
-        
-        performance_df = pd.DataFrame(performance_summary)
-        performance_filename = f"enhanced_models_performance_{timestamp}.xlsx"
-        performance_path = os.path.join(MODELS_DIR, performance_filename)
-        
-        performance_df.to_excel(performance_path, index=False)
-        
-        logger.info(f"All enhanced models and metadata saved")
-        logger.info(f"Performance summary: {performance_filename}")
+        logger.info(f"✅ All enhanced models and metadata saved")
         
         return True
         
     except Exception as e:
-        logger.error(f"Error saving enhanced models: {str(e)}")
+        logger.error(f"❌ Error saving enhanced models: {str(e)}")
         logger.error(traceback.format_exc())
         return False
 
 def main():
-    """Main function to run enhanced model training"""
+    """
+    Main function to run enhanced model training
+    """
     try:
-        logger.info("Starting Enhanced Model Training for Punch Codes 206 & 213")
+        logger.info("🚀 Starting Enhanced Model Training for Punch Codes 206 & 213")
+        logger.info("=" * 60)
         
         # Load training data
         df = load_training_data()
         if df is None:
-            logger.error("Failed to load training data. Exiting.")
+            logger.error("❌ Failed to load training data. Exiting.")
             return
         
-        # Create enhanced features
-        df_enhanced = create_enhanced_features(df)
-        
         # Check data distribution
-        logger.info("Data distribution:")
-        for work_type in df_enhanced['WorkType'].unique():
-            wt_data = df_enhanced[df_enhanced['WorkType'] == work_type]
-            logger.info(f"WorkType {work_type}: {len(wt_data)} records")
-            logger.info(f"Date range: {wt_data['Date'].min()} to {wt_data['Date'].max()}")
-            logger.info(f"Hours avg: {wt_data['Hours'].mean():.2f}")
+        logger.info("📊 Data distribution:")
+        for work_type in df['WorkType'].unique():
+            wt_data = df[df['WorkType'] == work_type]
+            logger.info(f"  WorkType {work_type}: {len(wt_data)} records")
+            logger.info(f"    Date range: {wt_data['Date'].min()} to {wt_data['Date'].max()}")
+            logger.info(f"    Hours avg: {wt_data['NoOfMan'].mean():.2f}")
         
         # Train models for each work type
         models = {}
@@ -506,16 +272,16 @@ def main():
         features = {}
         
         for work_type in ['206', '213']:
-            logger.info(f"Processing WorkType {work_type}")
+            logger.info(f"\n🎯 Processing WorkType {work_type}")
             
-            work_data = df_enhanced[df_enhanced['WorkType'] == work_type].copy()
+            work_data = df[df['WorkType'] == work_type].copy()
             work_data = work_data.sort_values('Date')  # Ensure temporal order
             
             if len(work_data) < 50:
                 logger.warning(f"Skipping {work_type}: Insufficient data ({len(work_data)} records)")
                 continue
             
-            # Train enhanced model
+            # Train enhanced model using complete pipeline
             model, model_metadata, selected_features = train_enhanced_model(work_data, work_type)
             
             if model is not None:
@@ -523,32 +289,33 @@ def main():
                 metadata[work_type] = model_metadata
                 features[work_type] = selected_features
                 
-                logger.info(f"Successfully trained enhanced model for {work_type}")
+                logger.info(f"✅ Successfully trained enhanced model for {work_type}")
             else:
-                logger.error(f"Failed to train model for {work_type}")
+                logger.error(f"❌ Failed to train model for {work_type}")
         
         # Save models and metadata
         if models:
             success = save_enhanced_models(models, metadata, features)
             
             if success:
-                logger.info("ENHANCED MODEL TRAINING COMPLETED SUCCESSFULLY")
-                logger.info(f"Trained models: {list(models.keys())}")
+                logger.info("\n🎉 ENHANCED MODEL TRAINING COMPLETED SUCCESSFULLY")
+                logger.info("=" * 60)
+                logger.info(f"✅ Trained models: {list(models.keys())}")
                 
                 # Print performance summary
                 for work_type, meta in metadata.items():
-                    logger.info(f"{work_type} Performance Summary:")
-                    logger.info(f"MAE: {meta['final_mae']:.3f}")
-                    logger.info(f"R²: {meta['final_r2']:.3f}")
-                    logger.info(f"MAPE: {meta['mape']:.2f}%")
-                    logger.info(f"Features: {len(meta['features'])}")
+                    logger.info(f"\n📈 {work_type} Performance Summary:")
+                    logger.info(f"   MAE: {meta['final_mae']:.3f}")
+                    logger.info(f"   R²: {meta['final_r2']:.3f}")
+                    logger.info(f"   MAPE: {meta['mape']:.2f}%")
+                    logger.info(f"   Pipeline: {' -> '.join(meta['pipeline_steps'])}")
             else:
-                logger.error("Failed to save enhanced models")
+                logger.error("❌ Failed to save enhanced models")
         else:
-            logger.error("No models were successfully trained")
+            logger.error("❌ No models were successfully trained")
             
     except Exception as e:
-        logger.error(f"Error in main training process: {str(e)}")
+        logger.error(f"❌ Error in main training process: {str(e)}")
         logger.error(traceback.format_exc())
 
 if __name__ == "__main__":

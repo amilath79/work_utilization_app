@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 # Update the import statement
 from utils.holiday_utils import is_working_day_for_punch_code
-
+from utils.feature_engineering import EnhancedFeatureTransformer
 # Import the torch_utils module for neural network support
 try:
     from utils.torch_utils import load_torch_models, predict_with_torch_model
@@ -250,24 +250,18 @@ def predict_with_neural_network(df, nn_models, nn_scalers, work_type, date=None,
     
 def create_prediction_features(df, work_type, next_date, latest_date):
     """
-    Create prediction features using direct config values
+    Create prediction features using EnhancedFeatureTransformer
     """
     try:
-        from utils.feature_engineering import engineer_features, create_lag_features
         # Process historical data ONLY
         work_type_data = df[df['WorkType'] == work_type].copy()
         
-        # Run feature engineering on clean historical data
-        engineered_df = engineer_features(work_type_data)
+        # Initialize and use the transformer
+        feature_transformer = EnhancedFeatureTransformer()
         
-        # Use essential config values directly - no complex logic needed
-        features_df = create_lag_features(
-            engineered_df, 
-            'WorkType', 
-            'NoOfMan',
-            lag_days=ESSENTIAL_LAGS,
-            rolling_windows=ESSENTIAL_WINDOWS
-        )
+        # Fit and transform the data
+        feature_transformer.fit(work_type_data)
+        features_df = feature_transformer.transform(work_type_data)
         
         # Get latest row and update date features only
         latest_features = features_df.iloc[-1:].copy()
