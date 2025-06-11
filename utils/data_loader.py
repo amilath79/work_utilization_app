@@ -309,4 +309,66 @@ def export_predictions(predictions, file_path):
         return False
     
 
+@st.cache_resource
+def load_enhanced_models():
+    """
+    Load enhanced complete pipeline models trained by train_models2.py
+    These pipelines include: Feature Engineering -> Preprocessing -> Model
     
+    Returns:
+    --------
+    tuple
+        (models_dict, metadata_dict, input_features_dict)
+    """
+    try:
+        import glob
+        import json
+        
+        models = {}
+        metadata = {}
+        input_features = {}
+        
+        # Load individual enhanced pipeline files
+        punch_codes = ['206', '213']
+        
+        for punch_code in punch_codes:
+            model_file = os.path.join(MODELS_DIR, f'enhanced_model_{punch_code}.pkl')
+            
+            if os.path.exists(model_file):
+                with open(model_file, 'rb') as f:
+                    pipeline = pickle.load(f)
+                    models[punch_code] = pipeline
+                    logger.info(f"✅ Loaded complete pipeline for punch code {punch_code}")
+                    
+                    # Log pipeline steps for verification
+                    if hasattr(pipeline, 'steps'):
+                        steps = [step[0] for step in pipeline.steps]
+                        logger.info(f"   Pipeline steps: {steps}")
+            else:
+                logger.warning(f"Enhanced pipeline file not found: {model_file}")
+        
+        # Load enhanced metadata
+        metadata_files = glob.glob(os.path.join(MODELS_DIR, 'enhanced_models_metadata_*.json'))
+        if metadata_files:
+            latest_metadata_file = max(metadata_files, key=os.path.getmtime)
+            with open(latest_metadata_file, 'r') as f:
+                metadata = json.load(f)
+                logger.info(f"✅ Loaded pipeline metadata from {latest_metadata_file}")
+                
+                # Extract input features for each model
+                for punch_code in models.keys():
+                    if punch_code in metadata:
+                        input_features[punch_code] = metadata[punch_code].get('input_features', ['Date', 'WorkType', 'NoOfMan', 'Quantity'])
+        
+        if models:
+            logger.info(f"🚀 Complete pipelines loaded successfully. Available punch codes: {list(models.keys())}")
+            logger.info("   Each pipeline handles: Feature Engineering -> Preprocessing -> Prediction")
+        else:
+            logger.warning("No enhanced pipeline models found")
+            
+        return models, metadata, input_features
+        
+    except Exception as e:
+        logger.error(f"Error loading enhanced pipeline models: {str(e)}")
+        logger.error(traceback.format_exc())
+        return {}, {}, {}

@@ -31,6 +31,8 @@ from utils.feature_engineering import (
 )
 from utils.holiday_utils import is_non_working_day
 from utils.sql_data_connector import extract_sql_data
+from config import ESSENTIAL_LAGS, ESSENTIAL_WINDOWS
+from utils.feature_engineering import EnhancedFeatureTransformer
 
 from config import (
     MODELS_DIR,
@@ -294,112 +296,116 @@ def select_features_with_time_series_validation(X, y, work_type, n_splits=5, max
         numeric_features = X.select_dtypes(include=[np.number]).columns.tolist()
         return numeric_features[:max_features], None, None, []
 
-def train_enhanced_model(work_type_data, work_type):
-    """Train enhanced model for specific work type"""
+def train_enhanced_model(df, work_type):
+    """
+    Train enhanced model using COMPLETE PIPELINE approach
+    Pipeline includes: Feature Engineering -> Preprocessing -> Model
+    """
     try:
-        logger.info(f"Training enhanced model for WorkType {work_type}")
+        logger.info(f"Training enhanced model for WorkType {work_type} using complete pipeline")
         
-        if len(work_type_data) < 50:
-            logger.warning(f"Insufficient data for {work_type}: {len(work_type_data)} records")
-            return None, None, None
+        # Import the custom transformer
+        from utils.feature_engineering import EnhancedFeatureTransformer
         
-        # Prepare features and target
-        feature_columns = [col for col in work_type_data.columns 
-                         if col not in ['Date', 'Hours', 'WorkType']]
+        # Prepare data
+        y = df['NoOfMan'].values
         
-        X = work_type_data[feature_columns]
-        y = work_type_data['Hours']
+        # For pipeline, we only need basic input features
+        # The pipeline will handle all feature engineering
+        basic_features = ['Date', 'WorkType', 'NoOfMan', 'Quantity']
+        available_basic_features = [f for f in basic_features if f in df.columns]
         
-        logger.info(f"Initial features: {len(X.columns)}")
-        logger.info(f"Data points: {len(X)}")
+        X_basic = df[available_basic_features].copy()
         
-        # Feature selection
-        selected_features, cv_mae, cv_r2, fold_results = select_features_with_time_series_validation(
-            X, y, work_type, n_splits=5, max_features=15
-        )
+        logger.info(f"Training with {len(X_basic)} records and {len(available_basic_features)} basic input features")
+
+        # Log active feature groups (same as your create_enhanced_features approach)
+        enabled_groups = [k for k, v in FEATURE_GROUPS.items() if v]
+        logger.info(f"📊 Config-driven training - Active Feature Groups: {enabled_groups}")
+        logger.info(f"📊 Using ESSENTIAL_LAGS: {ESSENTIAL_LAGS}")
+        logger.info(f"📊 Using ESSENTIAL_WINDOWS: {ESSENTIAL_WINDOWS}")
         
-        if not selected_features:
-            logger.error(f"No features selected for {work_type}")
-            return None, None, None
-        
-        # Prepare final training data
-        X_selected = X[selected_features]
-        
-        # Data validation
-        logger.info(f"Final data validation for {work_type}")
-        
-        # Handle infinity and NaN values
-        if np.isinf(X_selected.select_dtypes(include=[np.number])).any().any():
-            logger.warning(f"Infinite values detected in {work_type}, replacing with 0")
-            X_selected = X_selected.replace([np.inf, -np.inf], 0)
-        
-        if X_selected.isnull().any().any():
-            logger.warning(f"NaN values detected in {work_type}, filling with median")
-            X_selected = X_selected.fillna(X_selected.median())
-        
-        logger.info(f"Data validation complete for {work_type}")
-        
-        # Create preprocessing pipeline
-        numeric_features = X_selected.select_dtypes(include=[np.number]).columns.tolist()
-        categorical_features = X_selected.select_dtypes(include=['object', 'category']).columns.tolist()
-        
-        for col in categorical_features:
-            X_selected[col] = X_selected[col].astype(str)
-        
-        preprocessors = []
-        if numeric_features:
-            preprocessors.append(('num', StandardScaler(), numeric_features))
-        if categorical_features:
-            preprocessors.append(('cat', OneHotEncoder(drop='first', handle_unknown='ignore'), categorical_features))
-        
-        if not preprocessors:
-            logger.error(f"No valid features found for {work_type}")
-            return None, None, None
+        # Create COMPLETE pipeline (config-driven)
+        complete_pipeline = Pipeline([
+            # Step 1: Config-driven Feature Engineering
+            ('feature_engineering', EnhancedFeatureTransformer()),  # No parameters - reads from config
             
-        preprocessor = ColumnTransformer(transformers=preprocessors)
-        
-        # Create final model pipeline
-        final_pipeline = Pipeline([
-            ('preprocessor', preprocessor),
+            # Step 2: Preprocessing (scaling, encoding)
+            ('preprocessing', StandardScaler()),
+            
+            # Step 3: Model
             ('model', RandomForestRegressor(**DEFAULT_MODEL_PARAMS))
         ])
         
-        # Train final model
-        final_pipeline.fit(X_selected, y)
+        # Time series cross-validation
+        tscv = TimeSeriesSplit(n_splits=5)
+        fold_scores = []
         
-        # Model evaluation
-        y_pred_final = final_pipeline.predict(X_selected)
+        logger.info("Performing time series cross-validation...")
+        
+        for fold, (train_idx, val_idx) in enumerate(tscv.split(X_basic)):
+            X_train_fold = X_basic.iloc[train_idx]
+            X_val_fold = X_basic.iloc[val_idx] 
+            y_train_fold = y[train_idx]
+            y_val_fold = y[val_idx]
+            
+            # Train pipeline on fold
+            complete_pipeline.fit(X_train_fold, y_train_fold)
+            
+            # Predict on validation
+            y_pred_fold = complete_pipeline.predict(X_val_fold)
+            
+            # Calculate metrics
+            fold_mae = mean_absolute_error(y_val_fold, y_pred_fold)
+            fold_r2 = r2_score(y_val_fold, y_pred_fold)
+            fold_scores.append({'MAE': fold_mae, 'R2': fold_r2})
+            
+            logger.info(f"  Fold {fold+1}: MAE={fold_mae:.3f}, R²={fold_r2:.3f}")
+        
+        # Train final pipeline on all data
+        logger.info("Training final pipeline on all data...")
+        complete_pipeline.fit(X_basic, y)
+        
+        # Final evaluation
+        y_pred_final = complete_pipeline.predict(X_basic)
         final_mae = mean_absolute_error(y, y_pred_final)
         final_r2 = r2_score(y, y_pred_final)
         final_rmse = np.sqrt(mean_squared_error(y, y_pred_final))
-        mape = np.mean(np.abs((y - y_pred_final) / y)) * 100
         
-        logger.info(f"Final model trained for {work_type}")
-        logger.info(f"Performance:")
-        logger.info(f"MAE: {final_mae:.3f}")
-        logger.info(f"R²: {final_r2:.3f}")
-        logger.info(f"RMSE: {final_rmse:.3f}")
-        logger.info(f"MAPE: {mape:.2f}%")
+        # Calculate MAPE
+        mape = np.mean(np.abs((y - y_pred_final) / np.where(y == 0, 1, y))) * 100
         
-        # Store model metadata
+        # Calculate average CV metrics
+        avg_cv_mae = np.mean([score['MAE'] for score in fold_scores])
+        avg_cv_r2 = np.mean([score['R2'] for score in fold_scores])
+        
+        # Create metadata
         model_metadata = {
             'work_type': work_type,
-            'features': selected_features,
-            'training_records': len(work_type_data),
-            'cv_mae': cv_mae,
-            'cv_r2': cv_r2,
+            'training_records': len(df),
             'final_mae': final_mae,
             'final_r2': final_r2,
             'final_rmse': final_rmse,
             'mape': mape,
-            'fold_results': fold_results,
-            'training_date': datetime.now().isoformat()
+            'cv_mae': avg_cv_mae,
+            'cv_r2': avg_cv_r2,
+            'cv_folds': len(fold_scores),
+            'input_features': available_basic_features,
+            'pipeline_steps': [step[0] for step in complete_pipeline.steps],
+            'model_type': 'complete_pipeline',
+            'timestamp': datetime.now().strftime('%Y%m%d_%H%M%S')
         }
         
-        return final_pipeline, model_metadata, selected_features
+        logger.info(f"✅ Enhanced complete pipeline trained for {work_type}")
+        logger.info(f"   Final MAE: {final_mae:.3f}")
+        logger.info(f"   Final R²: {final_r2:.3f}")
+        logger.info(f"   CV MAE: {avg_cv_mae:.3f}")
+        logger.info(f"   MAPE: {mape:.2f}%")
+        
+        return complete_pipeline, model_metadata, available_basic_features
         
     except Exception as e:
-        logger.error(f"Error training model for {work_type}: {str(e)}")
+        logger.error(f"Error training enhanced model for {work_type}: {str(e)}")
         logger.error(traceback.format_exc())
         return None, None, None
 
@@ -413,7 +419,7 @@ def save_enhanced_models(models, metadata, features):
         # Save individual models
         for work_type, model in models.items():
             if model is not None:
-                model_filename = f"enhanced_model_{work_type}_{timestamp}.pkl"
+                model_filename = f"enhanced_model_{work_type}.pkl"
                 model_path = os.path.join(MODELS_DIR, model_filename)
                 
                 with open(model_path, 'wb') as f:

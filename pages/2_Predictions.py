@@ -19,7 +19,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.feature_engineering import engineer_features, create_lag_features
 from utils.prediction import predict_next_day, predict_multiple_days, evaluate_predictions
-from utils.data_loader import export_predictions, load_models, load_data
+from utils.data_loader import export_predictions, load_models, load_data, load_enhanced_models
 from utils.sql_data_connector import extract_sql_data, save_predictions_to_db
 from utils.holiday_utils import is_non_working_day
 from utils.sql_data_connector import extract_sql_data
@@ -93,14 +93,15 @@ def load_workutilizationdata():
     """Load data from the WorkUtilizationData table"""
     try:
         sql_query = """
-                SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
-                FROM WorkUtilizationData 
-                WHERE PunchCode IN (215, 209, 213, 211, 214, 202, 203, 206, 210, 217) 
-                AND Hours > 0 
-                AND NoOfMan > 0 
-                AND SystemHours > 0 
-                AND Quantity > 0
-                ORDER BY Date
+        SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, NoRows as Quantity, SystemKPI 
+        FROM WorkUtilizationData 
+        WHERE PunchCode IN (206, 213) 
+        AND Hours > 0 
+        AND NoOfMan > 0 
+        AND SystemHours > 0 
+        AND NoRows > 0
+        AND Date < '2025-05-01'
+        ORDER BY Date
         """
         
         with st.spinner("Loading work utilization data..."):
@@ -233,13 +234,13 @@ def ensure_data_and_models():
     
     # Load models
     if st.session_state.models is None:
-        with st.spinner("Loading models..."):
-            models, feature_importances, metrics = load_models()
+        with st.spinner("Loading enhanced models from train_models2.py..."):
+            models, features, metadata = load_enhanced_models()
             
             if models:
                 st.session_state.models = models
-                st.session_state.feature_importances = feature_importances
-                st.session_state.metrics = metrics
+                st.session_state.feature_importances = features
+                st.session_state.metrics = metadata
                 logger.info(f"Successfully loaded {len(models)} models: {list(models.keys())}")
             else:
                 st.error("No trained models available. Please train models first.")
@@ -337,35 +338,43 @@ def main():
             st.success("Check the console/logs for detailed diagnosis results")
     
     # Get available work types from models
-    available_work_types = list(st.session_state.models.keys())
+    # available_work_types = list(st.session_state.models.keys())
     # logger.info(f"Available models: {available_work_types}")
+    available_work_types = ['206', '213']
+    st.info(f"Enhanced models available for punch codes: {', '.join(available_work_types)}")
+    
     
     # Prediction options
     st.subheader("Prediction Options")
     
-    # Add model selection option
-    model_type = st.radio(
-        "Select Model Type",
-        ["Random Forest", "Neural Network", "Ensemble (Both)"],
-        horizontal=True,
-        help="Choose which model to use for predictions"
-    )
+    # # Add model selection option
+    # model_type = st.radio(
+    #     "Select Model Type",
+    #     ["Random Forest", "Neural Network", "Ensemble (Both)"],
+    #     horizontal=True,
+    #     help="Choose which model to use for predictions"
+    # )
     
-    # Set use_neural parameter based on selection
-    use_neural = model_type in ["Neural Network", "Ensemble (Both)"]
+    # # Set use_neural parameter based on selection
+    # use_neural = model_type in ["Neural Network", "Ensemble (Both)"]
+
+    # Use only Enhanced Random Forest models from train_models2.py
+    # model_type = "Enhanced Random Forest"
+    st.info("Using Random Forest models from train_models2.py")
+    use_neural = False
     
-    # Check if neural network models are available
-    nn_available = False
-    try:
-        nn_path = os.path.join(MODELS_DIR, "work_utilization_nn_models.pkl")
-        nn_available = os.path.exists(nn_path)
-    except:
-        pass
+    # # Check if neural network models are available
+    # nn_available = False
+    # try:
+    #     nn_path = os.path.join(MODELS_DIR, "work_utilization_nn_models.pkl")
+    #     nn_available = os.path.exists(nn_path)
+    # except:
+    #     pass
     
-    if use_neural and not nn_available:
-        st.warning("Neural network models are not available. Using Random Forest models instead.")
-        use_neural = False
-        model_type = "Random Forest"
+    # if use_neural and not nn_available:
+    #     st.warning("Neural network models are not available. Using Random Forest models instead.")
+    use_neural = False
+    # model_type = "Random Forest"
     
     # Date range selector
     col1, col2 = st.columns(2)

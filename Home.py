@@ -46,14 +46,15 @@ def load_data_from_database():
     try:
         # Create SQL query for WorkUtilizationData table
         sql_query = """
-                SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, Quantity, ResourceKPI, SystemKPI 
-                FROM WorkUtilizationData 
-                WHERE PunchCode IN (206, 213) 
-                AND Hours > 0 
-                AND NoOfMan > 0 
-                AND SystemHours > 0 
-                AND Quantity > 0
-                ORDER BY Date
+        SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, NoRows as Quantity, SystemKPI 
+        FROM WorkUtilizationData 
+        WHERE PunchCode IN (206, 213) 
+        AND Hours > 0 
+        AND NoOfMan > 0 
+        AND SystemHours > 0 
+        AND NoRows > 0
+        AND Date < '2025-05-01'
+        ORDER BY Date
         """
         
         # Show connecting message

@@ -284,211 +284,127 @@ def create_prediction_features(df, work_type, next_date, latest_date):
         logger.error(f"Error creating prediction features: {str(e)}")
         return None
     
+        
 def predict_next_day(df, models, date=None, use_neural_network=False):
     """
-    Predict NoOfMan and Hours for the next day for each WorkType
+    Simplified prediction using complete pipelines
+    No manual feature engineering needed - pipeline handles everything!
     """
     try:
-        # Find the latest date in the dataset or use specified date
-        latest_date = df['Date'].max() if date is None else date
-        next_date = latest_date + timedelta(days=1)
+        logger.info("🚀 Starting next day prediction with complete pipelines")
         
-        logger.info(f"Predicting NoOfMan for {next_date.strftime('%Y-%m-%d')}")
+        # Determine prediction date
+        if date is None:
+            latest_date = df['Date'].max()
+            next_date = latest_date + timedelta(days=1)
+        else:
+            next_date = pd.to_datetime(date)
         
-        # Load neural network models if requested
-        nn_models, nn_scalers, nn_metrics = {}, {}, {}
-        if use_neural_network:
-            nn_models, nn_scalers, nn_metrics = load_neural_models()
+        # Skip weekends
+        while next_date.weekday() >= 5:  # Saturday=5, Sunday=6
+            next_date += timedelta(days=1)
         
-
+        logger.info(f"Predicting for date: {next_date.strftime('%Y-%m-%d')}")
+        
         predictions = {}
         hours_predictions = {}
         
         for work_type in models.keys():
-            # Check if this punch code should work on this date
-            is_working, reason = is_working_day_for_punch_code(next_date, work_type)
-            
-            if not is_working:
-                logger.info(f"Date {next_date.strftime('%Y-%m-%d')} is non-working for punch code {work_type}: {reason}")
-                predictions[work_type] = 0
-                hours_predictions[work_type] = 0
-                continue
-
-
-            # Try neural network prediction first if requested
-            if use_neural_network and nn_models and work_type in nn_models:
-                nn_prediction = predict_with_neural_network(df, nn_models, nn_scalers, work_type, date)
-                
-                if nn_prediction is not None:
-                    predictions[work_type] = nn_prediction
-                    hours_predictions[work_type] = calculate_hours_prediction(df, work_type, nn_prediction, next_date)
-                    logger.info(f"Neural network predicted {nn_prediction:.2f} workers for WorkType {work_type}")
-                    continue
-            
-            # Fall back to traditional model - USE PROPER FEATURE ENGINEERING
             try:
-                # Create properly engineered features using the same pipeline as training
-                prediction_features = create_prediction_features(df, work_type, next_date, latest_date)
+                # Check if this punch code should work on this date
+                is_working, reason = is_working_day_for_punch_code(next_date, work_type)
                 
-                if prediction_features is None:
-                    logger.warning(f"Could not create features for WorkType {work_type}. Skipping.")
+                if not is_working:
+                    logger.info(f"Date {next_date.strftime('%Y-%m-%d')} is non-working for punch code {work_type}: {reason}")
+                    predictions[work_type] = 0
+                    hours_predictions[work_type] = 0
                     continue
                 
-                # Get the model
-                model = models[work_type]
+                # Get the complete pipeline model
+                pipeline = models[work_type]
                 
-                # Get required features for the model
-                required_features = _get_required_features(model)
+                # Create simple prediction input - pipeline handles all feature engineering!
+                work_type_data = df[df['WorkType'] == work_type].copy()
                 
-                # Filter to only include features that exist in our engineered features
-                available_features = [f for f in required_features if f in prediction_features.columns]
-
-                logger.info(f"=== FEATURE COUNT PREDICTION - {work_type} ===")
-                logger.info(f"Required features: {len(required_features)}")
-                logger.info(f"Available features: {len(available_features)}")
-                logger.info(f"Missing features: {len(required_features) - len(available_features)}")
-                if len(required_features) != len(available_features):
-                    missing = [f for f in required_features if f not in available_features]
-                    logger.info(f"Missing feature names: {missing}")
-                
-                if len(available_features) == 0:
-                    logger.warning(f"No required features available for WorkType {work_type}. Skipping.")
+                if len(work_type_data) == 0:
+                    logger.warning(f"No historical data for WorkType {work_type}")
                     continue
                 
-
-                # After creating prediction_features, add this:
-                logger.info(f"Prediction features for {work_type}:")
-                for col in ['NoOfMan_lag_1', 'NoOfMan_lag_7', 'NoOfMan_rolling_mean_7']:
-                    if col in prediction_features.columns:
-                        val = prediction_features[col].iloc[0]
-                        # logger.info(f"  {col}: {val}")
-
-                # Create prediction dataframe with only the available required features
-                X_pred = prediction_features[available_features].copy()
+                # Get the most recent record as base for prediction
+                latest_record = work_type_data.iloc[-1:].copy()
                 
-                # Fill any missing values with 0
-                X_pred = X_pred.fillna(0)
-                print(X_pred)
-                logger.info(f"Using {len(available_features)} features for WorkType {work_type}")
+                # Create prediction row with just the basic information
+                prediction_row = latest_record.copy()
+                prediction_row['Date'] = next_date
+                prediction_row['WorkType'] = work_type
                 
-                # Make prediction
-                prediction = model.predict(X_pred)[0]
+                # The pipeline will handle ALL feature engineering automatically!
+                prediction = pipeline.predict(prediction_row)[0]
                 
                 # Ensure prediction is not negative
                 prediction = max(0, prediction)
-
+                
                 predictions[work_type] = prediction
                 hours_predictions[work_type] = calculate_hours_prediction(df, work_type, prediction, next_date)
                 
-                logger.info(f"RandomForest predicted {prediction:.2f} workers for WorkType {work_type}")
+                logger.info(f"✅ Pipeline predicted {prediction:.2f} workers for WorkType {work_type}")
                 
             except Exception as e:
                 logger.error(f"Error predicting for WorkType {work_type}: {str(e)}")
                 logger.error(traceback.format_exc())
                 continue
         
-        # Return the date, predictions dictionary, and hours dictionary
+        logger.info(f"🎯 Predictions completed for {len(predictions)} work types")
         return next_date, predictions, hours_predictions
-    
+        
     except Exception as e:
-        logger.error(f"Error predicting next day: {str(e)}")
+        logger.error(f"Error in predict_next_day: {str(e)}")
         logger.error(traceback.format_exc())
-        raise Exception(f"Failed to predict next day: {str(e)}")
+        return None, {}, {}
 
 
-        
-def predict_multiple_days(df, models, num_days=7, use_neural_network=False):
+def predict_multiple_days(df, models, start_date, num_days, use_neural_network=False):
     """
-    Predict NoOfMan and Hours for multiple days for each WorkType
+    Simplified multi-day prediction using complete pipelines
     """
-
-
+    
     try:
-        logger.info(f"Predicting for the next {num_days} days")
-        
-        # Initialize results dictionaries and holiday info dictionary
-        multi_day_predictions = {}
-        multi_day_hours_predictions = {}
-        nonworking_info = {}
-        
-        # Create a working copy of the dataframe that we'll extend with predictions
+        all_predictions = {}
         current_df = df.copy()
         
-        # Find the latest date in the dataset
-        latest_date = current_df['Date'].max()
+        current_date = pd.to_datetime(start_date)
         
-        # Predict for each day
-        for i in range(num_days):
-            prediction_date = latest_date + timedelta(days=i+1)  # +1 to start with the next day
+        for day in range(num_days):
+            # Predict for current date
+            pred_date, daily_predictions, daily_hours = predict_next_day(
+                current_df, models, current_date, use_neural_network
+            )
             
-            try:
-                # Use the same prediction logic but now it handles punch-code specific rules
-                next_date, predictions, hours_predictions = predict_next_day(
-                    current_df, 
-                    models, 
-                    date=latest_date + timedelta(days=i), 
-                    use_neural_network=use_neural_network
-                )
+            if pred_date and daily_predictions:
+                all_predictions[pred_date] = daily_predictions
                 
-                # Debug log to see what predictions are being generated
-                logger.info(f"Generated predictions for {next_date}: {predictions}")
-                
-                # Store predictions
-                multi_day_predictions[next_date] = predictions
-                multi_day_hours_predictions[next_date] = hours_predictions
-                
-                # Check which punch codes are not working on this day for info
-                non_working_codes = []
-                for work_type in models.keys():
-                    is_working, reason = is_working_day_for_punch_code(next_date, work_type)
-                    if not is_working:
-                        non_working_codes.append(f"{work_type}: {reason}")
-                
-                if non_working_codes:
-                    nonworking_info[next_date] = "; ".join(non_working_codes)
-                
-                # Add the predictions back to the dataframe for the next iteration
-                new_rows = []
-                for work_type, pred_value in predictions.items():
-                    hours_value = hours_predictions.get(work_type, pred_value * 8.0)  # Default to 8 hours if missing
-                    
-                    # Create new row with all the necessary columns for feature engineering
-                    new_row = {
-                        'Date': next_date,
-                        'WorkType': work_type,
-                        'NoOfMan': pred_value,
-                        'Hours': hours_value
-                    }
-                    
-                    # Add productivity columns if they exist in original data
-                    productivity_columns = ['SystemHours', 'Quantity', 'ResourceKPI', 'SystemKPI']
-                    for col in productivity_columns:
-                        if col in current_df.columns:
-                            # Use recent average for productivity metrics
-                            recent_data = current_df[current_df['WorkType'] == work_type].tail(7)
-                            mean_value = recent_data[col].mean() if not recent_data.empty else 0
-                            new_row[col] = mean_value if not pd.isna(mean_value) else 0
-                    
-                    new_rows.append(new_row)
-                
-                # Append new rows to the dataframe
-                if new_rows:
-                    new_df = pd.DataFrame(new_rows)
-                    current_df = pd.concat([current_df, new_df], ignore_index=True)
-                    
-            except Exception as day_error:
-                # Handle errors for individual days without failing the entire prediction
-                logger.error(f"Error processing day {prediction_date}: {str(day_error)}")
-                # Continue with the next date
-                continue
+                # Add predictions to dataframe for next iteration
+                for work_type, prediction in daily_predictions.items():
+                    new_row = pd.DataFrame({
+                        'Date': [pred_date],
+                        'WorkType': [work_type], 
+                        'NoOfMan': [prediction],
+                        'Quantity': [current_df[current_df['WorkType'] == work_type]['Quantity'].iloc[-1] if len(current_df[current_df['WorkType'] == work_type]) > 0 else 0]
+                    })
+                    current_df = pd.concat([current_df, new_row], ignore_index=True)
+            
+            current_date += timedelta(days=1)
+            
+            # Skip weekends
+            while current_date.weekday() >= 5:
+                current_date += timedelta(days=1)
         
-        logger.info(f"Predictions completed for {num_days} days")
-        return multi_day_predictions, multi_day_hours_predictions, nonworking_info
-    
+        return all_predictions
+        
     except Exception as e:
-        logger.error(f"Error predicting multiple days: {str(e)}")
+        logger.error(f"Error in predict_multiple_days: {str(e)}")
         logger.error(traceback.format_exc())
-        raise Exception(f"Failed to predict multiple days: {str(e)}")
+        return {}
     
 
 def evaluate_predictions(y_true, y_pred):
