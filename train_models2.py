@@ -57,11 +57,10 @@ def load_training_data():
         logger.info("Loading training data for enhanced models (206, 213)")
         
         query = """
-        SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, NoRows as Quantity, SystemKPI 
+        SELECT Date, PunchCode as WorkType, Hours, SystemHours, NoRows as Quantity, SystemKPI 
         FROM WorkUtilizationData 
         WHERE PunchCode IN (206, 213) 
         AND Hours > 0 
-        AND NoOfMan > 0 
         AND SystemHours > 0 
         AND NoRows > 0
         AND Date < '2025-05-01'
@@ -96,17 +95,16 @@ def load_training_data():
 def train_enhanced_model(df, work_type):
     """
     Train enhanced model using COMPLETE PIPELINE approach
-    Pipeline includes: Feature Engineering -> Preprocessing -> Model
     """
     try:
         logger.info(f"Training enhanced model for WorkType {work_type} using complete pipeline")
         
-        # Prepare data
-        y = df['NoOfMan'].values
+        # Prepare data - TARGET IS NOW HOURS
+        y = df['Hours'].values
         
-        # For pipeline, we only need basic input features
+        
         # The pipeline will handle all feature engineering
-        basic_features = ['Date', 'WorkType', 'NoOfMan', 'Quantity']
+        basic_features = ['Date', 'WorkType', 'Quantity', 'SystemHours', 'SystemKPI']
         available_basic_features = [f for f in basic_features if f in df.columns]
         
         X_basic = df[available_basic_features].copy()
@@ -264,7 +262,7 @@ def main():
             wt_data = df[df['WorkType'] == work_type]
             logger.info(f"  WorkType {work_type}: {len(wt_data)} records")
             logger.info(f"    Date range: {wt_data['Date'].min()} to {wt_data['Date'].max()}")
-            logger.info(f"    Hours avg: {wt_data['NoOfMan'].mean():.2f}")
+            logger.info(f"    Hours avg: {wt_data['Hours'].mean():.2f}")
         
         # Train models for each work type
         models = {}

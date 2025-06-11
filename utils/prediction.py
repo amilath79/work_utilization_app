@@ -38,17 +38,17 @@ def get_required_features():
     numeric_features = []
     categorical_features = []
     
-    # Essential lag features
+    # Essential lag features - NOW USING HOURS
     if FEATURE_GROUPS['LAG_FEATURES']:
         for lag in ESSENTIAL_LAGS:
-            numeric_features.append(f'NoOfMan_lag_{lag}')
+            numeric_features.append(f'Hours_lag_{lag}')  # CHANGED
         if FEATURE_GROUPS['PRODUCTIVITY_FEATURES']:
             numeric_features.append('Quantity_lag_1')
     
-    # Essential rolling features  
+    # Essential rolling features - NOW USING HOURS  
     if FEATURE_GROUPS['ROLLING_FEATURES']:
         for window in ESSENTIAL_WINDOWS:
-            numeric_features.append(f'NoOfMan_rolling_mean_{window}')
+            numeric_features.append(f'Hours_rolling_mean_{window}')  # CHANGED
     
     # Date features from config
     if FEATURE_GROUPS['DATE_FEATURES']:
@@ -281,11 +281,10 @@ def create_prediction_features(df, work_type, next_date, latest_date):
         
 def predict_next_day(df, models, date=None, use_neural_network=False):
     """
-    Simplified prediction using complete pipelines
-    No manual feature engineering needed - pipeline handles everything!
+    Fixed prediction using EXISTING models (NoOfMan-based)
     """
     try:
-        logger.info("🚀 Starting next day prediction with complete pipelines")
+        logger.info("🚀 Starting next day prediction with existing NoOfMan models")
         
         # Determine prediction date
         if date is None:
@@ -295,7 +294,7 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
             next_date = pd.to_datetime(date)
         
         # Skip weekends
-        while next_date.weekday() >= 5:  # Saturday=5, Sunday=6
+        while next_date.weekday() >= 5:
             next_date += timedelta(days=1)
         
         logger.info(f"Predicting for date: {next_date.strftime('%Y-%m-%d')}")
@@ -305,47 +304,61 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
         
         for work_type in models.keys():
             try:
-                # Check if this punch code should work on this date
+                # Check working day
                 is_working, reason = is_working_day_for_punch_code(next_date, work_type)
-                
                 if not is_working:
-                    logger.info(f"Date {next_date.strftime('%Y-%m-%d')} is non-working for punch code {work_type}: {reason}")
+                    logger.info(f"Non-working day for {work_type}: {reason}")
                     predictions[work_type] = 0
                     hours_predictions[work_type] = 0
                     continue
                 
-                # Get the complete pipeline model
+                # Get the model pipeline
                 pipeline = models[work_type]
                 
-                # Create simple prediction input - pipeline handles all feature engineering!
+                # ===== CRITICAL FIX: Use NoOfMan-based features =====
                 work_type_data = df[df['WorkType'] == work_type].copy()
                 
                 if len(work_type_data) == 0:
                     logger.warning(f"No historical data for WorkType {work_type}")
                     continue
                 
-                # Get the most recent record as base for prediction
-                latest_record = work_type_data.iloc[-1:].copy()
+                # Create features using EXISTING NoOfMan-based approach
+                from utils.feature_engineering import create_lag_features
                 
-                # Create prediction row with just the basic information
-                prediction_row = latest_record.copy()
-                prediction_row['Date'] = next_date
-                prediction_row['WorkType'] = work_type
+                # Generate lag features with NoOfMan as target (not Hours)
+                featured_data = create_lag_features(
+                    work_type_data, 
+                    group_col='WorkType', 
+                    target_col='NoOfMan'  # Use NoOfMan, not Hours
+                )
                 
-                # The pipeline will handle ALL feature engineering automatically!
-                prediction = pipeline.predict(prediction_row)[0]
+                # Get the latest row for prediction
+                if len(featured_data) == 0:
+                    logger.warning(f"No featured data for WorkType {work_type}")
+                    continue
                 
-                # Ensure prediction is not negative
-                prediction = max(0, prediction)
+                latest_record = featured_data.iloc[-1:].copy()
                 
-                predictions[work_type] = prediction
-                hours_predictions[work_type] = calculate_hours_prediction(df, work_type, prediction, next_date)
+                # Update date features for prediction
+                latest_record['Date'] = next_date
+                latest_record['DayOfWeek_feat'] = next_date.weekday()
+                latest_record['Month_feat'] = next_date.month
+                latest_record['IsWeekend_feat'] = 1 if next_date.weekday() >= 5 else 0
                 
-                logger.info(f"✅ Pipeline predicted {prediction:.2f} workers for WorkType {work_type}")
+                # Predict NoOfMan using existing model
+                noof_man_prediction = pipeline.predict(latest_record)[0]
+                noof_man_prediction = max(0, noof_man_prediction)
+                
+                # Convert NoOfMan to Hours using business rule
+                hours_prediction = noof_man_prediction * 8.0  # Simple conversion
+                
+                predictions[work_type] = noof_man_prediction
+                hours_predictions[work_type] = hours_prediction
+                
+                logger.info(f"✅ Predicted {noof_man_prediction:.2f} workers, {hours_prediction:.1f} hours for {work_type}")
                 
             except Exception as e:
                 logger.error(f"Error predicting for WorkType {work_type}: {str(e)}")
-                logger.error(traceback.format_exc())
                 continue
         
         logger.info(f"🎯 Predictions completed for {len(predictions)} work types")
@@ -504,3 +517,129 @@ def _get_required_features(model):
         logger.error(f"Error getting required features: {str(e)}")
         # Simple fallback
         return ['DayOfWeek_feat', 'Month_feat', 'IsWeekend_feat', 'NoOfMan_lag_1', 'NoOfMan_lag_7', 'NoOfMan_rolling_mean_7']    
+    
+    
+
+def predict_hours_and_calculate_noof_man(df, models, work_type, date=None):
+    """
+    Predict Hours and calculate NoOfMan from it
+    
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        Input data with features
+    models : dict
+        Trained models
+    work_type : str
+        Work type to predict
+    date : datetime, optional
+        Date for prediction
+        
+    Returns:
+    --------
+    dict
+        Dictionary with Hours prediction and calculated NoOfMan
+    """
+    try:
+        # Get Hours prediction using existing model
+        hours_prediction = predict_single(df, models, work_type, date)
+        
+        # Convert to NoOfMan using business rule
+        noof_man_prediction = calculate_noof_man_from_hours(hours_prediction)
+        
+        return {
+            'Hours': hours_prediction,
+            'NoOfMan': noof_man_prediction,
+            'work_type': work_type,
+            'date': date
+        }
+        
+    except Exception as e:
+        logger.error(f"Error predicting hours and NoOfMan: {str(e)}")
+        return {
+            'Hours': 0,
+            'NoOfMan': 0,
+            'work_type': work_type,
+            'date': date
+        }
+    
+
+def calculate_noof_man_from_hours(hours_prediction, punch_code=None):
+    """
+    Simple function to convert Hours to NoOfMan using configurable business rule
+    
+    Parameters:
+    -----------
+    hours_prediction : float
+        Predicted total hours
+    punch_code : str, optional
+        Punch code for specific rules
+        
+    Returns:
+    --------
+    int
+        Number of workers needed
+    """
+    try:
+        from config import DEFAULT_HOURS_PER_WORKER, PUNCH_CODE_HOURS_PER_WORKER
+        
+        if hours_prediction <= 0:
+            return 0
+        
+        # Get hours per worker (punch code specific or default)
+        if punch_code and str(punch_code) in PUNCH_CODE_HOURS_PER_WORKER:
+            hours_per_worker = PUNCH_CODE_HOURS_PER_WORKER[str(punch_code)]
+        else:
+            hours_per_worker = DEFAULT_HOURS_PER_WORKER
+        
+        # Calculate NoOfMan
+        noof_man = hours_prediction / hours_per_worker
+        
+        # Round to whole number (minimum 1 if hours > 0)f
+        if noof_man > 0 and noof_man < 1:
+            return 1
+        else:
+            return max(0, round(noof_man))
+            
+    except Exception as e:
+        logger.error(f"Error calculating NoOfMan: {str(e)}")
+        # Safe fallback: simple division by 8
+        return max(0, round(hours_prediction / 8.0)) if hours_prediction > 0 else 0
+    
+
+def predict_single(df, models, work_type, date=None):
+    """
+    Predict Hours for a single work type on a single date
+    
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        Historical data
+    models : dict
+        Trained models
+    work_type : str
+        Work type to predict
+    date : datetime, optional
+        Date for prediction
+        
+    Returns:
+    --------
+    float
+        Predicted Hours for the work type
+    """
+    try:
+        # Use existing predict_next_day function
+        pred_date, predictions, hours_predictions = predict_next_day(df, models, date)
+        
+        # Extract the specific work type prediction
+        if work_type in predictions:
+            # Since models predict Hours directly, return that
+            hours_pred = predictions.get(work_type, 0)
+            return hours_pred
+        else:
+            logger.warning(f"No prediction available for work type {work_type}")
+            return 0
+            
+    except Exception as e:
+        logger.error(f"Error in predict_single for {work_type}: {str(e)}")
+        return 0

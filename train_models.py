@@ -127,38 +127,32 @@ def diagnose_training_data(df, work_type):
     print(f"\n=== ENHANCED DIAGNOSIS for {work_type} ===")
     print(f"Total records: {len(wt_data)}")
     print(f"Date range: {wt_data['Date'].min()} to {wt_data['Date'].max()}")
-    print(f"NoOfMan statistics:")
-    print(f"  Mean: {wt_data['NoOfMan'].mean():.2f}")
-    print(f"  Median: {wt_data['NoOfMan'].median():.2f}")
-    print(f"  Min: {wt_data['NoOfMan'].min():.2f}")
-    print(f"  Max: {wt_data['NoOfMan'].max():.2f}")
-    print(f"  Std: {wt_data['NoOfMan'].std():.2f}")
+    print(f"Hours statistics:")  # CHANGED
+    print(f"  Mean: {wt_data['Hours'].mean():.2f}")  # CHANGED
+    print(f"  Median: {wt_data['Hours'].median():.2f}")  # CHANGED
+    print(f"  Min: {wt_data['Hours'].min():.2f}")  # CHANGED
+    print(f"  Max: {wt_data['Hours'].max():.2f}")  # CHANGED
+    print(f"  Std: {wt_data['Hours'].std():.2f}")  # CHANGED
     
-    # Check for outliers using IQR method
-    q1 = wt_data['NoOfMan'].quantile(0.25)
-    q3 = wt_data['NoOfMan'].quantile(0.75)
+    # Check for outliers using IQR method - UPDATED
+    q1 = wt_data['Hours'].quantile(0.25)  # CHANGED
+    q3 = wt_data['Hours'].quantile(0.75)  # CHANGED
     iqr = q3 - q1
-    outliers = wt_data[(wt_data['NoOfMan'] < q1 - 1.5*iqr) | (wt_data['NoOfMan'] > q3 + 1.5*iqr)]
+    outliers = wt_data[(wt_data['Hours'] < q1 - 1.5*iqr) | (wt_data['Hours'] > q3 + 1.5*iqr)]  # CHANGED
     print(f"  Outliers: {len(outliers)} ({len(outliers)/len(wt_data)*100:.1f}%)")
     
-    # Check recent trend (last 30 records)
+    # Check recent trend (last 30 records) - UPDATED
     recent = wt_data.tail(30)
-    print(f"Recent 30 records average: {recent['NoOfMan'].mean():.2f}")
+    print(f"Recent 30 records average: {recent['Hours'].mean():.2f}")  # CHANGED
     
-    # Enhanced data quality checks
+    # Enhanced data quality checks - UPDATED
     print(f"Data Quality Assessment:")
-    zero_count = (wt_data['NoOfMan'] == 0).sum()
-    low_count = (wt_data['NoOfMan'] < 1).sum()
+    zero_count = (wt_data['Hours'] == 0).sum()  # CHANGED
+    low_count = (wt_data['Hours'] < 8).sum()    # CHANGED - 8 hours minimum
     print(f"  Zero values: {zero_count} ({zero_count/len(wt_data)*100:.1f}%)")
-    print(f"  Values < 1: {low_count} ({low_count/len(wt_data)*100:.1f}%)")
-    print(f"  Missing dates: {wt_data['Date'].isna().sum()}")
+    print(f"  Values < 8 hours: {low_count} ({low_count/len(wt_data)*100:.1f}%)")  # CHANGED
     
-    # Check for temporal gaps
-    date_diff = wt_data['Date'].diff().dt.days
-    large_gaps = (date_diff > 7).sum()
-    print(f"  Large time gaps (>7 days): {large_gaps}")
-    
-    return wt_data['NoOfMan'].mean()
+    return wt_data['Hours'].mean()  # CHANGED
 
 def validate_model_performance(model, X, y, work_type):
     """

@@ -76,6 +76,7 @@ DEFAULT_MODEL_PARAMS = {
 # LAG_DAYS = [1, 2, 3, 7, 14, 30]  # Default lag days for feature engineering
 # ROLLING_WINDOWS = [7, 14, 30, 90]    # Default rolling windows for feature engineering
 
+TARGET_COLUMN = 'Hours'  # NEW: Define target column explicitly
 LAG_DAYS = [1, 2, 7, 28, 365]  # 28 for true monthly cycle
 ROLLING_WINDOWS = [7, 21, 30, 90]  # 21 for 3-week patterns
  
@@ -205,3 +206,13 @@ MLFLOW_ENABLE_TRACKING = os.getenv('MLFLOW_ENABLE_TRACKING', 'true').lower() == 
 if MLFLOW_ENABLE_TRACKING:
     mlflow_dir = os.path.join(MODELS_DIR, 'mlflow-runs')
     os.makedirs(mlflow_dir, exist_ok=True)
+
+
+
+DEFAULT_HOURS_PER_WORKER = 8.0
+
+# Punch code specific hours (if different from default)
+PUNCH_CODE_HOURS_PER_WORKER = {
+    # '206': 7.5,  # Example: 206 works 7.5 hour shifts
+    # '213': 8.5,  # Example: 213 works 8.5 hour shifts
+}

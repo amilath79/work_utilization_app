@@ -14,27 +14,18 @@ from config import (
 
 logger = logging.getLogger(__name__)
 
-def create_lag_features(df, group_col='WorkType', target_col='NoOfMan', lag_days=None, rolling_windows=None):
+def create_lag_features(df, group_col='WorkType', target_col='Hours', lag_days=None, rolling_windows=None):
     """
     Create lag features while preserving essential columns for UI
     
     Parameters:
     -----------
-    df : pd.DataFrame
-        Input dataframe with Date, WorkType, NoOfMan columns
+    df : pd.DataFramex§
+        Input dataframe with Date, WorkType, Hours columns
     group_col : str
         Column to group by (default: 'WorkType')  
     target_col : str
-        Target column for lag features (default: 'NoOfMan')
-    lag_days : list, optional
-        List of lag days (uses ESSENTIAL_LAGS if None)
-    rolling_windows : list, optional
-        List of rolling windows (uses ESSENTIAL_WINDOWS if None)
-        
-    Returns:
-    --------
-    pd.DataFrame
-        DataFrame with original columns + lag features
+        Target column for lag features (default: 'Hours')  # CHANGED
     """
     try:
         logger.info("🔧 Creating lag features while preserving UI columns")
@@ -122,8 +113,8 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
         # Read parameters from config file (same as your approach)
         self.lag_days = ESSENTIAL_LAGS if FEATURE_GROUPS.get('LAG_FEATURES', False) else []
         self.rolling_windows = ESSENTIAL_WINDOWS if FEATURE_GROUPS.get('ROLLING_FEATURES', False) else []
-        self.lag_columns = LAG_FEATURES_COLUMNS if hasattr(config, 'LAG_FEATURES_COLUMNS') else ['NoOfMan']
-        self.rolling_columns = ROLLING_FEATURES_COLUMNS if hasattr(config, 'ROLLING_FEATURES_COLUMNS') else ['NoOfMan']
+        self.lag_columns = LAG_FEATURES_COLUMNS if hasattr(config, 'LAG_FEATURES_COLUMNS') else ['Hours']
+        self.rolling_columns = ROLLING_FEATURES_COLUMNS if hasattr(config, 'ROLLING_FEATURES_COLUMNS') else ['Hours']
         self.cyclical_features = CYCLICAL_FEATURES if FEATURE_GROUPS.get('CYCLICAL_FEATURES', False) else {}
         self.fitted_features_ = None
         

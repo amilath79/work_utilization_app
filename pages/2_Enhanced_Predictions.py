@@ -21,7 +21,9 @@ import glob
 # Add parent directory to path to import from utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.feature_engineering import add_rolling_features_by_group, add_lag_features_by_group, add_cyclical_features, add_trend_features, add_pattern_features
+# Use the working model loader from utils
+from utils.data_loader import load_enhanced_models
+from utils.feature_engineering import EnhancedFeatureTransformer
 from utils.sql_data_connector import extract_sql_data, save_predictions_to_db
 from utils.holiday_utils import is_non_working_day, is_working_day_for_punch_code
 from config import MODELS_DIR, DATA_DIR, SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION, FEATURE_GROUPS, DEFAULT_MODEL_PARAMS
@@ -196,63 +198,6 @@ def create_enhanced_features(df):
         logger.error(traceback.format_exc())
         return df
 
-def load_enhanced_models():
-    """
-    Load enhanced models, metadata, and features from train_models2.py
-    Follows enterprise patterns for model loading
-    """
-    try:
-        logger.info("📂 Loading enhanced models from train_models2.py")
-        
-        # Find the latest enhanced model files
-        model_files = glob.glob(os.path.join(MODELS_DIR, "enhanced_model_*.pkl"))
-        metadata_files = glob.glob(os.path.join(MODELS_DIR, "enhanced_models_metadata_*.json"))
-        feature_files = glob.glob(os.path.join(MODELS_DIR, "enhanced_features_*.json"))
-        
-        if not model_files:
-            logger.error("❌ No enhanced model files found")
-            return None, None, None
-        
-        # Get the latest files (by timestamp)
-        latest_model_file = max(model_files, key=os.path.getctime)
-        latest_metadata_file = max(metadata_files, key=os.path.getctime)
-        latest_feature_file = max(feature_files, key=os.path.getctime)
-        
-        # Load models
-        with open(latest_model_file, 'rb') as f:
-            loaded_models = pickle.load(f)
-
-        # Check if it's a dictionary or single model
-        if isinstance(loaded_models, dict):
-            models = loaded_models
-            logger.info(f"✅ Loaded models dictionary: {list(models.keys())}")
-        else:
-            # Single Pipeline model - determine work type from filename
-            if '206' in latest_model_file:
-                models = {'206': loaded_models}
-            elif '213' in latest_model_file:
-                models = {'213': loaded_models}
-            else:
-                models = {'206': loaded_models}  # Default assumption
-            logger.info(f"✅ Loaded single model: {type(loaded_models).__name__}")
-            
-            # Load metadata
-            with open(latest_metadata_file, 'r') as f:
-                metadata = json.load(f)
-            
-            # Load features
-            with open(latest_feature_file, 'r') as f:
-                features = json.load(f)
-            
-            logger.info(f"✅ Loaded enhanced models: {list(models.keys())}")
-            logger.info(f"📁 Model file: {os.path.basename(latest_model_file)}")
-            
-            return models, metadata, features
-            
-    except Exception as e:
-        logger.error(f"❌ Error loading enhanced models: {str(e)}")
-        logger.error(traceback.format_exc())
-        return None, None, None
 
 def create_prediction_features(df, work_type, prediction_date):
     """
@@ -442,7 +387,9 @@ def ensure_enhanced_data():
     # Load enhanced models
     if st.session_state.enhanced_models is None:
         with st.spinner("📂 Loading enhanced models..."):
-            models, metadata, features = load_enhanced_models()
+            # Import the working function
+            from utils.data_loader import load_enhanced_models
+            models, metadata, features = load_enhanced_models()  # This calls the working function
             
             if models is not None:
                 st.session_state.enhanced_models = models

@@ -18,7 +18,7 @@ import plotly.graph_objects as go
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.feature_engineering import EnhancedFeatureTransformer
-from utils.prediction import predict_next_day, predict_multiple_days, evaluate_predictions
+from utils.prediction import predict_next_day, predict_multiple_days, evaluate_predictions, calculate_noof_man_from_hours
 from utils.data_loader import export_predictions, load_models, load_data, load_enhanced_models
 from utils.sql_data_connector import extract_sql_data, save_predictions_to_db
 from utils.holiday_utils import is_non_working_day
@@ -240,7 +240,9 @@ def ensure_data_and_models():
     # Load models
     if st.session_state.models is None:
         with st.spinner("Loading enhanced models from train_models2.py..."):
-            models, features, metadata = load_enhanced_models()
+            # Import the correct function
+            from utils.data_loader import load_enhanced_models
+            models, metadata, features = load_enhanced_models()
             
             if models:
                 st.session_state.models = models
@@ -419,6 +421,31 @@ def main():
         help="Select the work types for which you want to make predictions"
     )
     # st.session_state.ts_data.to_excel('ts_data.xlsx')
+
+
+    # DEBUG: Check what models are actually loaded
+    st.write("**Debug Information:**")
+    if st.session_state.models:
+        st.info(f"✅ Loaded models for punch codes: {list(st.session_state.models.keys())}")
+        st.write("Model details:")
+        for code, model in st.session_state.models.items():
+            st.write(f"- {code}: {type(model).__name__}")
+    else:
+        st.error("❌ No models loaded in session state")
+
+    # Check model files on disk
+    import os
+    model_files = []
+    for code in ['206', '213']:
+        file_path = os.path.join(MODELS_DIR, f'enhanced_model_{code}.pkl')
+        exists = os.path.exists(file_path)
+        model_files.append(f"enhanced_model_{code}.pkl: {'✅ EXISTS' if exists else '❌ MISSING'}")
+
+    st.write("**Model Files on Disk:**")
+    for file_info in model_files:
+        st.write(f"- {file_info}")
+
+    st.write(f"**MODELS_DIR**: {MODELS_DIR}")
     # Button to trigger prediction
     if st.button("Generate Predictions", type="primary"):
         if not selected_work_types:
@@ -561,9 +588,15 @@ def main():
                 hist_data = st.session_state.ts_data[st.session_state.ts_data['WorkType'] == work_type]
                 
                 if not hist_data.empty:
-                    hist_avg = hist_data['NoOfMan'].mean()
-                    hist_min = hist_data['NoOfMan'].min()
-                    hist_max = hist_data['NoOfMan'].max()
+                    # Get historical Hours averages
+                    hist_hours_avg = hist_data['Hours'].mean()
+                    hist_hours_min = hist_data['Hours'].min()
+                    hist_hours_max = hist_data['Hours'].max()
+                    
+                    # Convert to NoOfMan using business rule
+                    hist_avg = calculate_noof_man_from_hours(hist_hours_avg, work_type)
+                    hist_min = calculate_noof_man_from_hours(hist_hours_min, work_type)
+                    hist_max = calculate_noof_man_from_hours(hist_hours_max, work_type)
                     
                     # Get prediction average
                     pred_values = [pred_dict.get(work_type, 0) for pred_dict in predictions.values()]
