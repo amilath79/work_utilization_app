@@ -67,11 +67,6 @@ st.set_page_config(
 
 if 'ts_data' not in st.session_state:
     st.session_state.ts_data = None
-if 'enhanced_df' not in st.session_state:
-    st.session_state.enhanced_df = None
-# if 'models' not in st.session_state:
-#     st.session_state.models = None
-
 if 'enhanced_models' not in st.session_state:
     st.session_state.enhanced_models = None
 if 'enhanced_df' not in st.session_state:
@@ -230,32 +225,45 @@ def ensure_data_and_models():
             st.warning("No data available. Please upload a file or connect to the database.")
             return False
     
-    # Process the dataset
-    if st.session_state.df is not None and st.session_state.processed_df is None:
-        with st.spinner("Processing data..."):
-            # Initialize and use the transformer
-            feature_transformer = EnhancedFeatureTransformer()
+    # Load enhanced data from saved training data (pickle file)
+    if st.session_state.enhanced_df is None:
+        try:
+            training_data_path = os.path.join(MODELS_DIR, 'enhanced_training_data.pkl')
             
-            # Fit and transform the data
-            feature_transformer.fit(st.session_state.df)
-            st.session_state.processed_df = feature_transformer.transform(st.session_state.df)
-            st.session_state.ts_data = st.session_state.processed_df  # Already includes lag features
+            if os.path.exists(training_data_path):
+                st.session_state.enhanced_df = pd.read_pickle(training_data_path)
+                logger.info(f"✅ Enhanced data loaded from pickle: {len(st.session_state.enhanced_df)} records")
+            else:
+                logger.warning(f"⚠️ Training data file not found: {training_data_path}")
+                st.warning("Please run train_models2.py first to generate training data")
+                
+        except Exception as e:
+            logger.error(f"❌ Failed to load enhanced data: {str(e)}")
+            st.session_state.enhanced_df = None
     
     # Load models
     if st.session_state.enhanced_models is None:
         with st.spinner("Loading enhanced models from train_models2.py..."):
             # Import the correct function
-
             models, metadata, features = load_enhanced_models()
             
             if models:
-                st.session_state.models = models
-                st.session_state.feature_importances = features
-                st.session_state.metrics = metadata
+                st.session_state.enhanced_models = models
+                st.session_state.enhanced_metadata = metadata
+                st.session_state.enhanced_features = features
                 logger.info(f"Successfully loaded {len(models)} models: {list(models.keys())}")
             else:
                 st.error("No trained models available. Please train models first.")
-                return False
+
+    # Determine available work types
+    available_work_types = []
+    if st.session_state.enhanced_models:
+        available_work_types.extend(list(st.session_state.enhanced_models.keys()))
+        st.info(f"✅ Enhanced models available: {', '.join(available_work_types)}")
+
+    if not available_work_types:
+        st.error("❌ No models available. Please run train_models2.py first.")
+        st.stop()
     
     return True
 
@@ -331,58 +339,43 @@ def main():
     st.write("### Data Quality Diagnosis")
     if st.button("Run Data Diagnosis"):
         with st.spinner("Analyzing training data..."):
-            diagnose_training_data(st.session_state.ts_data)
+            if st.session_state.enhanced_df is not None:
+                diagnose_training_data(st.session_state.enhanced_df)
+            else:
+                diagnose_training_data(st.session_state.ts_data)
             st.success("Check the console/logs for detailed diagnosis results")
     
-    # Get available work types from models
-    # Load enhanced models and check availability
+    # Get available work types from enhanced models
     if st.session_state.enhanced_models:
+        from config import ENHANCED_WORK_TYPES
         available_work_types = [wt for wt in ENHANCED_WORK_TYPES if wt in st.session_state.enhanced_models]
         st.info(f"Enhanced models available for punch codes: {', '.join(available_work_types)}")
     else:
         available_work_types = []
         st.warning("⚠️ No enhanced models loaded. Please run train_models2.py first.")
-        
+        return
     
     # Prediction options
     st.subheader("Prediction Options")
-    
-    # # Add model selection option
-    # model_type = st.radio(
-    #     "Select Model Type",
-    #     ["Random Forest", "Neural Network", "Ensemble (Both)"],
-    #     horizontal=True,
-    #     help="Choose which model to use for predictions"
-    # )
-    
-    # # Set use_neural parameter based on selection
-    # use_neural = model_type in ["Neural Network", "Ensemble (Both)"]
-
-    # Use only Enhanced Random Forest models from train_models2.py
-    # model_type = "Enhanced Random Forest"
-    st.info("Using Random Forest models from train_models2.py")
-    use_neural = False
-    
-    # # Check if neural network models are available
-    # nn_available = False
-    # try:
-    #     nn_path = os.path.join(MODELS_DIR, "work_utilization_nn_models.pkl")
-    #     nn_available = os.path.exists(nn_path)
-    # except:
-    #     pass
-    
-    # if use_neural and not nn_available:
-    #     st.warning("Neural network models are not available. Using Random Forest models instead.")
-    use_neural = False
-    # model_type = "Random Forest"
+    st.info("Using Enhanced Pipeline models from train_models2.py")
     
     # Date range selector
     col1, col2 = st.columns(2)
     
     with col1:
-        # Find the latest date from the dataset
-        st.session_state.enhanced_df.to_excel('enhanced_df.xlsx')
-        latest_date = pd.to_datetime(st.session_state.ts_data[['Year', 'Month', 'Day']]).max().date()
+        # FIXED: Add None check and use enhanced_df for date calculation
+        if st.session_state.enhanced_df is not None:
+            # Export for debugging (optional - can be removed)
+            try:
+                st.session_state.enhanced_df.to_excel('enhanced_df.xlsx')
+            except Exception as e:
+                logger.warning(f"Could not export enhanced_df: {str(e)}")
+            
+            latest_date = st.session_state.enhanced_df['Date'].max().date()
+        else:
+            # Fallback to ts_data if enhanced_df not available
+            latest_date = pd.to_datetime(st.session_state.ts_data[['Year', 'Month', 'Day']]).max().date()
+        
         next_date = latest_date + timedelta(days=1)
         
         pred_start_date = st.date_input(
@@ -413,8 +406,6 @@ def main():
         default=available_work_types,
         help="Select the work types for which you want to make predictions"
     )
-    # st.session_state.ts_data.to_excel('ts_data.xlsx')
-
 
     # Button to trigger prediction
     if st.button("Generate Predictions", type="primary"):
@@ -425,21 +416,24 @@ def main():
             st.session_state.save_success_message = None
             
             with st.spinner(f"Generating predictions for {num_days} days..."):
-                # Filter models to selected work types
-                filtered_models = {wt: st.session_state.models[wt] for wt in selected_work_types if wt in st.session_state.models}
+                # FIXED: Filter enhanced models to selected work types
+                filtered_models = {wt: st.session_state.enhanced_models[wt] for wt in selected_work_types if wt in st.session_state.enhanced_models}
                 
                 if not filtered_models:
-                    st.error("No models available for the selected work types")
+                    st.error("No enhanced models available for the selected work types")
                     return
                 
                 try:
+                    # FIXED: Use enhanced_df for pipeline models
+                    prediction_data = st.session_state.enhanced_df if st.session_state.enhanced_df is not None else st.session_state.ts_data
+                    
                     # Unpack all three return values from predict_multiple_days
                     predictions, hours_predictions, holiday_info = predict_multiple_days(
-                        st.session_state.ts_data,
+                        prediction_data,
                         filtered_models,
-                        start_date=pred_start_date,  # Add missing start_date parameter
+                        start_date=pred_start_date,
                         num_days=num_days,
-                        use_neural_network=use_neural
+                        use_neural_network=False  # Pipeline models don't need this
                     )
                     
                     print(f'Hours Prediction - {hours_predictions}')
@@ -478,7 +472,7 @@ def main():
                 results_records.append({
                     'Date': date,
                     'Work Type': work_type,
-                    'Predicted Workers': round(display_value),
+                    'Predicted Hours': round(display_value, 1),  # FIXED: Changed to Hours for enhanced models
                     'Raw Prediction': round(value, 1),  # Show original prediction for debugging
                     'Day of Week': date.strftime('%A'),
                     'Is Non-Working Day': "Yes" if is_non_working else "No",
@@ -488,13 +482,16 @@ def main():
         results_df = pd.DataFrame(results_records)
         
         # Display results
-        model_type_text = "Neural Network" if use_neural else "Random Forest"
+        model_type_text = "Enhanced Pipeline"
         
         # Reconstruct date range for display
         first_date = min(predictions.keys())
         last_date = max(predictions.keys())
 
         st.subheader(f"Predictions from {first_date.strftime('%B %d, %Y')} to {last_date.strftime('%B %d, %Y')} using {model_type_text}")
+        
+        # Show results table
+        st.dataframe(results_df, use_container_width=True)
         
         # Holiday information
         with st.expander("📊 View Holiday Information", expanded=False):
@@ -548,87 +545,9 @@ def main():
         st.write("### Monthly Resource Plan")
         st.dataframe(monthly_pivot, use_container_width=True)
 
-        # Add this after predictions are generated
-        # if st.session_state.current_predictions:
-        #     st.subheader("📊 Prediction Validation")
-            
-        #     # Compare with historical averages
-        #     validation_data = []
-        #     for work_type in selected_work_types:
-        #         # Get historical data for this work type
-        #         hist_data = st.session_state.ts_data[st.session_state.ts_data['WorkType'] == work_type]
-        #         hist_data.to_excel('hist_data.xlsx')
-        #         if not hist_data.empty:
-        #             # Get historical Hours averages
-        #             hist_hours_avg = hist_data['Hours'].mean()
-        #             hist_hours_min = hist_data['Hours'].min()
-        #             hist_hours_max = hist_data['Hours'].max()
-                    
-        #             # Convert to NoOfMan using business rule
-        #             hist_avg = calculate_noof_man_from_hours(hist_hours_avg, work_type)
-        #             hist_min = calculate_noof_man_from_hours(hist_hours_min, work_type)
-        #             hist_max = calculate_noof_man_from_hours(hist_hours_max, work_type)
-                    
-        #             # Get prediction average
-        #             pred_values = [pred_dict.get(work_type, 0) for pred_dict in predictions.values()]
-        #             pred_avg = np.mean(pred_values)
-                    
-        #             validation_data.append({
-        #                 'Work Type': work_type,
-        #                 'Historical Avg': round(hist_avg, 2),
-        #                 'Historical Range': f"{hist_min} - {hist_max}",
-        #                 'Predicted Avg': round(pred_avg, 2),
-        #                 'Within Range': "✅" if hist_min <= pred_avg <= hist_max else "⚠️"
-        #             })
-            
-        #     if validation_data:
-        #         validation_df = pd.DataFrame(validation_data)
-        #         st.dataframe(validation_df, use_container_width=True)
-
-
-        # # Download options
-        # st.subheader("Download Options")
-        # col1, col2, col3 = st.columns(3)
-        
-        # with col1:
-        #     # Download raw predictions
-        #     csv_data = results_df.to_csv(index=False)
-        #     st.download_button(
-        #         label="Download Predictions (CSV)",
-        #         data=csv_data,
-        #         file_name=f"workforce_predictions_{model_type_text.replace(' ', '_')}_{first_date.strftime('%Y%m%d')}_to_{last_date.strftime('%Y%m%d')}.csv",
-        #         mime="text/csv"
-        #     )
-        
-        # with col2:
-        #     # Download resource plan
-        #     pivot_buffer = io.BytesIO()
-        #     daily_pivot.to_excel(pivot_buffer)
-        #     pivot_buffer.seek(0)
-
-        #     st.download_button(
-        #         label="Download Daily Resource Plan (Excel)",
-        #         data=pivot_buffer,
-        #         file_name=f"daily_resource_plan_{first_date.strftime('%Y%m%d')}.xlsx",
-        #         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        #     )
-
-        # with col3:
-        #     # Download monthly plan
-        #     pivot_buffer_month = io.BytesIO()
-        #     monthly_pivot.to_excel(pivot_buffer_month)
-        #     pivot_buffer_month.seek(0)
-
-        #     st.download_button(
-        #         label="Download Monthly Resource Plan (Excel)",
-        #         data=pivot_buffer_month,
-        #         file_name=f"monthly_resource_plan_{first_date.strftime('%Y%m%d')}.xlsx",
-        #         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        #     )
-
         # Username input and save button - only show when predictions exist
         st.subheader("Save Predictions")
-        username = value=get_current_user()
+        username = get_current_user()
 
         # Save button
         if st.button("Save Predictions to Database", type="primary"):
