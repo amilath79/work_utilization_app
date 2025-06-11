@@ -23,7 +23,7 @@ from utils.data_loader import export_predictions, load_models, load_data, load_e
 from utils.sql_data_connector import extract_sql_data, save_predictions_to_db
 from utils.holiday_utils import is_non_working_day
 from utils.sql_data_connector import extract_sql_data
-from config import MODELS_DIR, DATA_DIR, SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION
+from config import MODELS_DIR, DATA_DIR, SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION, ENHANCED_WORK_TYPES
 
 # Configure logging to display debug information
 logging.basicConfig(
@@ -64,15 +64,19 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Initialize session state variables
-if 'df' not in st.session_state:
-    st.session_state.df = None
-if 'processed_df' not in st.session_state:
-    st.session_state.processed_df = None
+
 if 'ts_data' not in st.session_state:
     st.session_state.ts_data = None
-if 'models' not in st.session_state:
-    st.session_state.models = None
+if 'enhanced_df' not in st.session_state:
+    st.session_state.enhanced_df = None
+# if 'models' not in st.session_state:
+#     st.session_state.models = None
+
+if 'enhanced_models' not in st.session_state:
+    st.session_state.enhanced_models = None
+if 'enhanced_df' not in st.session_state:
+    st.session_state.enhanced_df = None
+
 if 'feature_importances' not in st.session_state:
     st.session_state.feature_importances = None
 if 'metrics' not in st.session_state:
@@ -238,10 +242,10 @@ def ensure_data_and_models():
             st.session_state.ts_data = st.session_state.processed_df  # Already includes lag features
     
     # Load models
-    if st.session_state.models is None:
+    if st.session_state.enhanced_models is None:
         with st.spinner("Loading enhanced models from train_models2.py..."):
             # Import the correct function
-            from utils.data_loader import load_enhanced_models
+
             models, metadata, features = load_enhanced_models()
             
             if models:
@@ -331,11 +335,14 @@ def main():
             st.success("Check the console/logs for detailed diagnosis results")
     
     # Get available work types from models
-    # available_work_types = list(st.session_state.models.keys())
-    # logger.info(f"Available models: {available_work_types}")
-    available_work_types = ['206', '213']
-    st.info(f"Enhanced models available for punch codes: {', '.join(available_work_types)}")
-    
+    # Load enhanced models and check availability
+    if st.session_state.enhanced_models:
+        available_work_types = [wt for wt in ENHANCED_WORK_TYPES if wt in st.session_state.enhanced_models]
+        st.info(f"Enhanced models available for punch codes: {', '.join(available_work_types)}")
+    else:
+        available_work_types = []
+        st.warning("⚠️ No enhanced models loaded. Please run train_models2.py first.")
+        
     
     # Prediction options
     st.subheader("Prediction Options")
@@ -374,7 +381,7 @@ def main():
     
     with col1:
         # Find the latest date from the dataset
-
+        st.session_state.enhanced_df.to_excel('enhanced_df.xlsx')
         latest_date = pd.to_datetime(st.session_state.ts_data[['Year', 'Month', 'Day']]).max().date()
         next_date = latest_date + timedelta(days=1)
         

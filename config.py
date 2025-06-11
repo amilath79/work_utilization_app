@@ -216,3 +216,6 @@ PUNCH_CODE_HOURS_PER_WORKER = {
     # '206': 7.5,  # Example: 206 works 7.5 hour shifts
     # '213': 8.5,  # Example: 213 works 8.5 hour shifts
 }
+
+
+ENHANCED_WORK_TYPES = ['206', '213']

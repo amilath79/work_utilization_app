@@ -201,7 +201,7 @@ def train_enhanced_model(df, work_type):
         logger.error(traceback.format_exc())
         return None, None, None
 
-def save_enhanced_models(models, metadata, features):
+def save_enhanced_models(models, metadata, features, df):
     """Save enhanced models and metadata"""
     try:
         logger.info("Saving enhanced models and metadata")
@@ -233,6 +233,14 @@ def save_enhanced_models(models, metadata, features):
         with open(features_path, 'w') as f:
             json.dump(features, f, indent=2)
         
+        # Save training data for predictions
+        try:
+            training_data_path = os.path.join(MODELS_DIR, 'enhanced_training_data.pkl')
+            df.to_pickle(training_data_path)
+            logger.info(f"✅ Enhanced training data saved: {training_data_path}")
+        except Exception as e:
+            logger.error(f"⚠️ Failed to save training data: {str(e)}")
+
         logger.info(f"✅ All enhanced models and metadata saved")
         
         return True
@@ -293,7 +301,7 @@ def main():
         
         # Save models and metadata
         if models:
-            success = save_enhanced_models(models, metadata, features)
+            success = save_enhanced_models(models, metadata, features, df)
             
             if success:
                 logger.info("\n🎉 ENHANCED MODEL TRAINING COMPLETED SUCCESSFULLY")
