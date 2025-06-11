@@ -53,7 +53,7 @@ def load_data_from_database():
         AND NoOfMan > 0 
         AND SystemHours > 0 
         AND NoRows > 0
-        AND Date < '2025-05-01'
+        AND Date < '2025-05-06'
         ORDER BY Date
         """
         

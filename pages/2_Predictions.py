@@ -100,7 +100,7 @@ def load_workutilizationdata():
         AND NoOfMan > 0 
         AND SystemHours > 0 
         AND NoRows > 0
-        AND Date < '2025-05-01'
+        AND Date < '2025-05-06'
         ORDER BY Date
         """
         
@@ -257,61 +257,47 @@ def ensure_data_and_models():
 
 
 def create_resource_plan_table(predictions_dict, hours_dict, selected_work_types, dates):
-    """Create a structured resource plan table with all selected work types"""
-    # Prepare data in the format needed for the pivot table
     data = []
     
     for date in dates:
-        # Check if day is non-working
         is_non_working, reason = is_non_working_day(date)
-        
-        # Add debug logging
-        logger.info(f"Processing date {date}: Is non-working: {is_non_working}, Reason: {reason}")
-        logger.info(f"Available predictions for this date: {date in predictions_dict}")
+        day_name = date.strftime('%A')
         
         for wt in selected_work_types:
-            # Default values
             man_value = 0
             hours_value = 0
             
-            # Only use zero for non-working days
-            if not is_non_working:
-                # For working days, use the predicted values from the dictionaries
+            # ✅ CORRECT: Use predictions for working days, zeros for non-working days
+            if not is_non_working:  # Working day
                 if date in predictions_dict and wt in predictions_dict[date]:
                     man_value = predictions_dict[date][wt]
-                    # logger.info(f"Found prediction for {date}, {wt}: {man_value}")
-                    
-                    # Also get hours value
+
                     if date in hours_dict and wt in hours_dict[date]:
                         hours_value = hours_dict[date][wt]
                     else:
-                        # Default to 8 hours per person if not in hours_dict
+
                         hours_value = man_value * 8.0
-                else:
-                    logger.warning(f"No prediction found for {date}, {wt}")
+            # For non-working days, keep man_value = 0 and hours_value = 0
             
-            # Add entry for NoOfMan
+            # Add NoOfMan row
             data.append({
                 'Date': date,
+                'Day': day_name,
                 'PunchCode': wt,
                 'Metric': 'NoOfMan',
-                'Value': round(man_value) if pd.notnull(man_value) else 0,
-                'Day': date.strftime('%a')
+                'Value': man_value
             })
             
-            # Add entry for Hours
+            # Add Hours row
             data.append({
                 'Date': date,
+                'Day': day_name,
                 'PunchCode': wt,
                 'Metric': 'Hours',
-                'Value': round(hours_value, 1) if pd.notnull(hours_value) else 0,
-                'Day': date.strftime('%a')
+                'Value': hours_value
             })
     
-    # Create dataframe
-    df = pd.DataFrame(data)
-    
-    return df
+    return pd.DataFrame(data)
 
 
 def get_current_user():
@@ -423,29 +409,6 @@ def main():
     # st.session_state.ts_data.to_excel('ts_data.xlsx')
 
 
-    # DEBUG: Check what models are actually loaded
-    st.write("**Debug Information:**")
-    if st.session_state.models:
-        st.info(f"✅ Loaded models for punch codes: {list(st.session_state.models.keys())}")
-        st.write("Model details:")
-        for code, model in st.session_state.models.items():
-            st.write(f"- {code}: {type(model).__name__}")
-    else:
-        st.error("❌ No models loaded in session state")
-
-    # Check model files on disk
-    import os
-    model_files = []
-    for code in ['206', '213']:
-        file_path = os.path.join(MODELS_DIR, f'enhanced_model_{code}.pkl')
-        exists = os.path.exists(file_path)
-        model_files.append(f"enhanced_model_{code}.pkl: {'✅ EXISTS' if exists else '❌ MISSING'}")
-
-    st.write("**Model Files on Disk:**")
-    for file_info in model_files:
-        st.write(f"- {file_info}")
-
-    st.write(f"**MODELS_DIR**: {MODELS_DIR}")
     # Button to trigger prediction
     if st.button("Generate Predictions", type="primary"):
         if not selected_work_types:
@@ -472,6 +435,7 @@ def main():
                         use_neural_network=use_neural
                     )
                     
+                    print(f'Hours Prediction - {hours_predictions}')
                     # Store predictions in session state for later use
                     st.session_state.current_predictions = predictions
                     st.session_state.current_hours_predictions = hours_predictions
@@ -578,41 +542,41 @@ def main():
         st.dataframe(monthly_pivot, use_container_width=True)
 
         # Add this after predictions are generated
-        if st.session_state.current_predictions:
-            st.subheader("📊 Prediction Validation")
+        # if st.session_state.current_predictions:
+        #     st.subheader("📊 Prediction Validation")
             
-            # Compare with historical averages
-            validation_data = []
-            for work_type in selected_work_types:
-                # Get historical data for this work type
-                hist_data = st.session_state.ts_data[st.session_state.ts_data['WorkType'] == work_type]
-                
-                if not hist_data.empty:
-                    # Get historical Hours averages
-                    hist_hours_avg = hist_data['Hours'].mean()
-                    hist_hours_min = hist_data['Hours'].min()
-                    hist_hours_max = hist_data['Hours'].max()
+        #     # Compare with historical averages
+        #     validation_data = []
+        #     for work_type in selected_work_types:
+        #         # Get historical data for this work type
+        #         hist_data = st.session_state.ts_data[st.session_state.ts_data['WorkType'] == work_type]
+        #         hist_data.to_excel('hist_data.xlsx')
+        #         if not hist_data.empty:
+        #             # Get historical Hours averages
+        #             hist_hours_avg = hist_data['Hours'].mean()
+        #             hist_hours_min = hist_data['Hours'].min()
+        #             hist_hours_max = hist_data['Hours'].max()
                     
-                    # Convert to NoOfMan using business rule
-                    hist_avg = calculate_noof_man_from_hours(hist_hours_avg, work_type)
-                    hist_min = calculate_noof_man_from_hours(hist_hours_min, work_type)
-                    hist_max = calculate_noof_man_from_hours(hist_hours_max, work_type)
+        #             # Convert to NoOfMan using business rule
+        #             hist_avg = calculate_noof_man_from_hours(hist_hours_avg, work_type)
+        #             hist_min = calculate_noof_man_from_hours(hist_hours_min, work_type)
+        #             hist_max = calculate_noof_man_from_hours(hist_hours_max, work_type)
                     
-                    # Get prediction average
-                    pred_values = [pred_dict.get(work_type, 0) for pred_dict in predictions.values()]
-                    pred_avg = np.mean(pred_values)
+        #             # Get prediction average
+        #             pred_values = [pred_dict.get(work_type, 0) for pred_dict in predictions.values()]
+        #             pred_avg = np.mean(pred_values)
                     
-                    validation_data.append({
-                        'Work Type': work_type,
-                        'Historical Avg': round(hist_avg, 2),
-                        'Historical Range': f"{hist_min} - {hist_max}",
-                        'Predicted Avg': round(pred_avg, 2),
-                        'Within Range': "✅" if hist_min <= pred_avg <= hist_max else "⚠️"
-                    })
+        #             validation_data.append({
+        #                 'Work Type': work_type,
+        #                 'Historical Avg': round(hist_avg, 2),
+        #                 'Historical Range': f"{hist_min} - {hist_max}",
+        #                 'Predicted Avg': round(pred_avg, 2),
+        #                 'Within Range': "✅" if hist_min <= pred_avg <= hist_max else "⚠️"
+        #             })
             
-            if validation_data:
-                validation_df = pd.DataFrame(validation_data)
-                st.dataframe(validation_df, use_container_width=True)
+        #     if validation_data:
+        #         validation_df = pd.DataFrame(validation_data)
+        #         st.dataframe(validation_df, use_container_width=True)
 
 
         # # Download options
