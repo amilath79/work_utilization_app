@@ -24,7 +24,7 @@ except ImportError:
 from config import (
     MODELS_DIR, DATA_DIR, LAG_DAYS, ROLLING_WINDOWS, CHUNK_SIZE, DEFAULT_MODEL_PARAMS,
     SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION, SQL_USERNAME, SQL_PASSWORD,
-    FEATURE_GROUPS, PRODUCTIVITY_FEATURES, DATE_FEATURES, ESSENTIAL_LAGS, ESSENTIAL_WINDOWS
+    FEATURE_GROUPS, PRODUCTIVITY_FEATURES, DATE_FEATURES, ESSENTIAL_LAGS, ESSENTIAL_WINDOWS, ENHANCED_WORK_TYPES
 )
 
 # Configure logger
@@ -281,10 +281,12 @@ def create_prediction_features(df, work_type, next_date, latest_date):
         
 def predict_next_day(df, models, date=None, use_neural_network=False):
     """
-    Fixed prediction using EXISTING models (NoOfMan-based)
+    Enhanced pipeline prediction using config-based work types
     """
     try:
-        logger.info("🚀 Starting next day prediction with existing NoOfMan models")
+
+        
+        logger.info("🚀 Starting enhanced pipeline prediction")
         
         # Determine prediction date
         if date is None:
@@ -294,8 +296,8 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
             next_date = pd.to_datetime(date)
         
         # Skip weekends
-        while next_date.weekday() >= 5:
-            next_date += timedelta(days=1)
+        # Don't skip weekends blindly - let punch code schedule decide
+        # Individual work types will check is_working_day_for_punch_code
         
         logger.info(f"Predicting for date: {next_date.strftime('%Y-%m-%d')}")
         
@@ -304,78 +306,82 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
         
         for work_type in models.keys():
             try:
-                # Check working day
-                is_working, reason = is_working_day_for_punch_code(next_date, work_type)
+                # Check if this work type uses enhanced models
+                if work_type not in ENHANCED_WORK_TYPES:
+                    logger.warning(f"WorkType {work_type} not in ENHANCED_WORK_TYPES, skipping")
+                    continue
+                
+                # Check working day - handle tuple return
+                is_working_result = is_working_day_for_punch_code(next_date, work_type)
+
+                # Handle both tuple and boolean returns
+                if isinstance(is_working_result, tuple):
+                    is_working, reason = is_working_result
+                else:
+                    is_working = is_working_result
+                    reason = None
+
                 if not is_working:
                     logger.info(f"Non-working day for {work_type}: {reason}")
                     predictions[work_type] = 0
                     hours_predictions[work_type] = 0
                     continue
                 
-                # Get the model pipeline
-                pipeline = models[work_type]
-                
-                # ===== CRITICAL FIX: Use NoOfMan-based features =====
+                # Get work type data (raw, no feature engineering)
                 work_type_data = df[df['WorkType'] == work_type].copy()
                 
                 if len(work_type_data) == 0:
                     logger.warning(f"No historical data for WorkType {work_type}")
+                    predictions[work_type] = 0
+                    hours_predictions[work_type] = 0
                     continue
                 
-                # Create features using EXISTING NoOfMan-based approach
-                from utils.feature_engineering import create_lag_features
+                # Get latest row
+                latest_row = work_type_data.iloc[-1]
                 
-                # Generate lag features with NoOfMan as target (not Hours)
-                featured_data = create_lag_features(
-                    work_type_data, 
-                    group_col='WorkType', 
-                    target_col='NoOfMan'  # Use NoOfMan, not Hours
-                )
+                # Create raw input for complete pipeline
+                raw_input = pd.DataFrame([{
+                    'Date': next_date,
+                    'WorkType': work_type,
+                    'Hours': latest_row['Hours'],
+                    'SystemHours': latest_row.get('SystemHours', latest_row['Hours']),
+                    'Quantity': latest_row.get('Quantity', 100),
+                    'SystemKPI': latest_row.get('SystemKPI', 1.0)
+                }])
                 
-                # Get the latest row for prediction
-                if len(featured_data) == 0:
-                    logger.warning(f"No featured data for WorkType {work_type}")
-                    continue
+                # Use complete pipeline (handles feature engineering internally)
+                pipeline = models[work_type]
+                prediction = pipeline.predict(raw_input)[0]
+                prediction = max(0, prediction)
                 
-                latest_record = featured_data.iloc[-1:].copy()
+                # Enhanced models predict Hours directly
+                predictions[work_type] = prediction
+                hours_predictions[work_type] = prediction
                 
-                # Update date features for prediction
-                latest_record['Date'] = next_date
-                latest_record['DayOfWeek_feat'] = next_date.weekday()
-                latest_record['Month_feat'] = next_date.month
-                latest_record['IsWeekend_feat'] = 1 if next_date.weekday() >= 5 else 0
-                
-                # Predict NoOfMan using existing model
-                noof_man_prediction = pipeline.predict(latest_record)[0]
-                noof_man_prediction = max(0, noof_man_prediction)
-                
-                # Convert NoOfMan to Hours using business rule
-                hours_prediction = noof_man_prediction * 8.0  # Simple conversion
-                
-                predictions[work_type] = noof_man_prediction
-                hours_predictions[work_type] = hours_prediction
-                
-                logger.info(f"✅ Predicted {noof_man_prediction:.2f} workers, {hours_prediction:.1f} hours for {work_type}")
+                logger.info(f"✅ Predicted {prediction:.2f} hours for {work_type}")
                 
             except Exception as e:
                 logger.error(f"Error predicting for WorkType {work_type}: {str(e)}")
+                predictions[work_type] = 0
+                hours_predictions[work_type] = 0
                 continue
         
-        logger.info(f"🎯 Predictions completed for {len(predictions)} work types")
+        logger.info(f"🎯 Enhanced predictions completed for {len(predictions)} work types")
         return next_date, predictions, hours_predictions
         
     except Exception as e:
-        logger.error(f"Error in predict_next_day: {str(e)}")
+        logger.error(f"Error in enhanced prediction: {str(e)}")
         logger.error(traceback.format_exc())
         return None, {}, {}
 
 
 def predict_multiple_days(df, models, start_date, num_days, use_neural_network=False):
     """
-    Simplified multi-day prediction using complete pipelines
+    Enhanced pipeline multi-day prediction using config-based work types
     """
-    
     try:
+        logger.info(f"🚀 Starting enhanced multi-day prediction for {num_days} days")
+        
         all_predictions = {}
         all_hours = {}
         current_df = df.copy()
@@ -385,61 +391,75 @@ def predict_multiple_days(df, models, start_date, num_days, use_neural_network=F
         
         current_date = pd.to_datetime(start_date)
         
-        for day in range(num_days):
-            # Predict for current date
-            pred_date, daily_predictions, daily_hours = predict_next_day(
-                current_df, models, current_date, use_neural_network
-            )
-            
-            if pred_date and daily_predictions:
-                all_predictions[pred_date] = daily_predictions
-                all_hours[pred_date] = daily_hours
-                
-                # Collect new rows to add at once (more efficient)
-                new_rows = []
-                for work_type, prediction in daily_predictions.items():
-                    # Get last quantity safely
-                    last_quantity = 0  # Default value
-                    
-                    try:
-                        # Check if required columns exist
-                        if 'WorkType' in current_df.columns and 'Quantity' in current_df.columns:
-                            # Filter for this work type
-                            work_type_data = current_df[current_df['WorkType'] == work_type]
-                            
-                            # Check if any rows match
-                            if len(work_type_data) > 0:
-                                last_quantity = work_type_data['Quantity'].iloc[-1]
-                                
-                    except Exception as e:
-                        logger.warning(f"Could not get quantity for {work_type}: {str(e)}")
-                        last_quantity = 0
-                    
-                    new_rows.append({
-                        'Date': pred_date,
-                        'WorkType': work_type, 
-                        'NoOfMan': prediction,
-                        'Quantity': last_quantity
-                    })
-                
-                # Add all new rows at once and reset index
-                if new_rows:
-                    new_df = pd.DataFrame(new_rows)
-                    current_df = pd.concat([current_df, new_df], ignore_index=True)
-                    current_df = current_df.reset_index(drop=True)  # Ensure clean index
-            
-            current_date += timedelta(days=1)
+        for i in range(num_days):
+            pred_date = current_date + timedelta(days=i)
             
             # Skip weekends
-            while current_date.weekday() >= 5:
-                current_date += timedelta(days=1)
+            while pred_date.weekday() >= 5:
+                pred_date += timedelta(days=1)
+            
+            logger.info(f"📅 Predicting for day {i+1}/{num_days}: {pred_date.strftime('%Y-%m-%d')}")
+            
+            # Use enhanced predict_next_day
+            _, day_predictions, day_hours = predict_next_day(
+                current_df, 
+                models, 
+                date=pred_date,
+                use_neural_network=False
+            )
+            
+            # Store predictions
+            all_predictions[pred_date] = day_predictions
+            all_hours[pred_date] = day_hours
+            
+            # Add predictions back to dataframe for next iteration (CRITICAL for recursive)
+            new_rows = []
+            for work_type in ENHANCED_WORK_TYPES:
+                if work_type in day_predictions:
+                    predicted_hours = day_predictions[work_type]
+                    
+                    # CRITICAL FIX: Skip non-working days from dataframe
+                    from utils.holiday_utils import is_working_day_for_punch_code
+                    is_working_result = is_working_day_for_punch_code(pred_date, work_type)
+
+                    # Handle tuple return
+                    if isinstance(is_working_result, tuple):
+                        is_working, reason = is_working_result
+                    else:
+                        is_working = is_working_result
+
+                    if is_working and predicted_hours > 0:
+                        
+                        new_row = {
+                            'Date': pred_date,
+                            'WorkType': work_type,
+                            'Hours': predicted_hours,
+                            'SystemHours': predicted_hours,
+                            'Quantity': max(1, int(predicted_hours * 10)),
+                            'SystemKPI': 1.0
+                        }
+                        new_rows.append(new_row)
+                    else:
+                        logger.info(f"🚫 Skipping non-working day {pred_date} for {work_type} from recursive dataframe")
+
+            # Append new rows to dataframe for next iteration
+            if new_rows:
+                new_df = pd.DataFrame(new_rows)
+                current_df = pd.concat([current_df, new_df], ignore_index=True)
+                current_df = current_df.sort_values(['WorkType', 'Date']).reset_index(drop=True)
+                logger.info(f"✅ Added {len(new_rows)} working day predictions for next iteration")
+            else:
+                logger.info("📅 No working day predictions to add to dataframe")
         
-        return all_predictions, all_hours, {}  # Return 3 values as expected
+        logger.info(f"🎯 Enhanced multi-day prediction completed")
+        logger.info(f"📊 Generated predictions for {len(all_predictions)} days")
+        
+        return all_predictions, all_hours, {}  # Empty holiday_info for compatibility
         
     except Exception as e:
-        logger.error(f"Error in predict_multiple_days: {str(e)}")
+        logger.error(f"❌ Error in enhanced multi-day prediction: {str(e)}")
         logger.error(traceback.format_exc())
-        return {}, {}, {}  # Return 3 empty values on error
+        return {}, {}, {}
     
 
 def evaluate_predictions(y_true, y_pred):

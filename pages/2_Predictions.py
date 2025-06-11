@@ -1,5 +1,6 @@
 """
 Predictions page for the Work Utilization Prediction app.
+Enhanced models for punch codes 206 & 213 using pipeline architecture.
 """
 import os
 os.environ["STREAMLIT_SERVER_WATCH_CHANGES"] = "false"
@@ -8,8 +9,6 @@ import pandas as pd
 import numpy as np
 import logging
 from datetime import datetime, timedelta
-import os
-import io
 import sys
 import traceback
 import plotly.graph_objects as go
@@ -21,16 +20,85 @@ from utils.feature_engineering import EnhancedFeatureTransformer
 from utils.prediction import predict_next_day, predict_multiple_days, evaluate_predictions, calculate_noof_man_from_hours
 from utils.data_loader import export_predictions, load_models, load_data, load_enhanced_models
 from utils.sql_data_connector import extract_sql_data, save_predictions_to_db
-from utils.holiday_utils import is_non_working_day
-from utils.sql_data_connector import extract_sql_data
+from utils.holiday_utils import is_non_working_day, is_working_day_for_punch_code
 from config import MODELS_DIR, DATA_DIR, SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION, ENHANCED_WORK_TYPES
 
-# Configure logging to display debug information
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Configure page
+st.set_page_config(
+    page_title="Workforce Predictions",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Initialize all session state variables
+if 'df' not in st.session_state:
+    st.session_state.df = None
+if 'processed_df' not in st.session_state:
+    st.session_state.processed_df = None
+if 'ts_data' not in st.session_state:
+    st.session_state.ts_data = None
+if 'enhanced_df' not in st.session_state:
+    st.session_state.enhanced_df = None
+if 'models' not in st.session_state:
+    st.session_state.models = None
+if 'enhanced_models' not in st.session_state:
+    st.session_state.enhanced_models = None
+if 'enhanced_metadata' not in st.session_state:
+    st.session_state.enhanced_metadata = None
+if 'enhanced_features' not in st.session_state:
+    st.session_state.enhanced_features = None
+if 'feature_importances' not in st.session_state:
+    st.session_state.feature_importances = None
+if 'metrics' not in st.session_state:
+    st.session_state.metrics = None
+if 'current_predictions' not in st.session_state:
+    st.session_state.current_predictions = None
+if 'current_hours_predictions' not in st.session_state:
+    st.session_state.current_hours_predictions = None
+if 'save_button_clicked' not in st.session_state:
+    st.session_state.save_button_clicked = False
+if 'save_success_message' not in st.session_state:
+    st.session_state.save_success_message = None
+
+# Load enhanced data from saved training data (pickle file)
+if st.session_state.enhanced_df is None:
+    try:
+        training_data_path = os.path.join(MODELS_DIR, 'enhanced_training_data.pkl')
+        
+        if os.path.exists(training_data_path):
+            st.session_state.enhanced_df = pd.read_pickle(training_data_path)
+            logger.info(f"✅ Enhanced data loaded from pickle: {len(st.session_state.enhanced_df)} records")
+        else:
+            logger.warning(f"⚠️ Training data file not found: {training_data_path}")
+            
+    except Exception as e:
+        logger.error(f"❌ Failed to load enhanced data: {str(e)}")
+        st.session_state.enhanced_df = None
+
+# Load enhanced models
+if st.session_state.enhanced_models is None:
+    try:
+        models, metadata, features = load_enhanced_models()
+        
+        if models:
+            st.session_state.enhanced_models = models
+            st.session_state.enhanced_metadata = metadata
+            st.session_state.enhanced_features = features
+            logger.info(f"✅ Loaded enhanced models: {list(models.keys())}")
+        else:
+            logger.warning("⚠️ No enhanced models found")
+            
+    except Exception as e:
+        logger.error(f"❌ Failed to load enhanced models: {str(e)}")
+        st.session_state.enhanced_models = {}
 
 def diagnose_training_data(df):
     """
@@ -43,285 +111,130 @@ def diagnose_training_data(df):
         
         print(f"\nWorkType {work_type}:")
         print(f"  Records: {len(wt_data)}")
-        print(f"  NoOfMan - Mean: {wt_data['NoOfMan'].mean():.2f}")
-        print(f"  NoOfMan - Median: {wt_data['NoOfMan'].median():.2f}")
-        print(f"  NoOfMan - Max: {wt_data['NoOfMan'].max():.2f}")
-        print(f"  NoOfMan - Min: {wt_data['NoOfMan'].min():.2f}")
+        print(f"  Hours - Mean: {wt_data['Hours'].mean():.2f}")
+        print(f"  Hours - Median: {wt_data['Hours'].median():.2f}")
+        print(f"  Hours - Max: {wt_data['Hours'].max():.2f}")
+        print(f"  Hours - Min: {wt_data['Hours'].min():.2f}")
         
         # Check for data quality issues
-        zero_count = (wt_data['NoOfMan'] == 0).sum()
-        low_count = (wt_data['NoOfMan'] < 1).sum()
+        zero_count = (wt_data['Hours'] == 0).sum()
+        low_count = (wt_data['Hours'] < 1).sum()
         
         print(f"  Zero values: {zero_count} ({zero_count/len(wt_data)*100:.1f}%)")
         print(f"  Values < 1: {low_count} ({low_count/len(wt_data)*100:.1f}%)")
 
-
-# Configure page
-st.set_page_config(
-    page_title="Workforce Predictions",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-
-if 'ts_data' not in st.session_state:
-    st.session_state.ts_data = None
-if 'enhanced_models' not in st.session_state:
-    st.session_state.enhanced_models = None
-if 'enhanced_df' not in st.session_state:
-    st.session_state.enhanced_df = None
-
-if 'feature_importances' not in st.session_state:
-    st.session_state.feature_importances = None
-if 'metrics' not in st.session_state:
-    st.session_state.metrics = None
-if 'current_predictions' not in st.session_state:
-    st.session_state.current_predictions = None
-if 'current_hours_predictions' not in st.session_state:
-    st.session_state.current_hours_predictions = None
-if 'save_button_clicked' not in st.session_state:
-    st.session_state.save_button_clicked = False
-if 'save_success_message' not in st.session_state:
-    st.session_state.save_success_message = ""
-
-def set_save_clicked():
-    st.session_state.save_button_clicked = True
-
-def load_workutilizationdata():
-    """Load data from the WorkUtilizationData table"""
-    try:
-        sql_query = """
-        SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, NoRows as Quantity, SystemKPI 
-        FROM WorkUtilizationData 
-        WHERE PunchCode IN (206, 213) 
-        AND Hours > 0 
-        AND NoOfMan > 0 
-        AND SystemHours > 0 
-        AND NoRows > 0
-        AND Date < '2025-05-06'
-        ORDER BY Date
-        """
-        
-        with st.spinner("Loading work utilization data..."):
-            df = extract_sql_data(
-                server=SQL_SERVER,
-                database=SQL_DATABASE,
-                query=sql_query,
-                trusted_connection=SQL_TRUSTED_CONNECTION
-            )
-            
-            if df is not None and not df.empty:
-                # Ensure Date is datetime type
-                df['Date'] = pd.to_datetime(df['Date'])
-                
-                # Ensure WorkType is string
-                df['WorkType'] = df['WorkType'].astype(str)
-                
-                logger.info(f"Loaded {len(df)} records from WorkUtilizationData")
-                return df
-            else:
-                logger.warning("No data returned from WorkUtilizationData")
-                return None
-    except Exception as e:
-        logger.error(f"Error loading data from WorkUtilizationData: {str(e)}")
-        logger.error(traceback.format_exc())
-        return None
-
-def simple_save_predictions(predictions_dict, hours_dict, username, server=None, database=None):
-    """
-    Simple function to save predictions to database with minimal complexity
-    """
-    import pyodbc
-    from config import SQL_SERVER, SQL_DATABASE
-    
-    # Use provided or default values
-    server = server or SQL_SERVER
-    database = database or SQL_DATABASE
-    
-    try:
-        # Create connection string
-        conn_str = f'DRIVER={{SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
-        
-        # Connect to database
-        conn = pyodbc.connect(conn_str)
-        cursor = conn.cursor()
-        
-        # Track success
-        saved_count = 0
-        
-        # Process each prediction one by one
-        for date, work_types in predictions_dict.items():
-            for work_type, man_value in work_types.items():
-                try:
-                    # Convert work_type to integer
-                    punch_code = int(work_type)
-                    
-                    # Format date as string
-                    date_str = date.strftime('%Y-%m-%d')
-                    
-                    # Get hours value
-                    hours = 0.0
-                    if date in hours_dict and work_type in hours_dict[date]:
-                        hours = float(hours_dict[date][work_type])
-                    
-                    # Execute stored procedure
-                    cursor.execute(
-                        "EXEC usp_UpsertPrediction @Date=?, @PunchCode=?, @NoOfMan=?, @Hours=?, @Username=?",
-                        date_str, 
-                        punch_code, 
-                        float(man_value), 
-                        hours, 
-                        username
-                    )
-                    
-                    # Commit immediately
-                    conn.commit()
-                    saved_count += 1
-                    
-                except Exception as e:
-                    print(f"Error saving prediction for {date_str}, {work_type}: {str(e)}")
-                    # Continue with next prediction
-        
-        # Close resources
-        cursor.close()
-        conn.close()
-        
-        return saved_count > 0
-    
-    except Exception as e:
-        print(f"Database error: {str(e)}")
-        return False
-
 def ensure_data_and_models():
-    """Ensure data and models are loaded"""
-    # Try to load data if not already loaded
-    if st.session_state.df is None:
-        st.session_state.df = load_workutilizationdata()
+    """Ensure enhanced data and models are loaded for punch codes 206 & 213"""
     
-    # If database load failed, offer Excel options
-    if st.session_state.df is None:
-        st.error("Could not load data from database. Please upload Excel file instead.")
-        
-        uploaded_file = st.file_uploader(
-            "Upload Work Utilization Excel File", 
-            type=["xlsx", "xls"],
-            help="Upload Excel file with work utilization data"
-        )
-        
-        if uploaded_file is not None:
-            st.session_state.df = load_data(uploaded_file)
-        
-        use_sample_data = st.checkbox("Use Sample Data", value=False)
-        
-        if use_sample_data:
-            sample_path = os.path.join(DATA_DIR, "sample_work_utilization.xlsx")
-            
-            if os.path.exists(sample_path):
-                st.session_state.df = load_data(sample_path)
-        
-        # Check if we have data after trying upload options
-        if st.session_state.df is None:
-            st.warning("No data available. Please upload a file or connect to the database.")
-            return False
-    
-    # Load enhanced data from saved training data (pickle file)
+    # Check enhanced data
     if st.session_state.enhanced_df is None:
-        try:
-            training_data_path = os.path.join(MODELS_DIR, 'enhanced_training_data.pkl')
-            
-            if os.path.exists(training_data_path):
-                st.session_state.enhanced_df = pd.read_pickle(training_data_path)
-                logger.info(f"✅ Enhanced data loaded from pickle: {len(st.session_state.enhanced_df)} records")
-            else:
-                logger.warning(f"⚠️ Training data file not found: {training_data_path}")
-                st.warning("Please run train_models2.py first to generate training data")
-                
-        except Exception as e:
-            logger.error(f"❌ Failed to load enhanced data: {str(e)}")
-            st.session_state.enhanced_df = None
+        st.error("❌ Enhanced data not loaded. Please run train_models2.py first.")
+        return False
     
-    # Load models
-    if st.session_state.enhanced_models is None:
-        with st.spinner("Loading enhanced models from train_models2.py..."):
-            # Import the correct function
-            models, metadata, features = load_enhanced_models()
-            
-            if models:
-                st.session_state.enhanced_models = models
-                st.session_state.enhanced_metadata = metadata
-                st.session_state.enhanced_features = features
-                logger.info(f"Successfully loaded {len(models)} models: {list(models.keys())}")
-            else:
-                st.error("No trained models available. Please train models first.")
-
-    # Determine available work types
-    available_work_types = []
-    if st.session_state.enhanced_models:
-        available_work_types.extend(list(st.session_state.enhanced_models.keys()))
-        st.info(f"✅ Enhanced models available: {', '.join(available_work_types)}")
-
-    if not available_work_types:
-        st.error("❌ No models available. Please run train_models2.py first.")
-        st.stop()
+    # Check enhanced models
+    if not st.session_state.enhanced_models:
+        st.error("❌ Enhanced models not loaded. Please run train_models2.py first.")
+        return False
     
     return True
 
-
-def create_resource_plan_table(predictions_dict, hours_dict, selected_work_types, dates):
-    data = []
-    
-    for date in dates:
-        is_non_working, reason = is_non_working_day(date)
-        day_name = date.strftime('%A')
-        
-        for wt in selected_work_types:
-            man_value = 0
-            hours_value = 0
-            
-            # ✅ CORRECT: Use predictions for working days, zeros for non-working days
-            if not is_non_working:  # Working day
-                if date in predictions_dict and wt in predictions_dict[date]:
-                    man_value = predictions_dict[date][wt]
-
-                    if date in hours_dict and wt in hours_dict[date]:
-                        hours_value = hours_dict[date][wt]
-                    else:
-
-                        hours_value = man_value * 8.0
-            # For non-working days, keep man_value = 0 and hours_value = 0
-            
-            # Add NoOfMan row
-            data.append({
-                'Date': date,
-                'Day': day_name,
-                'PunchCode': wt,
-                'Metric': 'NoOfMan',
-                'Value': man_value
-            })
-            
-            # Add Hours row
-            data.append({
-                'Date': date,
-                'Day': day_name,
-                'PunchCode': wt,
-                'Metric': 'Hours',
-                'Value': hours_value
-            })
-    
-    return pd.DataFrame(data)
-
-
 def get_current_user():
-    """Get the current user from the system"""
+    """Get current user for saving predictions"""
     try:
-        import os
         import getpass
-        username = os.environ.get('USERNAME', getpass.getuser())
-        return username
+        return getpass.getuser()
     except:
-        return "unknown"
+        return "unknown_user"
 
+def simple_save_predictions(predictions_dict, hours_dict, username):
+    """
+    Simple function to save predictions to database
+    """
+    try:
+        # Prepare data for saving
+        save_data = []
+        
+        for date, work_type_predictions in predictions_dict.items():
+            for work_type, predicted_value in work_type_predictions.items():
+                hours_value = hours_dict.get(date, {}).get(work_type, predicted_value)
+                
+                save_data.append({
+                    'Date': date,
+                    'WorkType': work_type,
+                    'PredictedHours': hours_value,
+                    'Username': username,
+                    'CreatedAt': datetime.now()
+                })
+        
+        if save_data:
+            save_df = pd.DataFrame(save_data)
+            
+            # Save to database using existing function
+            success = save_predictions_to_db(save_df, username)
+            
+            if success:
+                logger.info(f"✅ Saved {len(save_data)} predictions for user {username}")
+                return True
+            else:
+                logger.error("❌ Failed to save predictions to database")
+                return False
+        else:
+            logger.warning("⚠️ No predictions to save")
+            return False
+            
+    except Exception as e:
+        logger.error(f"❌ Error saving predictions: {str(e)}")
+        return False
+
+def create_resource_plan_table(predictions, hours_predictions, work_types, date_range):
+    """
+    Create structured data for resource planning pivot table
+    FIXED: Properly handles working day logic and tuple returns
+    """
+    resource_data = []
+    
+    for date in date_range:
+        for work_type in work_types:
+            # FIXED: Properly handle working day check
+            from utils.holiday_utils import is_working_day_for_punch_code
+            is_working_result = is_working_day_for_punch_code(date, work_type)
+            
+            # Handle both tuple and boolean returns
+            if isinstance(is_working_result, tuple):
+                is_working, reason = is_working_result
+            else:
+                is_working = is_working_result
+                reason = None
+            
+            if is_working:
+                # Working day - use predicted values
+                predicted_hours = predictions.get(date, {}).get(work_type, 0)
+                hours_value = hours_predictions.get(date, {}).get(work_type, predicted_hours)
+                workers_value = max(1, round(hours_value / 8.0)) if hours_value > 0 else 0
+            else:
+                # Non-working day - force to 0 (OVERRIDE any predictions)
+                hours_value = 0
+                workers_value = 0
+            
+            # Add rows for different metrics
+            resource_data.extend([
+                {
+                    'Date': date,
+                    'Day': date.strftime('%A'),
+                    'PunchCode': work_type,
+                    'Metric': 'Hours',
+                    'Value': round(hours_value, 1)
+                },
+                {
+                    'Date': date,
+                    'Day': date.strftime('%A'),
+                    'PunchCode': work_type,
+                    'Metric': 'Workers',
+                    'Value': workers_value
+                }
+            ])
+    
+    return pd.DataFrame(resource_data)
 
 def main():
     st.header("Workforce Predictions")
@@ -347,7 +260,6 @@ def main():
     
     # Get available work types from enhanced models
     if st.session_state.enhanced_models:
-        from config import ENHANCED_WORK_TYPES
         available_work_types = [wt for wt in ENHANCED_WORK_TYPES if wt in st.session_state.enhanced_models]
         st.info(f"Enhanced models available for punch codes: {', '.join(available_work_types)}")
     else:
@@ -363,7 +275,7 @@ def main():
     col1, col2 = st.columns(2)
     
     with col1:
-        # FIXED: Add None check and use enhanced_df for date calculation
+        # Use enhanced_df for date calculation
         if st.session_state.enhanced_df is not None:
             # Export for debugging (optional - can be removed)
             try:
@@ -373,8 +285,8 @@ def main():
             
             latest_date = st.session_state.enhanced_df['Date'].max().date()
         else:
-            # Fallback to ts_data if enhanced_df not available
-            latest_date = pd.to_datetime(st.session_state.ts_data[['Year', 'Month', 'Day']]).max().date()
+            # Fallback if enhanced_df not available
+            latest_date = datetime.now().date()
         
         next_date = latest_date + timedelta(days=1)
         
@@ -416,7 +328,7 @@ def main():
             st.session_state.save_success_message = None
             
             with st.spinner(f"Generating predictions for {num_days} days..."):
-                # FIXED: Filter enhanced models to selected work types
+                # Filter enhanced models to selected work types
                 filtered_models = {wt: st.session_state.enhanced_models[wt] for wt in selected_work_types if wt in st.session_state.enhanced_models}
                 
                 if not filtered_models:
@@ -424,8 +336,8 @@ def main():
                     return
                 
                 try:
-                    # FIXED: Use enhanced_df for pipeline models
-                    prediction_data = st.session_state.enhanced_df if st.session_state.enhanced_df is not None else st.session_state.ts_data
+                    # Use enhanced_df for pipeline models
+                    prediction_data = st.session_state.enhanced_df
                     
                     # Unpack all three return values from predict_multiple_days
                     predictions, hours_predictions, holiday_info = predict_multiple_days(
@@ -436,7 +348,7 @@ def main():
                         use_neural_network=False  # Pipeline models don't need this
                     )
                     
-                    print(f'Hours Prediction - {hours_predictions}')
+
                     # Store predictions in session state for later use
                     st.session_state.current_predictions = predictions
                     st.session_state.current_hours_predictions = hours_predictions
@@ -465,15 +377,14 @@ def main():
             is_non_working, reason = is_non_working_day(date)
             
             for work_type, value in pred_dict.items():
-                # IMPORTANT: Only set to 0 if it's a non-working day
-                # Otherwise use the actual predicted value
+                # Only set to 0 if it's a non-working day
                 display_value = 0 if is_non_working else value
                 
                 results_records.append({
                     'Date': date,
                     'Work Type': work_type,
-                    'Predicted Hours': round(display_value, 1),  # FIXED: Changed to Hours for enhanced models
-                    'Raw Prediction': round(value, 1),  # Show original prediction for debugging
+                    'Predicted Hours': round(display_value, 1),
+                    'Raw Prediction': round(value, 1),
                     'Day of Week': date.strftime('%A'),
                     'Is Non-Working Day': "Yes" if is_non_working else "No",
                     'Reason': reason if is_non_working else ""
@@ -510,6 +421,16 @@ def main():
         date_range = list(predictions.keys())
         selected_work_types_from_predictions = list(set(wt for pred_dict in predictions.values() for wt in pred_dict.keys()))
         
+
+        # DEBUG: Check what predictions actually contain
+        st.write("### DEBUG: Prediction Values")
+        for date, preds in predictions.items():
+            st.write(f"**{date.strftime('%Y-%m-%d')} ({date.strftime('%A')})**")
+            for work_type, value in preds.items():
+                from utils.holiday_utils import is_working_day_for_punch_code
+                is_working = is_working_day_for_punch_code(date, work_type)
+                st.write(f"  - {work_type}: {value:.1f} hours (Working: {is_working})")
+
         # Create structured data with all selected work types
         resource_data = create_resource_plan_table(
             predictions, 
