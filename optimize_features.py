@@ -14,7 +14,7 @@ import json
 sys.path.append('utils')
 
 from utils.feature_optimization import run_feature_optimization
-from utils.data_loader import load_data
+from train_models2 import load_training_data
 import config
 
 # Configure logging
@@ -158,7 +158,7 @@ def main():
     try:
         # Load data
         logger.info("📥 Loading training data...")
-        df = load_data()
+        df = load_training_data()
         
         if df is None or df.empty:
             logger.error("❌ No data available for optimization")
