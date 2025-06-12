@@ -394,9 +394,9 @@ def predict_multiple_days(df, models, start_date, num_days, use_neural_network=F
         for i in range(num_days):
             pred_date = current_date + timedelta(days=i)
             
-            # Skip weekends
-            while pred_date.weekday() >= 5:
-                pred_date += timedelta(days=1)
+            # # Skip weekends
+            # while pred_date.weekday() >= 5:
+            #     pred_date += timedelta(days=1)
             
             logger.info(f"📅 Predicting for day {i+1}/{num_days}: {pred_date.strftime('%Y-%m-%d')}")
             

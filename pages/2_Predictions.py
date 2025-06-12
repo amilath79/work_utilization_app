@@ -146,46 +146,66 @@ def get_current_user():
     except:
         return "unknown_user"
 
+# def simple_save_predictions(predictions_dict, hours_dict, username):
+#     """
+#     Simple function to save predictions to database
+#     """
+#     try:
+#         # Prepare data for saving
+#         save_data = []
+        
+#         for date, work_type_predictions in predictions_dict.items():
+#             for work_type, predicted_value in work_type_predictions.items():
+#                 hours_value = hours_dict.get(date, {}).get(work_type, predicted_value)
+                
+#                 save_data.append({
+#                     'Date': date,
+#                     'WorkType': work_type,
+#                     'PredictedHours': hours_value,
+#                     'Username': username,
+#                     'CreatedAt': datetime.now()
+#                 })
+        
+#         if save_data:
+#             save_df = pd.DataFrame(save_data)
+            
+#             # Save to database using existing function
+#             success = save_predictions_to_db(save_df, username)
+            
+#             if success:
+#                 logger.info(f"✅ Saved {len(save_data)} predictions for user {username}")
+#                 return True
+#             else:
+#                 logger.error("❌ Failed to save predictions to database")
+#                 return False
+#         else:
+#             logger.warning("⚠️ No predictions to save")
+#             return False
+            
+#     except Exception as e:
+#         logger.error(f"❌ Error saving predictions: {str(e)}")
+#         return False
+
 def simple_save_predictions(predictions_dict, hours_dict, username):
     """
     Simple function to save predictions to database
     """
     try:
-        # Prepare data for saving
-        save_data = []
+        # ✅ CORRECT: Pass the dictionaries directly
+        success = save_predictions_to_db(predictions_dict, hours_dict, username)
         
-        for date, work_type_predictions in predictions_dict.items():
-            for work_type, predicted_value in work_type_predictions.items():
-                hours_value = hours_dict.get(date, {}).get(work_type, predicted_value)
-                
-                save_data.append({
-                    'Date': date,
-                    'WorkType': work_type,
-                    'PredictedHours': hours_value,
-                    'Username': username,
-                    'CreatedAt': datetime.now()
-                })
-        
-        if save_data:
-            save_df = pd.DataFrame(save_data)
-            
-            # Save to database using existing function
-            success = save_predictions_to_db(save_df, username)
-            
-            if success:
-                logger.info(f"✅ Saved {len(save_data)} predictions for user {username}")
-                return True
-            else:
-                logger.error("❌ Failed to save predictions to database")
-                return False
+        if success:
+            logger.info(f"✅ Saved predictions for user {username}")
+            return True
         else:
-            logger.warning("⚠️ No predictions to save")
+            logger.error("❌ Failed to save predictions to database")
             return False
             
     except Exception as e:
         logger.error(f"❌ Error saving predictions: {str(e)}")
         return False
-
+    
+    
 def create_resource_plan_table(predictions, hours_predictions, work_types, date_range):
     """
     Create structured data for resource planning pivot table
@@ -421,15 +441,6 @@ def main():
         date_range = list(predictions.keys())
         selected_work_types_from_predictions = list(set(wt for pred_dict in predictions.values() for wt in pred_dict.keys()))
         
-
-        # DEBUG: Check what predictions actually contain
-        st.write("### DEBUG: Prediction Values")
-        for date, preds in predictions.items():
-            st.write(f"**{date.strftime('%Y-%m-%d')} ({date.strftime('%A')})**")
-            for work_type, value in preds.items():
-                from utils.holiday_utils import is_working_day_for_punch_code
-                is_working = is_working_day_for_punch_code(date, work_type)
-                st.write(f"  - {work_type}: {value:.1f} hours (Working: {is_working})")
 
         # Create structured data with all selected work types
         resource_data = create_resource_plan_table(

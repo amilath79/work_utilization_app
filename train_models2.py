@@ -24,6 +24,7 @@ import json
 from utils.feature_engineering import EnhancedFeatureTransformer
 from utils.holiday_utils import is_non_working_day
 from utils.sql_data_connector import extract_sql_data
+from config import ENHANCED_WORK_TYPES
 
 from config import (
     MODELS_DIR,
@@ -57,10 +58,13 @@ def load_training_data():
         logger.info("Loading training data for enhanced models (206, 213)")
         
         query = """
-        SELECT Date, PunchCode as WorkType, Hours, SystemHours, NoRows as Quantity, SystemKPI 
+        SELECT Date, PunchCode as WorkType, Hours, SystemHours, 
+		CASE WHEN PunchCode IN (206, 213) THEN NoRows
+		ELSE Quantity END as Quantity, 
+		SystemKPI
         FROM WorkUtilizationData 
-        WHERE PunchCode IN (206, 213) 
-        AND Hours > 0 
+        WHERE PunchCode IN ('202', '203', '206', '209', '210', '211', '213', '214', '215', '217') 
+		AND Hours > 0 
         AND SystemHours > 0 
         AND NoRows > 0
         AND Date < '2025-05-06'
@@ -277,7 +281,7 @@ def main():
         metadata = {}
         features = {}
         
-        for work_type in ['206', '213']:
+        for work_type in ENHANCED_WORK_TYPES:
             logger.info(f"\n🎯 Processing WorkType {work_type}")
             
             work_data = df[df['WorkType'] == work_type].copy()
