@@ -161,6 +161,7 @@ def train_enhanced_model(df, work_type):
             y_train_fold = y[train_idx]
             y_val_fold = y[val_idx]
             
+            print(f'X_train {X_train_fold}')
             # Train pipeline on fold
             complete_pipeline.fit(X_train_fold, y_train_fold)
             

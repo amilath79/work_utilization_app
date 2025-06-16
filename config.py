@@ -103,8 +103,7 @@ FEATURE_GROUPS = {
 }
 
 # OPTIMIZED LAG CONFIGURATION - Focused on most predictive periods
-ESSENTIAL_LAGS = [1, 2, 3, 7, 14, 21, 28]  # Removed 3,21 - reduced complexity, kept monthly
-
+ESSENTIAL_LAGS = [1, 2, 3, 7, 14, 21, 28] 
 # OPTIMIZED ROLLING WINDOWS - Balanced short/medium term patterns  
 ESSENTIAL_WINDOWS = [7, 14, 21, 30]  
 
@@ -245,7 +244,7 @@ PUNCH_CODE_HOURS_PER_WORKER = {
 }
 
 # Enhanced work types for special handling
-ENHANCED_WORK_TYPES = ['202', '203', '206', '209', '210', '211', '213', '214', '215', '217']
+ENHANCED_WORK_TYPES = ['202', '203', '206', '209', '210', '211', '213', '214', '215', '217'] # 
 
 # ==============================================
 # LOGGING SETUP

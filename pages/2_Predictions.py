@@ -17,9 +17,9 @@ import plotly.graph_objects as go
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.feature_engineering import EnhancedFeatureTransformer
-from utils.prediction import predict_next_day, predict_multiple_days, evaluate_predictions, calculate_noof_man_from_hours
-from utils.data_loader import export_predictions, load_models, load_data, load_enhanced_models
-from utils.sql_data_connector import extract_sql_data, save_predictions_to_db
+from utils.prediction import predict_multiple_days, predict_next_day
+from utils.data_loader import load_enhanced_models
+from utils.sql_data_connector import  save_predictions_to_db
 from utils.holiday_utils import is_non_working_day, is_working_day_for_punch_code
 from config import MODELS_DIR, DATA_DIR, SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION, ENHANCED_WORK_TYPES
 
@@ -67,6 +67,14 @@ if 'save_button_clicked' not in st.session_state:
     st.session_state.save_button_clicked = False
 if 'save_success_message' not in st.session_state:
     st.session_state.save_success_message = None
+
+
+
+if st.session_state.enhanced_models:
+    for work_type, model in st.session_state.enhanced_models.items():
+        st.write(f"Model {work_type} type: {type(model)}")
+        if hasattr(model, 'steps'):
+            st.write(f"  Pipeline steps : {[step[0] for step in model.steps]}")
 
 # Load enhanced data from saved training data (pickle file)
 if st.session_state.enhanced_df is None:
@@ -338,6 +346,39 @@ def main():
         default=available_work_types,
         help="Select the work types for which you want to make predictions"
     )
+
+
+    if st.button("Test Pipeline Prediction"):
+        next_date, preds, hours = predict_next_day(
+            st.session_state.enhanced_df,
+            st.session_state.enhanced_models
+        )
+        st.write(f"Predictions for {next_date}:")
+        for wt, hrs in hours.items():
+            st.write(f"  {wt}: {hrs:.1f} hours")
+
+
+    # Debug feature mismatch
+    if st.button("Debug Feature Names"):
+        # Pick one model to test
+        work_type = '206'  # Or any work type
+        pipeline = st.session_state.enhanced_models[work_type]
+        
+        # Check what features the RandomForest expects
+        rf_model = pipeline.named_steps['model']
+        st.write("**Model expects these features:**")
+        st.write(rf_model.feature_names_in_[:10])  # First 10 features
+        
+        # Create sample data and check what transformer produces
+        sample_data = st.session_state.enhanced_df[
+            st.session_state.enhanced_df['WorkType'] == work_type
+        ].tail(50)
+        
+        # Transform and check features
+        transformer = pipeline.named_steps['feature_engineering']
+        transformed = transformer.transform(sample_data)
+        st.write("\n**Transformer creates these features:**")
+        st.write(transformed.columns.tolist()[:10])  # First 10 features
 
     # Button to trigger prediction
     if st.button("Generate Predictions", type="primary"):
