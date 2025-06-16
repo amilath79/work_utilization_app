@@ -93,12 +93,13 @@ ROLLING_WINDOWS = [7, 21, 30, 90]  # 21 for 3-week patterns
 
 # OPTIMAL FEATURE CONFIGURATION - Tested for MAE < 0.5, R² > 0.85
 FEATURE_GROUPS = {
-    'LAG_FEATURES': True,           # ✅ Essential for workforce trends
-    'ROLLING_FEATURES': True,       # ✅ Essential for pattern capture  
-    'DATE_FEATURES': True,          # ✅ Essential for seasonality
-    'CYCLICAL_FEATURES': True,      # ✅ ENABLED - Critical for day/month patterns
-    'TREND_FEATURES': True,        # ❌ Disabled - Can cause overfitting
-    'PATTERN_FEATURES': True,      # ❌ Disabled - Can cause overfitting
+    'LAG_FEATURES': True,
+    'ROLLING_FEATURES': True,  
+    'DATE_FEATURES': True,
+    'CYCLICAL_FEATURES': True,
+    'TREND_FEATURES': True,
+    'PATTERN_FEATURES': True,
+    'INTERACTION_FEATURES': True,  # NEW - capture complex relationships
 }
 
 # OPTIMIZED LAG CONFIGURATION - Focused on most predictive periods

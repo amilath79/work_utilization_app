@@ -37,6 +37,23 @@ from config import (
     SQL_TRUSTED_CONNECTION
 )
 
+
+# Enhanced time series cross-validation with gap
+from sklearn.model_selection import TimeSeriesSplit
+
+class GapTimeSeriesSplit(TimeSeriesSplit):
+    """TimeSeriesSplit with gap to prevent data leakage"""
+    def __init__(self, n_splits=10, gap=7):
+        super().__init__(n_splits=n_splits)
+        self.gap = gap
+    
+    def split(self, X, y=None, groups=None):
+        for train_idx, test_idx in super().split(X, y, groups):
+            # Add gap between train and test
+            if len(train_idx) > self.gap:
+                train_idx = train_idx[:-self.gap]
+            yield train_idx, test_idx
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -55,7 +72,7 @@ os.makedirs("logs", exist_ok=True)
 def load_training_data():
     """Load training data for punch codes 206 and 213"""
     try:
-        logger.info("Loading training data for enhanced models (206, 213)")
+        logger.info(f"Loading training data for enhanced models {ENHANCED_WORK_TYPES}")
         
         query = """
         SELECT Date, PunchCode as WorkType, Hours, SystemHours, 
@@ -102,8 +119,7 @@ def train_enhanced_model(df, work_type):
     """
     try:
         logger.info(f"Training enhanced model for WorkType {work_type} using complete pipeline")
-        
-        # Prepare data - TARGET IS NOW HOURS
+        df = detect_and_handle_outliers(df, 'Hours', n_std=4) # Detect OutLiers
         y = df['Hours'].values
         
         
@@ -127,14 +143,14 @@ def train_enhanced_model(df, work_type):
             ('feature_engineering', EnhancedFeatureTransformer()),  # No parameters - reads from config
             
             # Step 2: Preprocessing (scaling, encoding)
-            ('preprocessing', StandardScaler()),
+            # ('preprocessing', StandardScaler()),
             
             # Step 3: Model
             ('model', RandomForestRegressor(**DEFAULT_MODEL_PARAMS))
         ])
         
         # Time series cross-validation
-        tscv = TimeSeriesSplit(n_splits=5)
+        tscv = GapTimeSeriesSplit(n_splits=10, gap=7)  # 10 splits with 7-day gap
         fold_scores = []
         
         logger.info("Performing time series cross-validation...")
@@ -328,6 +344,25 @@ def remove_extreme_outliers(X, y):
 #             mask[punch_mask] = outlier_mask
     
 #     return X[mask], y[mask]
+
+
+def detect_and_handle_outliers(df, target_col='Hours', n_std=4):
+    """Remove extreme outliers that could hurt model training"""
+    for work_type in df['WorkType'].unique():
+        wt_mask = df['WorkType'] == work_type
+        wt_data = df.loc[wt_mask, target_col]
+        
+        # Calculate bounds
+        mean_val = wt_data.mean()
+        std_val = wt_data.std()
+        lower_bound = mean_val - n_std * std_val
+        upper_bound = mean_val + n_std * std_val
+        
+        # Cap outliers instead of removing
+        df.loc[wt_mask & (df[target_col] < lower_bound), target_col] = lower_bound
+        df.loc[wt_mask & (df[target_col] > upper_bound), target_col] = upper_bound
+    
+    return df
 
 def main():
     """

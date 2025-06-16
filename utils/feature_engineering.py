@@ -86,11 +86,27 @@ def create_lag_features(df, group_col='WorkType', target_col='Hours', lag_days=N
             result_df['Quarter'] = result_df['Date'].dt.quarter
             result_df['Year'] = result_df['Date'].dt.year
             result_df['Day'] = result_df['Date'].dt.day
+            
         # Fill NaN values created by lag/rolling operations
+        # Smart NaN handling based on feature type
         numeric_columns = result_df.select_dtypes(include=[np.number]).columns
         for col in numeric_columns:
             if result_df[col].isna().any():
-                result_df[col] = result_df[col].fillna(0)
+                if 'lag' in col:
+                    # For lag features, forward fill then use median
+                    result_df[col] = result_df.groupby('WorkType')[col].fillna(method='ffill').fillna(
+                        result_df.groupby('WorkType')[col].median()
+                    )
+                elif 'rolling' in col:
+                    # For rolling features, use expanding mean until enough data
+                    result_df[col] = result_df.groupby('WorkType')[col].fillna(
+                        result_df.groupby('WorkType')[col.replace('rolling', 'expanding')].mean()
+                    )
+                else:
+                    # For other features, use median by worktype
+                    result_df[col] = result_df.groupby('WorkType')[col].fillna(
+                        result_df.groupby('WorkType')[col].median()
+                ).fillna(0)  # Final fallback
         
         logger.info(f"✅ Created lag features. Shape: {result_df.shape}")
         logger.info(f"📊 Columns include: Date={('Date' in result_df.columns)}, WorkType={('WorkType' in result_df.columns)}")
@@ -221,6 +237,8 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
         # Pattern features (config-driven)  
         if FEATURE_GROUPS.get('PATTERN_FEATURES', False):
             features.extend(['Quantity_3d_avg'])  # Example from your pattern
+
+            
         
         # Keep original features that might be needed
         original_features = []
@@ -259,7 +277,9 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
     def _add_lag_features(self, df):
         """Add lag features (config-driven)"""
         if FEATURE_GROUPS.get('LAG_FEATURES', False):
-            if 'NoOfMan' in df.columns and 'WorkType' in df.columns:
+            # Support both Hours (new) and NoOfMan (legacy)
+            target_col = 'Hours' if 'Hours' in df.columns else 'NoOfMan'
+            if target_col in df.columns and 'WorkType' in df.columns:
                 df = df.sort_values(['WorkType', 'Date'] if 'Date' in df.columns else ['WorkType'])
                 
                 for col in self.lag_columns:
@@ -370,3 +390,23 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
                 )
 
         return df.fillna(0)
+    
+    def _add_interaction_features(self, df):
+        """Add interaction features for complex patterns"""
+        if FEATURE_GROUPS.get('INTERACTION_FEATURES', False):
+            # DayOfWeek × WorkType interactions (workforce varies by day and type)
+            if 'DayOfWeek' in df.columns and 'WorkType' in df.columns:
+                # Create worktype-specific day patterns
+                for work_type in df['WorkType'].unique():
+                    wt_mask = df['WorkType'] == work_type
+                    df.loc[wt_mask, f'DayPattern_{work_type}'] = df.loc[wt_mask, 'DayOfWeek']
+            
+            # Month × Quantity interaction (seasonal workload)
+            if 'Month' in df.columns and 'Quantity' in df.columns:
+                df['Month_Quantity_interaction'] = df['Month'] * df['Quantity'] / 12
+            
+            # Weekend × WorkType (different weekend patterns per type)
+            if 'IsWeekend' in df.columns and 'Hours' in df.columns:
+                df['Weekend_Hours_ratio'] = df['IsWeekend'] * df['Hours']
+        
+        return df
