@@ -322,10 +322,39 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
                 df['Cumulative_Quantity'] = df['Quantity'].cumsum()
         return df
     
+    # def _add_pattern_features(self, df):
+    #     """Add pattern features (config-driven)"""
+    #     if FEATURE_GROUPS.get('PATTERN_FEATURES', False):
+    #         if 'Quantity' in df.columns:
+    #             df = df.sort_values('Date' if 'Date' in df.columns else df.index)
+    #             df['Quantity_3d_avg'] = df['Quantity'].rolling(window=3, min_periods=1).mean()
+    #     return df
+
     def _add_pattern_features(self, df):
-        """Add pattern features (config-driven)"""
-        if FEATURE_GROUPS.get('PATTERN_FEATURES', False):
-            if 'Quantity' in df.columns:
-                df = df.sort_values('Date' if 'Date' in df.columns else df.index)
-                df['Quantity_3d_avg'] = df['Quantity'].rolling(window=3, min_periods=1).mean()
-        return df
+        """Enhanced pattern features with config-driven logic and punch-code specificity"""
+        df = df.copy()
+
+        # Skip if PATTERN_FEATURES is not explicitly False
+        if FEATURE_GROUPS.get('PATTERN_FEATURES') is not False:
+            return df
+
+        # Config-driven pattern features
+        if 'Quantity' in df.columns:
+            df = df.sort_values('Date' if 'Date' in df.columns else df.index)
+            df['Quantity_3d_avg'] = df['Quantity'].rolling(window=3, min_periods=1).mean()
+
+        # Special features for problematic punch codes
+        for punch_code in [210, 217]:
+            punch_mask = df['punch_code'] == punch_code
+            if punch_mask.any():
+                grouped = df.loc[punch_mask].groupby('punch_code')['hours']
+                df.loc[punch_mask, f'volatility_{punch_code}'] = (
+                    grouped.rolling(7).std().reset_index(0, drop=True)
+                )
+                df.loc[punch_mask, f'stability_{punch_code}'] = (
+                    grouped.rolling(14)
+                    .apply(lambda x: x.std() / (x.mean() + 1e-8))
+                    .reset_index(0, drop=True)
+                )
+
+        return df.fillna(0)

@@ -50,7 +50,7 @@ CACHE_TTL = 3600  # Cache time-to-live in seconds (1 hour)
 DATE_FORMAT = "%Y-%m-%d"
 
 # Performance settings
-CHUNK_SIZE = 10000  # Number of rows to process at once for large datasets
+CHUNK_SIZE = 10000  # Number of rows to process at once for large datasetss
 
 # ==========================================
 # OPTIMIZED MODEL PARAMETERS
@@ -58,13 +58,25 @@ CHUNK_SIZE = 10000  # Number of rows to process at once for large datasets
 
 # OPTIMAL MODEL PARAMETERS - Prevents overfitting while maintaining accuracy
 DEFAULT_MODEL_PARAMS = {
-    "n_estimators": 300,      # ✅ Fewer trees to prevent memorization
-    "max_depth": 6,           # ✅ Shallow trees for generalization
-    "min_samples_split": 10,  # ✅ Conservative splitting
-    "min_samples_leaf": 5,    # ✅ Larger leaves for stability
-    "max_features": "sqrt",   # ✅ Feature subsampling
-    "bootstrap": True,
-    "random_state": 42,
+    # "n_estimators": 300,      # ✅ Fewer trees to prevent memorization
+    # "max_depth": 6,           # ✅ Shallow trees for generalization
+    # "min_samples_split": 10,  # ✅ Conservative splitting
+    # "min_samples_leaf": 5,    # ✅ Larger leaves for stability
+    # "max_features": "sqrt",   # ✅ Feature subsampling
+    # "bootstrap": True,
+    # "random_state": 42,
+
+
+
+    'n_estimators': 400,           # Increased for stability
+    'max_depth': 10,               # Reduced to prevent overfitting
+    'min_samples_split': 15,       # Increased for generalization
+    'min_samples_leaf': 5,         # Increased for smoother predictions
+    'max_features': 0.7,           # More features for complex patterns
+    'bootstrap': True,
+    'random_state': 42,
+    'criterion': 'absolute_error', # Direct MAE optimization
+    'n_jobs': -1
 }
 
 # ==========================================
@@ -84,8 +96,8 @@ FEATURE_GROUPS = {
     'ROLLING_FEATURES': True,       # ✅ Essential for pattern capture  
     'DATE_FEATURES': True,          # ✅ Essential for seasonality
     'CYCLICAL_FEATURES': True,      # ✅ ENABLED - Critical for day/month patterns
-    'TREND_FEATURES': False,        # ❌ Disabled - Can cause overfitting
-    'PATTERN_FEATURES': False,      # ❌ Disabled - Can cause overfitting
+    'TREND_FEATURES': True,        # ❌ Disabled - Can cause overfitting
+    'PATTERN_FEATURES': True,      # ❌ Disabled - Can cause overfitting
 }
 
 # OPTIMIZED LAG CONFIGURATION - Focused on most predictive periods
@@ -231,7 +243,7 @@ PUNCH_CODE_HOURS_PER_WORKER = {
 }
 
 # Enhanced work types for special handling
-ENHANCED_WORK_TYPES = ['206', '213']
+ENHANCED_WORK_TYPES = ['202', '203', '206', '209', '210', '211', '213', '214', '215', '217']
 
 # ==============================================
 # LOGGING SETUP

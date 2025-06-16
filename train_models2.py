@@ -253,6 +253,81 @@ def save_enhanced_models(models, metadata, features, df):
         logger.error(f"❌ Error saving enhanced models: {str(e)}")
         logger.error(traceback.format_exc())
         return False
+    
+def preprocess_by_punch_code(df):
+    """Special handling for problematic punch codes"""
+    df_processed = df.copy()
+    
+    # Punch 210 & 217: Apply log transformation for extreme outliers
+    for punch_code in [210, 217]:
+        mask = df_processed['WorkType'] == punch_code
+        if mask.any():
+            # Log transform to reduce extreme values
+            df_processed.loc[mask, 'Hours'] = np.log1p(df_processed.loc[mask, 'Hours'])
+            
+            # Cap extreme outliers at 99th percentile
+            p99 = df_processed.loc[mask, 'Hours'].quantile(0.99)
+            df_processed.loc[mask, 'Hours'] = np.minimum(
+                df_processed.loc[mask, 'Hours'], p99
+            )
+    
+    return df_processed
+
+def remove_extreme_outliers(X, y):
+    """Aggressive outlier removal for punch codes 210 & 217"""
+    mask = np.ones(len(X), dtype=bool)
+    
+    # Standard outlier removal for most punch codes
+    for punch_code in [202, 203, 206, 209, 211, 213, 214, 215]:
+        punch_mask = X['WorkType'] == punch_code
+        if punch_mask.sum() > 10:
+            Q1 = y[punch_mask].quantile(0.25)
+            Q3 = y[punch_mask].quantile(0.75)
+            IQR = Q3 - Q1
+            lower_bound = Q1 - 1.5 * IQR
+            upper_bound = Q3 + 1.5 * IQR
+            outlier_mask = (y[punch_mask] >= lower_bound) & (y[punch_mask] <= upper_bound)
+            mask[punch_mask] = outlier_mask
+    
+    # AGGRESSIVE outlier removal for 210 & 217
+    for punch_code in [210, 217]:
+        punch_mask = X['WorkType'] == punch_code
+        if punch_mask.sum() > 10:
+            # Remove top and bottom 10% of extreme values
+            lower_bound = y[punch_mask].quantile(0.10)
+            upper_bound = y[punch_mask].quantile(0.90)
+            outlier_mask = (y[punch_mask] >= lower_bound) & (y[punch_mask] <= upper_bound)
+            mask[punch_mask] = outlier_mask
+    
+    return X[mask], y[mask]
+
+# def remove_extreme_outliers(X, y):
+#     """Aggressive outlier removal for punch codes 210 & 217"""
+#     mask = np.ones(len(X), dtype=bool)
+    
+#     # Standard outlier removal for most punch codes
+#     for punch_code in [202, 203, 206, 209, 211, 213, 214, 215]:
+#         punch_mask = X['punch_code'] == punch_code
+#         if punch_mask.sum() > 10:
+#             Q1 = y[punch_mask].quantile(0.25)
+#             Q3 = y[punch_mask].quantile(0.75)
+#             IQR = Q3 - Q1
+#             lower_bound = Q1 - 1.5 * IQR
+#             upper_bound = Q3 + 1.5 * IQR
+#             outlier_mask = (y[punch_mask] >= lower_bound) & (y[punch_mask] <= upper_bound)
+#             mask[punch_mask] = outlier_mask
+    
+#     # AGGRESSIVE outlier removal for 210 & 217
+#     for punch_code in [210, 217]:
+#         punch_mask = X['punch_code'] == punch_code
+#         if punch_mask.sum() > 10:
+#             # Remove top and bottom 10% of extreme values
+#             lower_bound = y[punch_mask].quantile(0.10)
+#             upper_bound = y[punch_mask].quantile(0.90)
+#             outlier_mask = (y[punch_mask] >= lower_bound) & (y[punch_mask] <= upper_bound)
+#             mask[punch_mask] = outlier_mask
+    
+#     return X[mask], y[mask]
 
 def main():
     """
@@ -290,7 +365,8 @@ def main():
             if len(work_data) < 50:
                 logger.warning(f"Skipping {work_type}: Insufficient data ({len(work_data)} records)")
                 continue
-            
+            work_data = preprocess_by_punch_code(work_data)
+
             # Train enhanced model using complete pipeline
             model, model_metadata, selected_features = train_enhanced_model(work_data, work_type)
             
