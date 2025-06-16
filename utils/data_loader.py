@@ -9,7 +9,7 @@ import logging
 import streamlit as st
 from datetime import datetime, timedelta
 import traceback
-from config import MODELS_DIR, DATA_DIR, CACHE_TTL, CHUNK_SIZE
+from config import MODELS_DIR, DATA_DIR, CACHE_TTL, CHUNK_SIZE, ENHANCED_WORK_TYPES
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -329,7 +329,7 @@ def load_enhanced_models():
         input_features = {}
         
         # Load individual enhanced pipeline files
-        punch_codes = ['206', '213']
+        punch_codes = ENHANCED_WORK_TYPES
         
         for punch_code in punch_codes:
             model_file = os.path.join(MODELS_DIR, f'enhanced_model_{punch_code}.pkl')

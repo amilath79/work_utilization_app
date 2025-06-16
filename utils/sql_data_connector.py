@@ -9,7 +9,7 @@ import os
 import logging
 import traceback
 from datetime import datetime
-from config import DATA_DIR, CACHE_TTL, CHUNK_SIZE, SQL_SERVER, SQL_TRUSTED_CONNECTION, SQL_DATABASE_LIVE, SQL_DATABASE
+from config import DATA_DIR, CACHE_TTL, CHUNK_SIZE, SQL_SERVER, SQL_TRUSTED_CONNECTION, SQL_DATABASE_LIVE, SQL_DATABASE, SQL_USERNAME, SQL_PASSWORD
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -622,3 +622,58 @@ def load_demand_with_kpi_data(next_working_day, server=SQL_SERVER, database=SQL_
         logger.error(f"Error loading demand data with KPI: {str(e)}")
         logger.error(traceback.format_exc())
         return None
+    
+
+def load_utilization_vs_prediction(start_date, end_date):
+    query = f"""
+    SELECT 
+        u.Date AS Date,
+        u.PunchCode AS PunchCode,
+        u.Hours AS ActualHours,
+        u.NoOfMan AS ActualNoOfMan,
+        p.Hours AS PredictedHours,
+        p.NoOfMan AS PredictedNoOfMan
+    FROM WorkUtilizationData u
+    INNER JOIN PredictionData p
+        ON u.Date = p.Date AND u.PunchCode = p.PunchCode
+    WHERE u.Date BETWEEN '{start_date}' AND '{end_date}';
+    """
+    try:
+        conn = SQLDataConnector.connect_to_sql(
+                server=SQL_SERVER,
+                database=SQL_DATABASE,
+                username= SQL_USERNAME,
+                password=SQL_PASSWORD,
+                trusted_connection=SQL_TRUSTED_CONNECTION
+            )
+        
+        if conn is None:
+            return None
+        
+        # Extract data to DataFrame
+        df = SQLDataConnector.extract_to_df(query, conn, chunk_size=CHUNK_SIZE)
+        
+        # Close connection
+        conn.close()
+        # Clean numeric strings (replace commas with dots and convert)
+        for col in ['ActualHours', 'ActualNoOfMan', 'PredictedHours', 'PredictedNoOfMan']:
+            df[col] = df[col].astype(str).str.replace(',', '.').astype(float)
+        
+        return df
+
+    except Exception as e:
+        logger.error(f"Error in extract_sql_data: {str(e)}")
+        logger.error(traceback.format_exc())
+        return None
+
+
+    # Clean numeric strings (replace commas with dots and convert)
+    for col in ['ActualHours', 'ActualNoOfMan', 'PredictedHours', 'PredictedNoOfMan']:
+        df[col] = df[col].astype(str).str.replace(',', '.').astype(float)
+    return df
+
+
+
+        
+
+        

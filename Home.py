@@ -48,7 +48,7 @@ def load_data_from_database():
         sql_query = """
         SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, NoRows as Quantity, SystemKPI 
         FROM WorkUtilizationData 
-        WHERE PunchCode IN (206, 213) 
+        WHERE PunchCode IN ('202', '203', '206', '209', '210', '211', '213', '214', '215', '217') 
         AND Hours > 0 
         AND NoOfMan > 0 
         AND SystemHours > 0 

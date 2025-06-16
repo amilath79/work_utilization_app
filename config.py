@@ -68,15 +68,16 @@ DEFAULT_MODEL_PARAMS = {
 
 
 
-    'n_estimators': 400,           # Increased for stability
-    'max_depth': 10,               # Reduced to prevent overfitting
-    'min_samples_split': 15,       # Increased for generalization
-    'min_samples_leaf': 5,         # Increased for smoother predictions
-    'max_features': 0.7,           # More features for complex patterns
+    'n_estimators': 400,           # Keep same - good balance
+    'max_depth': 12,               # Slight increase for workforce patterns
+    'min_samples_split': 8,        # Reduced from 15 - less restrictive
+    'min_samples_leaf': 3,         # Reduced from 5 - capture more patterns
+    'max_features': 0.7,           # Keep same - good for complexity
     'bootstrap': True,
     'random_state': 42,
-    'criterion': 'absolute_error', # Direct MAE optimization
-    'n_jobs': -1
+    'criterion': 'absolute_error', # Keep - direct MAE optimization
+    'n_jobs': -1,
+    'min_impurity_decrease': 0.0001  # NEW - prevents tiny splits
 }
 
 # ==========================================
@@ -101,13 +102,13 @@ FEATURE_GROUPS = {
 }
 
 # OPTIMIZED LAG CONFIGURATION - Focused on most predictive periods
-ESSENTIAL_LAGS = [1, 2, 7, 14, 28]  # Removed 3,21 - reduced complexity, kept monthly
+ESSENTIAL_LAGS = [1, 2, 3, 7, 14, 21, 28]  # Removed 3,21 - reduced complexity, kept monthly
 
 # OPTIMIZED ROLLING WINDOWS - Balanced short/medium term patterns  
-ESSENTIAL_WINDOWS = [7, 14, 30]  # Removed 3 - too noisy, focus on weekly+ patterns
+ESSENTIAL_WINDOWS = [7, 14, 21, 30]  
 
 # OPTIMIZED FEATURE COLUMNS - Hours is most predictive
-LAG_FEATURES_COLUMNS = ['Hours', 'Quantity']  # Removed SystemHours - often redundant
+LAG_FEATURES_COLUMNS =  ['Hours', 'Quantity', 'SystemHours'] # Removed SystemHours - often redundant
 ROLLING_FEATURES_COLUMNS = ['Hours', 'Quantity']  # Removed SystemHours - reduce noise
 
 # ENHANCED CYCLICAL FEATURES - Better workforce pattern capture
@@ -188,7 +189,7 @@ OPTIMIZATION_GRID = {
 # Optimization settings
 OPTIMIZATION_CONFIG = {
     'cv_splits': 5,                     # Cross-validation splits
-    'test_punch_codes': ['206', '213'], # Test on these first (your enhanced codes)
+    'test_punch_codes': ['202', '203', '206', '209', '210', '211', '213', '214', '215', '217'], # Test on these first (your enhanced codes)
     'min_improvement': 0.02,            # Minimum MAE improvement to consider
     'max_combinations': 25,             # Limit total combinations tested
 }

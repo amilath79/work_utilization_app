@@ -66,12 +66,12 @@ def load_enhanced_training_data():
         query = """
         SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, NoRows as Quantity, SystemKPI 
         FROM WorkUtilizationData 
-        WHERE PunchCode IN (206, 213) 
+        WHERE PunchCode IN ('202', '203', '206', '209', '210', '211', '213', '214', '215', '217') 
         AND Hours > 0 
         AND NoOfMan > 0 
         AND SystemHours > 0 
         AND NoRows > 0
-        AND Date < '2025-05-01'
+        AND Date < '2025-05-06'
         ORDER BY Date
         """
         

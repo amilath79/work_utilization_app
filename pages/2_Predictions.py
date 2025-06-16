@@ -280,7 +280,7 @@ def main():
     
     # Get available work types from enhanced models
     if st.session_state.enhanced_models:
-        available_work_types = [wt for wt in ENHANCED_WORK_TYPES if wt in st.session_state.enhanced_models]
+        available_work_types = [wt for wt in ENHANCED_WORK_TYPES if wt in st.session_state.enhanced_models] # 
         st.info(f"Enhanced models available for punch codes: {', '.join(available_work_types)}")
     else:
         available_work_types = []

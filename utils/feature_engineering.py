@@ -266,6 +266,18 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
                     if col in df.columns:
                         for lag in self.lag_days:
                             df[f'{col}_lag_{lag}'] = df.groupby('WorkType')[col].shift(lag)
+            
+            if 'Date' in df.columns:
+                df['DayOfWeek_num'] = df['Date'].dt.dayofweek
+                for col in self.lag_columns:
+                    if col in df.columns:
+                        for weeks_back in [1, 2, 4]:  # Same weekday 1,2,4 weeks ago
+                            df[f'{col}_same_dow_{weeks_back}w'] = (
+                                df.groupby(['WorkType', 'DayOfWeek_num'])[col]
+                                .shift(weeks_back)
+                            )
+                df = df.drop('DayOfWeek_num', axis=1)  # Clean up temp column
+
             else:
                 # For prediction, fill with reasonable defaults
                 for col in self.lag_columns:
