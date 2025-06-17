@@ -632,7 +632,7 @@ def load_utilization_vs_prediction(start_date, end_date):
         u.Hours AS ActualHours,
         u.NoOfMan AS ActualNoOfMan,
         p.Hours AS PredictedHours,
-        p.NoOfMan AS PredictedNoOfMan
+        p.NoOfMan/8 AS PredictedNoOfMan
     FROM WorkUtilizationData u
     INNER JOIN PredictionData p
         ON u.Date = p.Date AND u.PunchCode = p.PunchCode

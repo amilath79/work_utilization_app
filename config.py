@@ -97,20 +97,20 @@ FEATURE_GROUPS = {
     'LAG_FEATURES': True,
     'ROLLING_FEATURES': True,  
     'DATE_FEATURES': True,
-    'CYCLICAL_FEATURES': True,
-    'TREND_FEATURES': True,
+    'CYCLICAL_FEATURES': False,
+    'TREND_FEATURES': False,
     'PATTERN_FEATURES': True,
-    'INTERACTION_FEATURES': True,  # NEW - capture complex relationships
+    'INTERACTION_FEATURES': False,  # NEW - capture complex relationships
 }
 
 # OPTIMIZED LAG CONFIGURATION - Focused on most predictive periods
-ESSENTIAL_LAGS = [1, 2, 3, 7, 14, 21, 28] 
+ESSENTIAL_LAGS = [1, 7, 14, 21] 
 # OPTIMIZED ROLLING WINDOWS - Balanced short/medium term patterns  
-ESSENTIAL_WINDOWS = [7, 14, 21, 30]  
+ESSENTIAL_WINDOWS = [7, 14]  
 
 # OPTIMIZED FEATURE COLUMNS - Hours is most predictive
-LAG_FEATURES_COLUMNS =  ['Hours', 'Quantity', 'SystemHours'] # Removed SystemHours - often redundant
-ROLLING_FEATURES_COLUMNS = ['Hours', 'Quantity']  # Removed SystemHours - reduce noise
+LAG_FEATURES_COLUMNS =  ['Quantity', 'SystemHours'] # Removed SystemHours - often redundant # removed  Hours
+ROLLING_FEATURES_COLUMNS = ['Quantity', 'SystemHours']  # Removed SystemHours - reduce noise # removed Hours
 
 # ENHANCED CYCLICAL FEATURES - Better workforce pattern capture
 CYCLICAL_FEATURES = {

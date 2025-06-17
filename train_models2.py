@@ -124,7 +124,7 @@ def train_enhanced_model(df, work_type):
         
         
         # The pipeline will handle all feature engineering
-        basic_features = ['Date', 'WorkType', 'Quantity', 'SystemHours', 'SystemKPI', 'Hours']
+        basic_features = ['Date', 'WorkType', 'Quantity', 'SystemHours', 'SystemKPI'] #removeh Hours
         available_basic = [f for f in basic_features if f in df.columns]
         X_basic = df[available_basic].copy()
         # …
