@@ -139,55 +139,59 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
         logger.info(f"📊 Config-driven EnhancedFeatureTransformer - Active Feature Groups: {enabled_groups}")
         
     def fit(self, X, y=None):
-        """
-        Fit the transformer (learn feature names from training data)
-        """
-        # Convert to DataFrame if needed
-        if not isinstance(X, pd.DataFrame):
-            X = pd.DataFrame(X)
-            
-        # Store the features we expect to create
+        # ensure DataFrame
+        X = pd.DataFrame(X).copy()
+        # remember how many days back we’ll need
+        self.max_lag = max(self.lag_days or [0])
+        # store the end of each series for each WorkType
+        self._history = (
+            X.sort_values(['WorkType','Date'])
+            .groupby('WorkType')
+            .tail(self.max_lag)
+            .reset_index(drop=True)
+        )
         self.fitted_features_ = self._get_expected_features(X)
-        logger.info(f"EnhancedFeatureTransformer fitted with {len(self.fitted_features_)} features")
-        
         return self
     
     def transform(self, X):
         """
-        Transform the data by applying config-driven enhanced feature engineering
-        Follows the same pattern as your create_enhanced_features function
+        Transform the data by applying config-driven enhanced feature engineering.
+        Prepends the last max_lag rows from fit() so that early lags/windows are correct.
         """
-        # Convert to DataFrame if needed
+        # 1) Ensure DataFrame and reset index
         if not isinstance(X, pd.DataFrame):
             X = pd.DataFrame(X)
-            
-        X_transformed = X.copy()
-        
-        # Apply all feature engineering steps (config-driven)
-        X_transformed = self._add_date_features(X_transformed)
-        X_transformed = self._add_lag_features(X_transformed)
-        X_transformed = self._add_rolling_features(X_transformed)
-        X_transformed = self._add_cyclical_features(X_transformed)
-        X_transformed = self._add_system_features(X_transformed)
-        X_transformed = self._add_trend_features(X_transformed)
-        X_transformed = self._add_pattern_features(X_transformed)
-        
-        # Ensure all expected features are present
-        for feature in self.fitted_features_:
-            if feature not in X_transformed.columns:
-                X_transformed[feature] = 0  # Fill missing features with 0
-        
-            # Step 1: Get model features (exclude pipeline columns)
-            model_features = [col for col in self.fitted_features_ if col in X_transformed.columns]
+        X = X.copy().reset_index(drop=True)
 
-            # Step 2: Get essential pipeline columns (NOT model features)
-            essential_cols = ['WorkType', 'Quantity']
-            preserved_cols = [col for col in essential_cols if col in X_transformed.columns]
+        # 2) Concatenate history (from fit) + new rows
+        #    (history has the last self.max_lag rows per WorkType)
+        full = pd.concat([self._history, X], ignore_index=True)
 
-            # Step 3: Combine without duplicates (preserved first, then model features)
-            all_output_cols = preserved_cols + [col for col in model_features if col not in preserved_cols]
+        # 3) Apply all FE steps to the full series
+        full = self._add_date_features(full)
+        full = self._add_lag_features(full)
+        full = self._add_rolling_features(full)
+        full = self._add_cyclical_features(full)
+        full = self._add_system_features(full)
+        full = self._add_trend_features(full)
+        full = self._add_pattern_features(full)
+        full = self._add_interaction_features(full)
 
-            return X_transformed[all_output_cols].fillna(0)
+        # 4) Extract just the transformed “new” rows
+        transformed = full.iloc[-len(X):].reset_index(drop=True)
+
+        # 5) Ensure every expected feature exists
+        for feat in self.fitted_features_:
+            if feat not in transformed.columns:
+                transformed[feat] = 0.0
+
+        # 6) Preserve raw columns the model may need (e.g. Hours) 
+        essential = [c for c in ['WorkType', 'Quantity', 'Hours'] if c in transformed.columns]
+
+        # 7) Final column ordering: essentials first, then all fitted_features_
+        cols = essential + [f for f in self.fitted_features_ if f not in essential]
+        return transformed[cols].fillna(0)
+
     
     def _get_expected_features(self, X):
         """

@@ -124,30 +124,16 @@ def train_enhanced_model(df, work_type):
         
         
         # The pipeline will handle all feature engineering
-        basic_features = ['Date', 'WorkType', 'Quantity', 'SystemHours', 'SystemKPI']
-        available_basic_features = [f for f in basic_features if f in df.columns]
-        
-        X_basic = df[available_basic_features].copy()
-        
-        logger.info(f"Training with {len(X_basic)} records and {len(available_basic_features)} basic input features")
-
-        # Log active feature groups (same as your create_enhanced_features approach)
-        enabled_groups = [k for k, v in FEATURE_GROUPS.items() if v]
-        logger.info(f"📊 Config-driven training - Active Feature Groups: {enabled_groups}")
-        logger.info(f"📊 Using ESSENTIAL_LAGS: {ESSENTIAL_LAGS}")
-        logger.info(f"📊 Using ESSENTIAL_WINDOWS: {ESSENTIAL_WINDOWS}")
-        
-        # Create COMPLETE pipeline (config-driven)
+        basic_features = ['Date', 'WorkType', 'Quantity', 'SystemHours', 'SystemKPI', 'Hours']
+        available_basic = [f for f in basic_features if f in df.columns]
+        X_basic = df[available_basic].copy()
+        # …
         complete_pipeline = Pipeline([
-            # Step 1: Config-driven Feature Engineering
-            ('feature_engineering', EnhancedFeatureTransformer()),  # No parameters - reads from config
-            
-            # Step 2: Preprocessing (scaling, encoding)
-            # ('preprocessing', StandardScaler()),
-            
-            # Step 3: Model
+            ('feature_engineering', EnhancedFeatureTransformer()),
             ('model', RandomForestRegressor(**DEFAULT_MODEL_PARAMS))
         ])
+        # fit on X_basic (which now includes Hours!)
+        complete_pipeline.fit(X_basic, y)
         
         # Time series cross-validation
         tscv = GapTimeSeriesSplit(n_splits=10, gap=7)  # 10 splits with 7-day gap
@@ -161,12 +147,15 @@ def train_enhanced_model(df, work_type):
             y_train_fold = y[train_idx]
             y_val_fold = y[val_idx]
             
-            print(f'X_train {X_train_fold}')
+            # print(f'X_train {X_train_fold}')
+            # print(f'Y_train {y_train_fold}')
             # Train pipeline on fold
             complete_pipeline.fit(X_train_fold, y_train_fold)
             
             # Predict on validation
             y_pred_fold = complete_pipeline.predict(X_val_fold)
+
+
             
             # Calculate metrics
             fold_mae = mean_absolute_error(y_val_fold, y_pred_fold)
@@ -179,6 +168,13 @@ def train_enhanced_model(df, work_type):
         logger.info("Training final pipeline on all data...")
         complete_pipeline.fit(X_basic, y)
         
+        fe = complete_pipeline.named_steps['feature_engineering']
+        X_fe = fe.transform(X_basic)
+
+        cols = fe._get_expected_features(X_basic)   # or however you compute your feature list
+        X_fe_df = pd.DataFrame(fe.transform(X_basic), columns=cols)
+        # print(f'AAA {X_fe_df.columns.tolist()}')
+
         # Final evaluation
         y_pred_final = complete_pipeline.predict(X_basic)
         final_mae = mean_absolute_error(y, y_pred_final)
@@ -203,7 +199,7 @@ def train_enhanced_model(df, work_type):
             'cv_mae': avg_cv_mae,
             'cv_r2': avg_cv_r2,
             'cv_folds': len(fold_scores),
-            'input_features': available_basic_features,
+            'input_features': basic_features,
             'pipeline_steps': [step[0] for step in complete_pipeline.steps],
             'model_type': 'complete_pipeline',
             'timestamp': datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -215,7 +211,7 @@ def train_enhanced_model(df, work_type):
         logger.info(f"   CV MAE: {avg_cv_mae:.3f}")
         logger.info(f"   MAPE: {mape:.2f}%")
         
-        return complete_pipeline, model_metadata, available_basic_features
+        return complete_pipeline, model_metadata, basic_features
         
     except Exception as e:
         logger.error(f"Error training enhanced model for {work_type}: {str(e)}")

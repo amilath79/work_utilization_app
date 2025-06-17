@@ -49,6 +49,7 @@ CACHE_TTL = 3600  # Cache time-to-live in seconds (1 hour)
 # Date format
 DATE_FORMAT = "%Y-%m-%d"
 
+
 # Performance settings
 CHUNK_SIZE = 10000  # Number of rows to process at once for large datasetss
 
