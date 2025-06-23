@@ -154,24 +154,10 @@ def train_enhanced_model(df, work_type):
         optimized_params = optimize_lightgbm_for_worktype(X_basic, y, work_type)
         validated_params = validate_lightgbm_params({**DEFAULT_MODEL_PARAMS, **optimized_params})
         
-        # Create preprocessing pipeline that handles categorical features
-        categorical_features = ['WorkType']
-        numeric_features = [col for col in basic_features if col not in categorical_features + ['Date']]
-        
-        preprocessor = ColumnTransformer(
-            transformers=[
-                ('cat', LabelEncoder(), categorical_features),     # Convert WorkType to numbers
-                ('num', 'passthrough', numeric_features),          # Keep numeric features as-is
-                ('date', 'passthrough', ['Date'])                  # Keep Date for feature engineering
-            ],
-            remainder='drop'
-        )
-        
         complete_pipeline = Pipeline([
             ('feature_engineering', EnhancedFeatureTransformer()),
-            ('preprocessor', preprocessor),                        # Handle categorical encoding
             ('model', LGBMRegressor(**validated_params))
-        ])  # IMPACT: LightGBM will now handle your lag features and rolling windows more effectively
+        ])
 
         # fit on X_basic (which now includes Hours!)
         complete_pipeline.fit(X_basic, y)

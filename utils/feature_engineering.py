@@ -188,6 +188,10 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
         # 6) Preserve raw columns the model may need (e.g. Hours) 
         essential = [c for c in ['WorkType', 'Quantity', 'Hours'] if c in transformed.columns]
 
+        # 6.5) Encode WorkType if present
+        if 'WorkType' in transformed.columns:
+            transformed['WorkType'] = transformed['WorkType'].astype('category').cat.codes
+
         # 7) Final column ordering: essentials first, then all fitted_features_
         cols = essential + [f for f in self.fitted_features_ if f not in essential]
         return transformed[cols].fillna(0)
