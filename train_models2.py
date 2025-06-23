@@ -35,6 +35,7 @@ import json
 from sklearn.preprocessing import LabelEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
+from lightgbm import early_stopping, log_evaluation
 
 # IMPACT: LightGBM import for superior gradient boosting performance
 
@@ -133,20 +134,23 @@ def load_training_data():
         logger.error(traceback.format_exc())
         return None
 
+# Add these imports at the top of train_models2.py
+from lightgbm import early_stopping, log_evaluation
+
 def train_enhanced_model(df, work_type):
     """
     Train enhanced model using COMPLETE PIPELINE approach with LightGBM
     """
     try:
         logger.info(f"Training enhanced LightGBM model for WorkType {work_type} using complete pipeline")
-        df = detect_and_handle_outliers(df, 'Hours', n_std=4) # Detect OutLiers
+        df = detect_and_handle_outliers(df, 'Hours', n_std=3)  # Changed to 3 for better outlier handling
         y = df['Hours'].values
         
         # Import LightGBM utilities
         from utils.lightgbm_utils import optimize_lightgbm_for_worktype, validate_lightgbm_params
         
         # The pipeline will handle all feature engineering
-        basic_features = ['Date', 'WorkType', 'Quantity', 'SystemHours', 'SystemKPI'] #removeh Hours
+        basic_features = ['Date', 'WorkType', 'Quantity', 'SystemHours', 'SystemKPI']
         available_basic = [f for f in basic_features if f in df.columns]
         X_basic = df[available_basic].copy()
         
@@ -154,55 +158,115 @@ def train_enhanced_model(df, work_type):
         optimized_params = optimize_lightgbm_for_worktype(X_basic, y, work_type)
         validated_params = validate_lightgbm_params({**DEFAULT_MODEL_PARAMS, **optimized_params})
         
-        complete_pipeline = Pipeline([
-            ('feature_engineering', EnhancedFeatureTransformer()),
-            ('model', LGBMRegressor(**validated_params))
-        ])
-
-        # fit on X_basic (which now includes Hours!)
-        complete_pipeline.fit(X_basic, y)
-        
         # Time series cross-validation
-        tscv = GapTimeSeriesSplit(n_splits=10, gap=7)  # 10 splits with 7-day gap
+        tscv = GapTimeSeriesSplit(n_splits=5, gap=14)  # Reduced splits, increased gap
         fold_scores = []
+        train_scores = []  # Track training scores to detect overfitting
         
         logger.info("Performing time series cross-validation...")
         
         for fold, (train_idx, val_idx) in enumerate(tscv.split(X_basic)):
+            # Skip if validation set too small
+            if len(val_idx) < 30:
+                logger.warning(f"Skipping fold {fold+1}: validation set too small ({len(val_idx)} samples)")
+                continue
+                
             X_train_fold = X_basic.iloc[train_idx]
             X_val_fold = X_basic.iloc[val_idx] 
             y_train_fold = y[train_idx]
             y_val_fold = y[val_idx]
             
-            # print(f'X_train {X_train_fold}')
-            # print(f'Y_train {y_train_fold}')
-            # Train pipeline on fold
-            complete_pipeline.fit(X_train_fold, y_train_fold)
+            # Create a NEW pipeline for each fold (important!)
+            fold_pipeline = Pipeline([
+                ('feature_engineering', EnhancedFeatureTransformer()),
+                ('model', LGBMRegressor(**validated_params))
+            ])
             
-            # Predict on validation
-            y_pred_fold = complete_pipeline.predict(X_val_fold)
-
-
+            # Fit feature engineering on training fold
+            feature_eng = fold_pipeline.named_steps['feature_engineering']
+            X_train_transformed = feature_eng.fit_transform(X_train_fold)
+            X_val_transformed = feature_eng.transform(X_val_fold)
+            
+            # Train the model with early stopping
+            lgb_model = fold_pipeline.named_steps['model']
+            lgb_model.fit(
+                X_train_transformed, 
+                y_train_fold,
+                eval_set=[(X_val_transformed, y_val_fold)],
+                callbacks=[
+                    early_stopping(stopping_rounds=20, verbose=False),
+                    log_evaluation(period=0)  # Suppress output
+                ]
+            )
+            
+            # Predict on validation using the fitted model
+            y_pred_val = lgb_model.predict(X_val_transformed)
+            
+            # Also predict on training to check overfitting
+            y_pred_train = lgb_model.predict(X_train_transformed)
             
             # Calculate metrics
-            fold_mae = mean_absolute_error(y_val_fold, y_pred_fold)
-            fold_r2 = r2_score(y_val_fold, y_pred_fold)
-            fold_scores.append({'MAE': fold_mae, 'R2': fold_r2})
+            train_mae = mean_absolute_error(y_train_fold, y_pred_train)
+            val_mae = mean_absolute_error(y_val_fold, y_pred_val)
+            val_r2 = r2_score(y_val_fold, y_pred_val)
             
-            logger.info(f"  Fold {fold+1}: MAE={fold_mae:.3f}, R²={fold_r2:.3f}")
+            # Calculate overfitting ratio
+            overfit_ratio = train_mae / val_mae if val_mae > 0 else 0
+            
+            fold_scores.append({'MAE': val_mae, 'R2': val_r2})
+            train_scores.append({'train_MAE': train_mae, 'overfit_ratio': overfit_ratio})
+            
+            logger.info(f"  Fold {fold+1}: Train MAE={train_mae:.3f}, Val MAE={val_mae:.3f}, "
+                       f"R²={val_r2:.3f}, Overfit Ratio={overfit_ratio:.3f}")
+            
+            # Warning if severe overfitting detected
+            if overfit_ratio < 0.5:
+                logger.warning(f"  ⚠️ Severe overfitting detected in fold {fold+1}")
         
-        # Train final pipeline on all data
+        # Check overall overfitting
+        avg_overfit_ratio = np.mean([s['overfit_ratio'] for s in train_scores]) if train_scores else 1.0
+        avg_cv_r2 = np.mean([score['R2'] for score in fold_scores]) if fold_scores else 0
+        
+        # If still overfitting, increase regularization
+        if avg_overfit_ratio < 0.7 or avg_cv_r2 > 0.95:
+            logger.warning(f"⚠️ Model shows signs of overfitting (avg ratio: {avg_overfit_ratio:.3f}, R²: {avg_cv_r2:.3f})")
+            validated_params['lambda_l1'] *= 2
+            validated_params['lambda_l2'] *= 2
+            validated_params['num_leaves'] = max(10, validated_params.get('num_leaves', 31) // 2)
+            logger.info("  Increased regularization parameters")
+        
+        # Train final pipeline on all data with adjusted parameters
         logger.info("Training final pipeline on all data...")
-        complete_pipeline.fit(X_basic, y)
+        complete_pipeline = Pipeline([
+            ('feature_engineering', EnhancedFeatureTransformer()),
+            ('model', LGBMRegressor(**validated_params))
+        ])
         
+        # For final training, use validation split for early stopping
+        val_size = int(len(X_basic) * 0.2)
+        X_train_final = X_basic.iloc[:-val_size]
+        y_train_final = y[:-val_size]
+        X_val_final = X_basic.iloc[-val_size:]
+        y_val_final = y[-val_size:]
+        
+        # Fit feature engineering on training data
         fe = complete_pipeline.named_steps['feature_engineering']
-        X_fe = fe.transform(X_basic)
-
-        cols = fe._get_expected_features(X_basic)   # or however you compute your feature list
-        X_fe_df = pd.DataFrame(fe.transform(X_basic), columns=cols)
-        # print(f'AAA {X_fe_df.columns.tolist()}')
-
-        # Final evaluation
+        X_train_transformed_final = fe.fit_transform(X_train_final)
+        X_val_transformed_final = fe.transform(X_val_final)
+        
+        # Train model with early stopping
+        final_model = complete_pipeline.named_steps['model']
+        final_model.fit(
+            X_train_transformed_final,
+            y_train_final,
+            eval_set=[(X_val_transformed_final, y_val_final)],
+            callbacks=[
+                early_stopping(stopping_rounds=20, verbose=True),
+                log_evaluation(period=10)
+            ]
+        )
+        
+        # Final evaluation on ALL data
         y_pred_final = complete_pipeline.predict(X_basic)
         final_mae = mean_absolute_error(y, y_pred_final)
         final_r2 = r2_score(y, y_pred_final)
@@ -212,8 +276,8 @@ def train_enhanced_model(df, work_type):
         mape = np.mean(np.abs((y - y_pred_final) / np.where(y == 0, 1, y))) * 100
         
         # Calculate average CV metrics
-        avg_cv_mae = np.mean([score['MAE'] for score in fold_scores])
-        avg_cv_r2 = np.mean([score['R2'] for score in fold_scores])
+        avg_cv_mae = np.mean([score['MAE'] for score in fold_scores]) if fold_scores else final_mae
+        avg_cv_r2 = np.mean([score['R2'] for score in fold_scores]) if fold_scores else final_r2
         
         # Create metadata
         model_metadata = {
@@ -229,17 +293,19 @@ def train_enhanced_model(df, work_type):
             'input_features': basic_features,
             'pipeline_steps': [step[0] for step in complete_pipeline.steps],
             'model_type': 'complete_pipeline',
-            'timestamp': datetime.now().strftime('%Y%m%d_%H%M%S')
+            'timestamp': datetime.now().strftime('%Y%m%d_%H%M%S'),
+            'regularization_applied': avg_overfit_ratio < 0.7 or avg_cv_r2 > 0.95
         }
         
         # Extract LightGBM-specific information
         lgb_model = complete_pipeline.named_steps['model']
-        n_estimators_used = getattr(lgb_model, 'best_iteration', lgb_model.n_estimators)
+        n_estimators_used = getattr(lgb_model, 'best_iteration_', lgb_model.n_estimators)
         
         logger.info(f"✅ Enhanced LightGBM pipeline trained for {work_type}")
         logger.info(f"   Final MAE: {final_mae:.3f}")
         logger.info(f"   Final R²: {final_r2:.3f}")
         logger.info(f"   CV MAE: {avg_cv_mae:.3f}")
+        logger.info(f"   CV R²: {avg_cv_r2:.3f}")
         logger.info(f"   MAPE: {mape:.2f}%")
         logger.info(f"   Trees used: {n_estimators_used}/{lgb_model.n_estimators}")
         
@@ -249,6 +315,7 @@ def train_enhanced_model(df, work_type):
         logger.error(f"Error training enhanced model for {work_type}: {str(e)}")
         logger.error(traceback.format_exc())
         return None, None, None
+
 
 def save_enhanced_models(models, metadata, features, df):
     """Save enhanced models and metadata"""
@@ -345,34 +412,6 @@ def remove_extreme_outliers(X, y):
             mask[punch_mask] = outlier_mask
     
     return X[mask], y[mask]
-
-# def remove_extreme_outliers(X, y):
-#     """Aggressive outlier removal for punch codes 210 & 217"""
-#     mask = np.ones(len(X), dtype=bool)
-    
-#     # Standard outlier removal for most punch codes
-#     for punch_code in [202, 203, 206, 209, 211, 213, 214, 215]:
-#         punch_mask = X['punch_code'] == punch_code
-#         if punch_mask.sum() > 10:
-#             Q1 = y[punch_mask].quantile(0.25)
-#             Q3 = y[punch_mask].quantile(0.75)
-#             IQR = Q3 - Q1
-#             lower_bound = Q1 - 1.5 * IQR
-#             upper_bound = Q3 + 1.5 * IQR
-#             outlier_mask = (y[punch_mask] >= lower_bound) & (y[punch_mask] <= upper_bound)
-#             mask[punch_mask] = outlier_mask
-    
-#     # AGGRESSIVE outlier removal for 210 & 217
-#     for punch_code in [210, 217]:
-#         punch_mask = X['punch_code'] == punch_code
-#         if punch_mask.sum() > 10:
-#             # Remove top and bottom 10% of extreme values
-#             lower_bound = y[punch_mask].quantile(0.10)
-#             upper_bound = y[punch_mask].quantile(0.90)
-#             outlier_mask = (y[punch_mask] >= lower_bound) & (y[punch_mask] <= upper_bound)
-#             mask[punch_mask] = outlier_mask
-    
-#     return X[mask], y[mask]
 
 
 def detect_and_handle_outliers(df, target_col='Hours', n_std=4):

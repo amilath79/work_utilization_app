@@ -78,8 +78,17 @@ def validate_lightgbm_params(params):
     # Suppress verbose output by default
     if 'verbosity' not in validated_params:
         validated_params['verbosity'] = -1
+
+    validated_params['max_depth'] = min(validated_params.get('max_depth', 8), 8)
+    validated_params['num_leaves'] = min(validated_params.get('num_leaves', 31), 31)
+    validated_params['min_child_samples'] = max(validated_params.get('min_child_samples', 20), 30)
+    
+    # Force stronger regularization
+    validated_params['lambda_l1'] = max(validated_params.get('lambda_l1', 0.1), 0.5)
+    validated_params['lambda_l2'] = max(validated_params.get('lambda_l2', 0.1), 0.5)
     
     logger.info(f"Validated LightGBM parameters for workforce prediction")
+    
     return validated_params
 
 def get_feature_importance_lightgbm(model, feature_names, importance_type='gain'):
@@ -167,85 +176,95 @@ def lightgbm_cross_validate_fold(model, X_train, X_val, y_train, y_val):
 
 def optimize_lightgbm_for_worktype(X, y, work_type):
     """
-    Optimize LightGBM parameters for specific work type
-    
-    Parameters:
-    -----------
-    X : array-like
-        Feature matrix
-    y : array-like
-        Target values
-    work_type : str
-        Work type identifier
-        
-    Returns:
-    --------
-    dict
-        Optimized parameters for the work type
+    Optimize LightGBM parameters for specific work type with anti-overfitting focus
     """
     try:
-        # Base parameters
+        # Base parameters with strong regularization
         base_params = {
             'objective': 'regression',
             'metric': ['mae', 'rmse'],
             'boosting_type': 'gbdt',
             'random_state': 42,
             'verbosity': -1,
-            'n_jobs': -1
+            'n_jobs': -1,
+            'force_col_wise': True  # Better performance for many features
         }
         
         # Adjust parameters based on data size
         n_samples, n_features = X.shape
         
         if n_samples < 1000:
-            # Small dataset - prevent overfitting
+            # Small dataset - aggressive anti-overfitting
             base_params.update({
-                'num_leaves': 20,
-                'learning_rate': 0.1,
-                'min_child_samples': 10,
-                'feature_fraction': 0.7,
-                'bagging_fraction': 0.7
+                'num_leaves': 15,           # Very simple trees
+                'learning_rate': 0.05,      # Conservative learning
+                'min_child_samples': 20,    # Large leaves
+                'feature_fraction': 0.5,    # High randomness
+                'bagging_fraction': 0.6,    
+                'bagging_freq': 1,
+                'lambda_l1': 1.0,           # Strong L1
+                'lambda_l2': 1.0,           # Strong L2
+                'min_gain_to_split': 0.02,  # High threshold
+                'max_depth': 5              # Limit depth
             })
         elif n_samples < 5000:
             # Medium dataset - balanced approach
             base_params.update({
-                'num_leaves': 35,
-                'learning_rate': 0.08,
-                'min_child_samples': 15,
-                'feature_fraction': 0.8,
-                'bagging_fraction': 0.8
+                'num_leaves': 25,           # Moderate complexity
+                'learning_rate': 0.03,      
+                'min_child_samples': 25,    
+                'feature_fraction': 0.6,    
+                'bagging_fraction': 0.7,
+                'bagging_freq': 1,
+                'lambda_l1': 0.5,           
+                'lambda_l2': 0.5,
+                'min_gain_to_split': 0.01,
+                'max_depth': 8
             })
         else:
-            # Large dataset - can handle more complexity
+            # Large dataset - still conservative
             base_params.update({
-                'num_leaves': 50,
-                'learning_rate': 0.05,
-                'min_child_samples': 20,
-                'feature_fraction': 0.9,
-                'bagging_fraction': 0.9
+                'num_leaves': 31,           # Standard complexity
+                'learning_rate': 0.02,      # Very slow learning
+                'min_child_samples': 30,    
+                'feature_fraction': 0.7,    
+                'bagging_fraction': 0.8,
+                'bagging_freq': 1,
+                'lambda_l1': 0.3,
+                'lambda_l2': 0.3,
+                'min_gain_to_split': 0.005,
+                'max_depth': 10
             })
         
-        # Add regularization based on feature count
+        # Additional regularization based on feature count
         if n_features > 50:
-            base_params['lambda_l1'] = 0.1
-            base_params['lambda_l2'] = 0.1
-        else:
-            base_params['lambda_l1'] = 0.05
-            base_params['lambda_l2'] = 0.05
+            base_params['feature_fraction'] = max(0.4, base_params['feature_fraction'] - 0.1)
+            base_params['lambda_l1'] = base_params['lambda_l1'] * 1.5
+            base_params['lambda_l2'] = base_params['lambda_l2'] * 1.5
+            base_params['path_smooth'] = 1.0  # Extra smoothing for many features
         
-        logger.info(f"Optimized LightGBM parameters for {work_type} "
+        # Add data-dependent parameters
+        base_params['min_data_per_group'] = max(100, n_samples // 100)
+        base_params['cat_smooth'] = max(10, n_samples // 1000)
+        
+        logger.info(f"Optimized anti-overfitting LightGBM parameters for {work_type} "
                    f"(samples: {n_samples}, features: {n_features})")
         
         return base_params
         
     except Exception as e:
         logger.error(f"Error optimizing LightGBM for {work_type}: {str(e)}")
-        # Return safe defaults
+        # Return safe anti-overfitting defaults
         return {
             'objective': 'regression',
             'metric': 'mae',
-            'num_leaves': 31,
-            'learning_rate': 0.1,
+            'num_leaves': 20,
+            'learning_rate': 0.05,
+            'min_child_samples': 30,
+            'feature_fraction': 0.6,
+            'bagging_fraction': 0.7,
+            'lambda_l1': 0.5,
+            'lambda_l2': 0.5,
             'random_state': 42,
             'verbosity': -1
         }
