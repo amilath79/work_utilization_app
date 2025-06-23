@@ -4,6 +4,21 @@ Enterprise-Grade Time Series Model Training with Advanced Feature Engineering
 Uses Complete Pipeline Approach Only
 """
 
+# import pandas as pd
+# import numpy as np
+# from datetime import datetime
+# import pickle
+# import os
+# import logging
+# import traceback
+# from sklearn.ensemble import RandomForestRegressor
+# from sklearn.preprocessing import StandardScaler
+# from sklearn.pipeline import Pipeline
+# from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+# from sklearn.model_selection import TimeSeriesSplit
+# import json
+
+
 import pandas as pd
 import numpy as np
 from datetime import datetime
@@ -11,12 +26,17 @@ import pickle
 import os
 import logging
 import traceback
-from sklearn.ensemble import RandomForestRegressor
+from lightgbm import LGBMRegressor                    # Replace RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import TimeSeriesSplit
 import json
+from sklearn.preprocessing import LabelEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler
+
+# IMPACT: LightGBM import for superior gradient boosting performance
 
 
 
@@ -115,23 +135,44 @@ def load_training_data():
 
 def train_enhanced_model(df, work_type):
     """
-    Train enhanced model using COMPLETE PIPELINE approach
+    Train enhanced model using COMPLETE PIPELINE approach with LightGBM
     """
     try:
-        logger.info(f"Training enhanced model for WorkType {work_type} using complete pipeline")
+        logger.info(f"Training enhanced LightGBM model for WorkType {work_type} using complete pipeline")
         df = detect_and_handle_outliers(df, 'Hours', n_std=4) # Detect OutLiers
         y = df['Hours'].values
         
+        # Import LightGBM utilities
+        from utils.lightgbm_utils import optimize_lightgbm_for_worktype, validate_lightgbm_params
         
         # The pipeline will handle all feature engineering
         basic_features = ['Date', 'WorkType', 'Quantity', 'SystemHours', 'SystemKPI'] #removeh Hours
         available_basic = [f for f in basic_features if f in df.columns]
         X_basic = df[available_basic].copy()
-        # …
+        
+        # Optimize LightGBM parameters for this specific work type
+        optimized_params = optimize_lightgbm_for_worktype(X_basic, y, work_type)
+        validated_params = validate_lightgbm_params({**DEFAULT_MODEL_PARAMS, **optimized_params})
+        
+        # Create preprocessing pipeline that handles categorical features
+        categorical_features = ['WorkType']
+        numeric_features = [col for col in basic_features if col not in categorical_features + ['Date']]
+        
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ('cat', LabelEncoder(), categorical_features),     # Convert WorkType to numbers
+                ('num', 'passthrough', numeric_features),          # Keep numeric features as-is
+                ('date', 'passthrough', ['Date'])                  # Keep Date for feature engineering
+            ],
+            remainder='drop'
+        )
+        
         complete_pipeline = Pipeline([
             ('feature_engineering', EnhancedFeatureTransformer()),
-            ('model', RandomForestRegressor(**DEFAULT_MODEL_PARAMS))
-        ])
+            ('preprocessor', preprocessor),                        # Handle categorical encoding
+            ('model', LGBMRegressor(**validated_params))
+        ])  # IMPACT: LightGBM will now handle your lag features and rolling windows more effectively
+
         # fit on X_basic (which now includes Hours!)
         complete_pipeline.fit(X_basic, y)
         
@@ -205,11 +246,16 @@ def train_enhanced_model(df, work_type):
             'timestamp': datetime.now().strftime('%Y%m%d_%H%M%S')
         }
         
-        logger.info(f"✅ Enhanced complete pipeline trained for {work_type}")
+        # Extract LightGBM-specific information
+        lgb_model = complete_pipeline.named_steps['model']
+        n_estimators_used = getattr(lgb_model, 'best_iteration', lgb_model.n_estimators)
+        
+        logger.info(f"✅ Enhanced LightGBM pipeline trained for {work_type}")
         logger.info(f"   Final MAE: {final_mae:.3f}")
         logger.info(f"   Final R²: {final_r2:.3f}")
         logger.info(f"   CV MAE: {avg_cv_mae:.3f}")
         logger.info(f"   MAPE: {mape:.2f}%")
+        logger.info(f"   Trees used: {n_estimators_used}/{lgb_model.n_estimators}")
         
         return complete_pipeline, model_metadata, basic_features
         

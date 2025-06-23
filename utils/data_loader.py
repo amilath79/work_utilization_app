@@ -313,13 +313,15 @@ def export_predictions(predictions, file_path):
 def load_enhanced_models():
     """
     Load enhanced complete pipeline models trained by train_models2.py
-    These pipelines include: Feature Engineering -> Preprocessing -> Model
+    These pipelines include: Feature Engineering -> Preprocessing -> LightGBM Model
     
     Returns:
     --------
     tuple
         (models_dict, metadata_dict, input_features_dict)
     """
+
+# IMPACT: Updated documentation to reflect LightGBM usage
     try:
         import glob
         import json
