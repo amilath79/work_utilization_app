@@ -385,9 +385,9 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
 
         # Special features for problematic punch codes
         for punch_code in [210, 217]:
-            punch_mask = df['punch_code'] == punch_code
+            punch_mask = df['WorkType'] == punch_code
             if punch_mask.any():
-                grouped = df.loc[punch_mask].groupby('punch_code')['hours']
+                grouped = df.loc[punch_mask].groupby('WorkType')['hours']
                 df.loc[punch_mask, f'volatility_{punch_code}'] = (
                     grouped.rolling(7).std().reset_index(0, drop=True)
                 )

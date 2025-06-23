@@ -77,19 +77,18 @@ DEFAULT_MODEL_PARAMS = {
     'objective': 'regression',
     'metric': ['mae', 'rmse'],
     'boosting_type': 'gbdt',
-    'num_leaves': 50,              # Optimized for your feature count
-    'learning_rate': 0.05,         # Conservative for stability
-    'feature_fraction': 0.8,       # Feature sampling (like max_features)
-    'bagging_fraction': 0.8,       # Row sampling (like bootstrap)
+    'num_leaves': 50,
+    'learning_rate': 0.05,
+    'feature_fraction': 0.8,
+    'bagging_fraction': 0.8,
     'bagging_freq': 5,
-    'min_child_samples': 20,       # Equivalent to min_samples_leaf
-    'lambda_l1': 0.1,              # L1 regularization
-    'lambda_l2': 0.1,              # L2 regularization
+    'min_child_samples': 20,
+    'lambda_l1': 0.1,
+    'lambda_l2': 0.1,
     'random_state': 42,
     'n_jobs': -1,
-    'verbosity': -1,               # Suppress warnings
-    'early_stopping_rounds': 50,
-    'n_estimators': 400            # Same as RF for fair comparison
+    'verbosity': -1,
+    'n_estimators': 500
 }
 
 # IMPACT: Expected 10-20% accuracy improvement, better handling of workforce patterns
@@ -110,16 +109,16 @@ FEATURE_GROUPS = {
     'LAG_FEATURES': True,
     'ROLLING_FEATURES': True,  
     'DATE_FEATURES': True,
-    'CYCLICAL_FEATURES': True,
+    'CYCLICAL_FEATURES': False,
     'TREND_FEATURES': False,
-    'PATTERN_FEATURES': True,
+    'PATTERN_FEATURES': False,
     'INTERACTION_FEATURES': False,  # NEW - capture complex relationships
 }
 
 # OPTIMIZED LAG CONFIGURATION - Focused on most predictive periods
-ESSENTIAL_LAGS = [1, 7, 14, 21, 30] 
+ESSENTIAL_LAGS = [1, 7] #, 14, 21, 30
 # OPTIMIZED ROLLING WINDOWS - Balanced short/medium term patterns  
-ESSENTIAL_WINDOWS = [7, 14, 30]  
+ESSENTIAL_WINDOWS = [7, 14]  # 30
 
 # OPTIMIZED FEATURE COLUMNS - Hours is most predictive
 LAG_FEATURES_COLUMNS =  ['Quantity', 'SystemHours'] # Removed SystemHours - often redundant # removed  Hours

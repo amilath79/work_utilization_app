@@ -365,9 +365,9 @@ def main():
         pipeline = st.session_state.enhanced_models[work_type]
         
         # Check what features the RandomForest expects
-        rf_model = pipeline.named_steps['model']
+        lgb_model = pipeline.named_steps['model']
         st.write("**Model expects these features:**")
-        st.write(rf_model.feature_names_in_[:10])  # First 10 features
+        st.write(lgb_model.feature_names_in_[:10]) # First 10 features
         
         # Create sample data and check what transformer produces
         sample_data = st.session_state.enhanced_df[
