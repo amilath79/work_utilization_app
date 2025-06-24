@@ -74,6 +74,7 @@ CHUNK_SIZE = 10000  # Number of rows to process at once for large datasetss
 
 # LIGHTGBM OPTIMAL PARAMETERS - Tuned for workforce prediction accuracy
 DEFAULT_MODEL_PARAMS = {
+<<<<<<< HEAD
     'objective': 'regression',
     'metric': ['mae', 'rmse'],
     'boosting_type': 'gbdt',
@@ -94,6 +95,28 @@ DEFAULT_MODEL_PARAMS = {
     'early_stopping_rounds': 30,   # Reduced from 50 - stop earlier
     'n_estimators': 300            # Reduced from 400 - fewer trees
 }
+=======
+    'n_estimators': 1000,          # Increased from current value
+    'learning_rate': 0.01,         # Lower learning rate for better accuracy
+    'num_leaves': 31,              # Standard value
+    'max_depth': -1,               # No limit
+    'min_child_samples': 20,       # Prevent overfitting
+    'subsample': 0.8,              # Row sampling
+    'colsample_bytree': 0.8,       # Column sampling
+    'reg_alpha': 0.1,              # L1 regularization
+    'reg_lambda': 0.1,             # L2 regularization
+    'random_state': 42,
+    'n_jobs': 1,                   # For Windows compatibility
+    'verbose': -1,
+    'metric': 'rmse',
+    'importance_type': 'gain',
+    'min_gain_to_split': 0.01,     # Minimum gain to make a split
+    'min_data_in_bin': 5,          # Minimum data in bin
+    'path_smooth': 1.0             # Smoothing for tree paths
+}
+
+
+>>>>>>> 7f9e72d (2025-06-23  05 commit)
 # IMPACT: Expected 10-20% accuracy improvement, better handling of workforce patterns
 
 # ==========================================
@@ -124,7 +147,7 @@ ESSENTIAL_LAGS = [1, 7, 14] #, 14, 21, 30
 ESSENTIAL_WINDOWS = [7, 14]  # 30
 
 # OPTIMIZED FEATURE COLUMNS - Hours is most predictive
-LAG_FEATURES_COLUMNS =  ['Quantity', 'SystemHours'] # Removed SystemHours - often redundant # removed  Hours
+LAG_FEATURES_COLUMNS =  ['Quantity' , 'SystemHours'] # Removed SystemHours - often redundant # removed  Hours
 ROLLING_FEATURES_COLUMNS = ['Quantity', 'SystemHours']  # Removed SystemHours - reduce noise # removed Hours
 
 # ENHANCED CYCLICAL FEATURES - Better workforce pattern capture
@@ -157,8 +180,8 @@ OPTIMIZATION_HISTORY = {
     'last_optimized': '2025-06-12',
     'target_metrics': {
         'mae_target': 0.5,
-        'r2_target': 0.85,
-        'mape_target': 10.0
+        'r2_target': 0.7,
+        'mape_target': 15.0
     },
     'current_performance': {
         'mae': None,  # Will be updated after training

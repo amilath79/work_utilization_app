@@ -127,6 +127,7 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
     
     def __init__(self):
         # Read parameters from config file (same as your approach)
+        self.target_history_ = None
         self.lag_days = ESSENTIAL_LAGS if FEATURE_GROUPS.get('LAG_FEATURES', False) else []
         self.rolling_windows = ESSENTIAL_WINDOWS if FEATURE_GROUPS.get('ROLLING_FEATURES', False) else []
         self.lag_columns = LAG_FEATURES_COLUMNS if hasattr(config, 'LAG_FEATURES_COLUMNS') else ['Hours']
@@ -141,6 +142,15 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         # ensure DataFrame
         X = pd.DataFrame(X).copy()
+
+        # If y is provided, store it for creating target lags
+        if y is not None:
+            self.target_history_ = pd.DataFrame({
+                'WorkType': X['WorkType'] if 'WorkType' in X.columns else 0,
+                'Date': X['Date'] if 'Date' in X.columns else range(len(y)),
+                'Hours': y
+            })
+
         # remember how many days back we’ll need
         self.max_lag = max(self.lag_days or [0])
         # store the end of each series for each WorkType
@@ -162,6 +172,18 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
         if not isinstance(X, pd.DataFrame):
             X = pd.DataFrame(X)
         X = X.copy().reset_index(drop=True)
+
+                # If we have target history, add it temporarily for lag creation
+        if self.target_history_ is not None and 'Hours' not in X.columns:
+            # Merge target history with X based on WorkType and Date
+            X = X.merge(
+                self.target_history_[['WorkType', 'Date', 'Hours']], 
+                on=['WorkType', 'Date'], 
+                how='left'
+            )
+            target_was_added = True
+        else:
+            target_was_added = False
 
         # 2) Concatenate history (from fit) + new rows
         #    (history has the last self.max_lag rows per WorkType)
@@ -194,6 +216,10 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
 
         # 7) Final column ordering: essentials first, then all fitted_features_
         cols = essential + [f for f in self.fitted_features_ if f not in essential]
+
+        if target_was_added and 'Hours' in transformed.columns:
+            transformed = transformed.drop('Hours', axis=1)
+        
         return transformed[cols].fillna(0)
 
     
@@ -279,7 +305,7 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
                 df['Quarter'] = current_date.quarter
                 df['Year'] = current_date.year
                 df['Day'] = df['Date'].dt.day
-            
+        print(f'Features XXXX - {df.columns}')    
         return df
     
     def _add_lag_features(self, df):
