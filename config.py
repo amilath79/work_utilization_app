@@ -74,28 +74,6 @@ CHUNK_SIZE = 10000  # Number of rows to process at once for large datasetss
 
 # LIGHTGBM OPTIMAL PARAMETERS - Tuned for workforce prediction accuracy
 DEFAULT_MODEL_PARAMS = {
-<<<<<<< HEAD
-    'objective': 'regression',
-    'metric': ['mae', 'rmse'],
-    'boosting_type': 'gbdt',
-    'num_leaves': 31,              # Reduced from 50 - prevents complex trees
-    'learning_rate': 0.03,         # Reduced from 0.05 - slower learning
-    'feature_fraction': 0.6,       # Reduced from 0.8 - more randomness
-    'bagging_fraction': 0.7,       # Reduced from 0.8 - more randomness
-    'bagging_freq': 1,             # Changed from 5 - bagging every iteration
-    'min_child_samples': 30,       # Increased from 20 - larger leaf nodes
-    'lambda_l1': 0.5,              # Increased from 0.1 - stronger L1
-    'lambda_l2': 0.5,              # Increased from 0.1 - stronger L2
-    'min_gain_to_split': 0.01,     # NEW - minimum gain to make split
-    'max_bin': 255,                # NEW - default binning
-    'min_data_in_bin': 5,          # NEW - minimum data in bins
-    'random_state': 42,
-    'n_jobs': -1,
-    'verbosity': -1,               
-    'early_stopping_rounds': 30,   # Reduced from 50 - stop earlier
-    'n_estimators': 300            # Reduced from 400 - fewer trees
-}
-=======
     'n_estimators': 1000,          # Increased from current value
     'learning_rate': 0.01,         # Lower learning rate for better accuracy
     'num_leaves': 31,              # Standard value
@@ -116,7 +94,6 @@ DEFAULT_MODEL_PARAMS = {
 }
 
 
->>>>>>> 7f9e72d (2025-06-23  05 commit)
 # IMPACT: Expected 10-20% accuracy improvement, better handling of workforce patterns
 
 # ==========================================
@@ -142,7 +119,7 @@ FEATURE_GROUPS = {
 }
 
 # OPTIMIZED LAG CONFIGURATION - Focused on most predictive periods
-ESSENTIAL_LAGS = [1, 7, 14] #, 14, 21, 30
+ESSENTIAL_LAGS = [1, 7] #, 14, 21, 30
 # OPTIMIZED ROLLING WINDOWS - Balanced short/medium term patterns  
 ESSENTIAL_WINDOWS = [7, 14]  # 30
 
