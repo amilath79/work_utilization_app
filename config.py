@@ -27,6 +27,7 @@ MODELS_DIR = "C:/forlogssystems/Models"
 DATA_DIR = os.path.join(BASE_DIR, "data")
 LOGS_DIR = os.path.join(BASE_DIR, "logs")
 
+
 APP_ICON = os.path.join(BASE_DIR, "assets", "2.png")
 
 # Model and data configurations
@@ -38,6 +39,7 @@ MODEL_CONFIGS = {
     'nn_scalers': 'work_utilization_nn_scalers.pkl',
     'nn_metrics': 'work_utilization_nn_metrics.pkl'
 }
+
 
 # Ensure directories exist
 for directory in [MODELS_DIR, DATA_DIR, LOGS_DIR]:
@@ -75,14 +77,14 @@ CHUNK_SIZE = 10000  # Number of rows to process at once for large datasetss
 # LIGHTGBM OPTIMAL PARAMETERS - Tuned for workforce prediction accuracy
 DEFAULT_MODEL_PARAMS = {
     'n_estimators': 1000,          # Increased from current value
-    'learning_rate': 0.01,         # Lower learning rate for better accuracy
-    'num_leaves': 31,              # Standard value
+    'learning_rate': 0.05,         # Lower learning rate for better accuracy
+    'num_leaves': 100,              # Standard value
     'max_depth': -1,               # No limit
-    'min_child_samples': 20,       # Prevent overfitting
+    'min_child_samples': 2,       # Prevent overfitting
     'subsample': 0.8,              # Row sampling
     'colsample_bytree': 0.8,       # Column sampling
-    'reg_alpha': 0.1,              # L1 regularization
-    'reg_lambda': 0.1,             # L2 regularization
+    'reg_alpha': 0.01,              # L1 regularization
+    'reg_lambda': 0.01,             # L2 regularization
     'random_state': 42,
     'n_jobs': 1,                   # For Windows compatibility
     'verbose': -1,
@@ -110,22 +112,25 @@ TARGET_COLUMN = 'Hours'  # Primary target for prediction
 # OPTIMAL FEATURE CONFIGURATION - Tested for MAE < 0.5, R² > 0.85
 FEATURE_GROUPS = {
     'LAG_FEATURES': True,
-    'ROLLING_FEATURES': True,  
+    'ROLLING_FEATURES': True,
     'DATE_FEATURES': True,
-    'CYCLICAL_FEATURES': False,
-    'TREND_FEATURES': False,
-    'PATTERN_FEATURES': False,
-    'INTERACTION_FEATURES': False,  # NEW - capture complex relationships
+    'CYCLICAL_FEATURES': True,
+    'PRODUCTIVITY_FEATURES': True,
+    'TREND_FEATURES': True,
+    'PATTERN_FEATURES': True,
+    'INTERACTION_FEATURES': True,
 }
 
 # OPTIMIZED LAG CONFIGURATION - Focused on most predictive periods
-ESSENTIAL_LAGS = [1, 7] #, 14, 21, 30
+ESSENTIAL_LAGS = [1, 7, 14, 21, 30]
 # OPTIMIZED ROLLING WINDOWS - Balanced short/medium term patterns  
-ESSENTIAL_WINDOWS = [7, 14]  # 30
+ESSENTIAL_WINDOWS = [7, 14, 28]  # 30
 
 # OPTIMIZED FEATURE COLUMNS - Hours is most predictive
-LAG_FEATURES_COLUMNS =  ['Quantity' , 'SystemHours'] # Removed SystemHours - often redundant # removed  Hours
-ROLLING_FEATURES_COLUMNS = ['Quantity', 'SystemHours']  # Removed SystemHours - reduce noise # removed Hours
+
+LAG_FEATURES_COLUMNS = ['Hours', 'Quantity', 'SystemHours']  # Added 'Hours' at the beginning
+ROLLING_FEATURES_COLUMNS = ['Hours', 'Quantity', 'SystemHours']  # Added 'Hours' at the beginning
+
 
 # ENHANCED CYCLICAL FEATURES - Better workforce pattern capture
 CYCLICAL_FEATURES = {
@@ -262,6 +267,8 @@ PUNCH_CODE_HOURS_PER_WORKER = {
 # Enhanced work types for special handling
 ENHANCED_WORK_TYPES = ['202', '203', '206', '209', '210', '211', '213', '214', '215', '217'] # 
 
+
+
 # ==============================================
 # LOGGING SETUP
 # ==============================================
@@ -277,6 +284,9 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s | %(name)s | %(levelname)s | %(message)s'
 )
+
+
+
 
 # ==============================================
 # ENTERPRISE CONFIGURATION
@@ -380,6 +390,9 @@ def print_config_summary():
     print(f"   All Punch Codes: {list(PUNCH_CODE_WORKING_RULES.keys())}")
     
     print("="*60)
+
+
+
 
 # Auto-validate configuration on import
 if __name__ == "__main__":

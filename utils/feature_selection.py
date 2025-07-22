@@ -132,3 +132,14 @@ def reduce_features_gradually(X, y, feature_names, initial_features=50, min_feat
 # from utils.feature_selection import select_features_by_importance, reduce_features_gradually
 
 # IMPACT: Reduces overfitting by using only the most predictive features
+
+
+from sklearn.base import BaseEstimator, TransformerMixin
+
+class FeatureSelector(BaseEstimator, TransformerMixin):
+    def __init__(self, features):
+        self.features = features
+    def fit(self, X, y=None):
+        return self
+    def transform(self, X):
+        return X[self.features]
