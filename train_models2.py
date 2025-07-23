@@ -15,7 +15,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 
 from utils.feature_engineering import EnhancedFeatureTransformer
 from utils.sql_data_connector import extract_sql_data
-from config import ENHANCED_WORK_TYPES, MODELS_DIR, DEFAULT_MODEL_PARAMS, SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION
+from config import ENHANCED_WORK_TYPES, MODELS_DIR, DEFAULT_MODEL_PARAMS, SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION, MAX_FEATURES_PER_MODEL
 from utils.feature_selection import FeatureSelector
 
 # Configure logging
@@ -91,28 +91,44 @@ def train_enhanced_model(df, work_type):
         available_basic = [f for f in basic_features if f in df.columns]
         X_basic = df[available_basic].copy()
 
-        # TimeSeriesSplit for robust validation
+        # CRITICAL FIX: Reserve final 20% for true out-of-sample testing
+        test_size = int(len(X_basic) * 0.2)
+        
+        # Split data temporally - most recent data for testing
+        X_train_cv = X_basic.iloc[:-test_size].copy()
+        y_train_cv = y[:-test_size]
+        X_test_final = X_basic.iloc[-test_size:].copy()
+        y_test_final = y[-test_size:]
+        
+        logger.info(f"Data split - Train/CV: {len(X_train_cv)} samples, Final Test: {len(X_test_final)} samples")
+        logger.info(f"Test period: {X_test_final['Date'].min()} to {X_test_final['Date'].max()}")
+
+        # TimeSeriesSplit for CV on training data only
         tscv = TimeSeriesSplit(n_splits=5)
         fold_scores = []
         feature_importances = None
 
-        logger.info("Performing time series cross-validation...")
+        logger.info("Performing time series cross-validation on training data...")
 
-        for fold, (train_idx, val_idx) in enumerate(tscv.split(X_basic)):
-            X_train_fold = X_basic.iloc[train_idx]
-            X_val_fold = X_basic.iloc[val_idx]
-            y_train_fold = y[train_idx]
-            y_val_fold = y[val_idx]
+        # Cross-validation loop
+        for fold, (train_idx, val_idx) in enumerate(tscv.split(X_train_cv)):
+            X_train_fold = X_train_cv.iloc[train_idx]
+            X_val_fold = X_train_cv.iloc[val_idx]
+            y_train_fold = y_train_cv[train_idx]
+            y_val_fold = y_train_cv[val_idx]
 
+            # Create pipeline for this fold
             fold_pipeline = Pipeline([
                 ('feature_engineering', EnhancedFeatureTransformer()),
                 ('model', LGBMRegressor(**DEFAULT_MODEL_PARAMS))
             ])
 
+            # Fit and transform
             feature_eng = fold_pipeline.named_steps['feature_engineering']
             X_train_transformed = feature_eng.fit_transform(X_train_fold)
             X_val_transformed = feature_eng.transform(X_val_fold)
 
+            # Train model
             lgb_model = fold_pipeline.named_steps['model']
             lgb_model.fit(
                 X_train_transformed,
@@ -121,6 +137,7 @@ def train_enhanced_model(df, work_type):
                 callbacks=[]
             )
 
+            # Evaluate on validation set
             y_pred_val_log = lgb_model.predict(X_val_transformed)
             y_pred_val = np.expm1(y_pred_val_log)
             y_val_true = np.expm1(y_val_fold)
@@ -131,110 +148,147 @@ def train_enhanced_model(df, work_type):
             val_mape = np.mean(np.abs((y_val_true - y_pred_val) / np.maximum(y_val_true, 10))) * 100
 
             fold_scores.append({'MAE': val_mae, 'RMSE': val_rmse, 'R2': val_r2, 'MAPE': val_mape})
-
-            # Feature importances
+            
+            # Accumulate feature importances
             current_importances = lgb_model.feature_importances_
             if feature_importances is None:
                 feature_importances = current_importances
             else:
                 feature_importances += current_importances
 
-            plt.figure(figsize=(10,4))
-            plt.plot(y_val_true, label='Actual')
-            plt.plot(y_pred_val, label='Predicted')
-            plt.legend()
-            plt.title(f"Actual vs Predicted (Validation Fold {fold+1}) - WorkType {work_type}")
-            plt.tight_layout()
-            plt.savefig(os.path.join(MODELS_DIR, f"val_plot_{work_type}_fold{fold+1}.png"))
-            plt.close()
+            # # Plot for fold (optional - can be commented out for speed)
+            # plt.figure(figsize=(10,4))
+            # plt.plot(y_val_true, label='Actual')
+            # plt.plot(y_pred_val, label='Predicted')
+            # plt.legend()
+            # plt.title(f"CV Fold {fold+1} - WorkType {work_type}")
+            # plt.tight_layout()
+            # plt.savefig(os.path.join(MODELS_DIR, f"cv_fold_{work_type}_fold{fold+1}.png"))
+            # plt.close()
 
-        # Feature selection
+        # Feature selection based on average importance
         feature_eng = EnhancedFeatureTransformer()
-        X_all_transformed = feature_eng.fit_transform(X_basic)
-        feature_names = X_all_transformed.columns if hasattr(X_all_transformed, 'columns') else [f'f{i}' for i in range(X_all_transformed.shape[1])]
+        X_train_cv_transformed = feature_eng.fit_transform(X_train_cv)
+        feature_names = X_train_cv_transformed.columns if hasattr(X_train_cv_transformed, 'columns') else [f'f{i}' for i in range(X_train_cv_transformed.shape[1])]
+        
+        # Average importances across folds
         feature_importances = feature_importances / len(fold_scores)
         importance_df = pd.DataFrame({'feature': feature_names, 'importance': feature_importances})
         importance_df = importance_df.sort_values('importance', ascending=False)
-        selected_features = importance_df.head(20)['feature'].tolist()
-        logger.info(f"Selected top 20 features for final model: {selected_features}")
+        
+        # Select top features
+        selected_features = importance_df.head(MAX_FEATURES_PER_MODEL)['feature'].tolist()
+        
+        # Add diagnostic logging
+        logger.info(f"Trend features created: {len([f for f in feature_names if 'trend' in f.lower()])} - {[f for f in feature_names if 'trend' in f.lower()][:5]}")
+        
+        # Force include some trend features if they exist
+        trend_features = [col for col in feature_names if 'trend' in col.lower()]
+        if trend_features and len([f for f in selected_features if 'trend' in f.lower()]) < 5:
+            selected_features = list(set(selected_features + trend_features[:5]))
+            logger.info(f"Added trend features: {trend_features[:5]}")
+        
+        logger.info(f"Selected top {len(selected_features)} features for final model: {selected_features}")
 
-        # Final pipeline
+        # CRITICAL: Train final model on ALL training data (not including test set)
         complete_pipeline = Pipeline([
             ('feature_engineering', EnhancedFeatureTransformer()),
             ('feature_selection', FeatureSelector(selected_features)),
             ('model', LGBMRegressor(**DEFAULT_MODEL_PARAMS))
         ])
 
-        val_size = int(len(X_basic) * 0.2)
-        X_train_final = X_basic.iloc[:-val_size]
-        y_train_final = y[:-val_size]
-        X_val_final = X_basic.iloc[-val_size:]
-        y_val_final = y[-val_size:]
-
+        # Fit on all training data
         fe = complete_pipeline.named_steps['feature_engineering']
-        fe.fit(X_train_final)
-        X_train_transformed_final = fe.transform(X_train_final)
-        X_val_transformed_final = fe.transform(X_val_final)
-
+        fe.fit(X_train_cv)
+        X_train_transformed = fe.transform(X_train_cv)
+        
         fs = complete_pipeline.named_steps['feature_selection']
-        fs.fit(X_train_transformed_final)
-        X_train_selected = fs.transform(X_train_transformed_final)
-        X_val_selected = fs.transform(X_val_transformed_final)
-
+        fs.fit(X_train_transformed)
+        X_train_selected = fs.transform(X_train_transformed)
+        
+        # Transform test set
+        X_test_transformed = fe.transform(X_test_final)
+        X_test_selected = fs.transform(X_test_transformed)
+        
+        # Train final model
         final_model = complete_pipeline.named_steps['model']
         final_model.fit(
             X_train_selected,
-            y_train_final,
-            eval_set=[(X_val_selected, y_val_final)],
+            y_train_cv,
+            eval_set=[(X_test_selected, y_test_final)],
             callbacks=[]
         )
 
-        # Final evaluation on ALL data (original scale)
-        X_all_transformed = fe.transform(X_basic)
-        X_all_selected = fs.transform(X_all_transformed)
-        y_pred_final_log = final_model.predict(X_all_selected)
-        y_pred_final = np.expm1(y_pred_final_log)
-        y_true_final = np.expm1(y)
-        final_mae = mean_absolute_error(y_true_final, y_pred_final)
-        final_r2 = r2_score(y_true_final, y_pred_final)
-        final_rmse = np.sqrt(mean_squared_error(y_true_final, y_pred_final))
-        mape = np.mean(np.abs((y_true_final - y_pred_final) / np.maximum(y_true_final, 10))) * 100
+        # CRITICAL: Evaluate ONLY on held-out test set
+        y_pred_test_log = final_model.predict(X_test_selected)
+        y_pred_test = np.expm1(y_pred_test_log)
+        y_true_test = np.expm1(y_test_final)
+        
+        # Calculate test metrics
+        test_mae = mean_absolute_error(y_true_test, y_pred_test)
+        test_r2 = r2_score(y_true_test, y_pred_test)
+        test_rmse = np.sqrt(mean_squared_error(y_true_test, y_pred_test))
+        test_mape = np.mean(np.abs((y_true_test - y_pred_test) / np.maximum(y_true_test, 10))) * 100
 
-        avg_cv_mae = np.mean([score['MAE'] for score in fold_scores]) if fold_scores else final_mae
-        avg_cv_r2 = np.mean([score['R2'] for score in fold_scores]) if fold_scores else final_r2
+        # Calculate average CV metrics
+        avg_cv_mae = np.mean([score['MAE'] for score in fold_scores]) if fold_scores else test_mae
+        avg_cv_r2 = np.mean([score['R2'] for score in fold_scores]) if fold_scores else test_r2
+        avg_cv_mape = np.mean([score['MAPE'] for score in fold_scores]) if fold_scores else test_mape
 
+        # Plot test set predictions
         plt.figure(figsize=(12,4))
-        plt.plot(y_true_final, label='Actual')
-        plt.plot(y_pred_final, label='Predicted')
+        plt.subplot(1,2,1)
+        plt.plot(y_true_test, label='Actual')
+        plt.plot(y_pred_test, label='Predicted')
         plt.legend()
-        plt.title(f"Actual vs Predicted (All Data) - WorkType {work_type}")
+        plt.title(f"Test Set Predictions - WorkType {work_type}")
+        
+        plt.subplot(1,2,2)
+        plt.scatter(y_true_test, y_pred_test, alpha=0.5)
+        plt.plot([y_true_test.min(), y_true_test.max()], [y_true_test.min(), y_true_test.max()], 'r--')
+        plt.xlabel('Actual')
+        plt.ylabel('Predicted')
+        plt.title(f"Test Set Scatter - R²={test_r2:.3f}")
         plt.tight_layout()
-        plt.savefig(os.path.join(MODELS_DIR, f"final_plot_{work_type}.png"))
+        plt.savefig(os.path.join(MODELS_DIR, f"test_predictions_{work_type}.png"))
         plt.close()
 
+        # Create comprehensive metadata
         model_metadata = {
             'work_type': work_type,
-            'training_records': len(df),
-            'final_mae': final_mae,
-            'final_r2': final_r2,
-            'final_rmse': final_rmse,
-            'mape': mape,
+            'training_records': len(X_train_cv),
+            'test_records': len(X_test_final),
+            'test_period': {
+                'start': str(X_test_final['Date'].min()),
+                'end': str(X_test_final['Date'].max())
+            },
+            # Test set metrics (true out-of-sample)
+            'test_mae': test_mae,
+            'test_r2': test_r2,
+            'test_rmse': test_rmse,
+            'test_mape': test_mape,
+            # Cross-validation metrics (average)
             'cv_mae': avg_cv_mae,
             'cv_r2': avg_cv_r2,
+            'cv_mape': avg_cv_mape,
             'cv_folds': len(fold_scores),
+            # Feature information
             'input_features': basic_features,
             'selected_features': selected_features,
+            'num_features': len(selected_features),
+            'trend_features_count': len([f for f in selected_features if 'trend' in f.lower()]),
+            # Model configuration
             'pipeline_steps': [step[0] for step in complete_pipeline.steps],
             'model_type': 'complete_pipeline',
             'timestamp': datetime.now().strftime('%Y%m%d_%H%M%S'),
         }
 
         logger.info(f"✅ Enhanced LightGBM pipeline trained for {work_type}")
-        logger.info(f"   Final MAE: {final_mae:.3f}")
-        logger.info(f"   Final R²: {final_r2:.3f}")
-        logger.info(f"   CV MAE: {avg_cv_mae:.3f}")
+        logger.info(f"   Test MAE: {test_mae:.3f} (on {len(X_test_final)} samples)")
+        logger.info(f"   Test R²: {test_r2:.3f}")
+        logger.info(f"   Test MAPE: {test_mape:.2f}%")
+        logger.info(f"   CV MAE: {avg_cv_mae:.3f} (avg of {len(fold_scores)} folds)")
         logger.info(f"   CV R²: {avg_cv_r2:.3f}")
-        logger.info(f"   MAPE: {mape:.2f}%")
 
         return complete_pipeline, model_metadata, selected_features
 
@@ -317,10 +371,12 @@ def main():
                 logger.info(f"✅ Trained models: {list(models.keys())}")
                 for work_type, meta in metadata.items():
                     logger.info(f"\n📈 {work_type} Performance Summary:")
-                    logger.info(f"   MAE: {meta['final_mae']:.3f}")
-                    logger.info(f"   R²: {meta['final_r2']:.3f}")
-                    logger.info(f"   MAPE: {meta['mape']:.2f}%")
-                    logger.info(f"   Pipeline: {' -> '.join(meta['pipeline_steps'])}")
+                    logger.info(f"   Test MAE: {meta['test_mae']:.3f} (True out-of-sample)")
+                    logger.info(f"   Test R²: {meta['test_r2']:.3f}")
+                    logger.info(f"   Test MAPE: {meta['test_mape']:.2f}%")
+                    logger.info(f"   CV MAE: {meta['cv_mae']:.3f} (Cross-validation average)")
+                    logger.info(f"   CV R²: {meta['cv_r2']:.3f}")
+                    logger.info(f"   Features: {meta['num_features']} (including {meta['trend_features_count']} trend features)")
             else:
                 logger.error("❌ Failed to save enhanced models")
         else:

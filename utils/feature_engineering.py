@@ -7,7 +7,8 @@ from utils.feature_selection import FeatureSelector
 from config import (
     FEATURE_GROUPS, ESSENTIAL_LAGS, ESSENTIAL_WINDOWS,
     LAG_FEATURES_COLUMNS, ROLLING_FEATURES_COLUMNS, 
-    CYCLICAL_FEATURES, DATE_FEATURES, PRODUCTIVITY_FEATURES
+    CYCLICAL_FEATURES, DATE_FEATURES, PRODUCTIVITY_FEATURES,
+    TREND_WINDOWS, TREND_FEATURES_COLUMNS, TREND_CALCULATIONS  # Add these
 )
 
 class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
@@ -22,6 +23,10 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
         self.lag_columns = LAG_FEATURES_COLUMNS if hasattr(config, 'LAG_FEATURES_COLUMNS') else ['Hours']
         self.rolling_columns = ROLLING_FEATURES_COLUMNS if hasattr(config, 'ROLLING_FEATURES_COLUMNS') else ['Hours']
         self.cyclical_features = CYCLICAL_FEATURES if FEATURE_GROUPS.get('CYCLICAL_FEATURES', False) else {}
+
+        self.trend_windows = TREND_WINDOWS if hasattr(config, 'TREND_WINDOWS') else [7, 30, 90]
+        self.trend_columns = TREND_FEATURES_COLUMNS if hasattr(config, 'TREND_FEATURES_COLUMNS') else ['Hours']
+        self.trend_calculations = TREND_CALCULATIONS if hasattr(config, 'TREND_CALCULATIONS') else {}
         self.fitted_features_ = None
 
     def fit(self, X, y=None):
@@ -82,6 +87,25 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
         # Trend features
         if FEATURE_GROUPS.get('TREND_FEATURES', False):
             features.append('Cumulative_Quantity')
+            # Enhanced trend features
+            for col in self.trend_columns:
+                for window in self.trend_windows:
+                    if self.trend_calculations.get('slope', True):
+                        features.append(f'{col}_trend_slope_{window}')
+                    if self.trend_calculations.get('strength', True):
+                        features.append(f'{col}_trend_strength_{window}')
+                    if self.trend_calculations.get('detrended', True):
+                        features.append(f'{col}_detrended_{window}')
+                
+                # Trend changes
+                if self.trend_calculations.get('change', True) and len(self.trend_windows) >= 2:
+                    for i in range(len(self.trend_windows) - 1):
+                        w1, w2 = self.trend_windows[i], self.trend_windows[i + 1]
+                        features.append(f'{col}_trend_change_{w1}_{w2}')
+                
+                # Acceleration
+                if self.trend_calculations.get('acceleration', True):
+                    features.append(f'{col}_trend_acceleration')
         # Pattern features
         if FEATURE_GROUPS.get('PATTERN_FEATURES', False):
             features.append('Quantity_3d_avg')
@@ -138,9 +162,54 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
         return df
 
     def _add_trend_features(self, df):
-        if FEATURE_GROUPS.get('TREND_FEATURES', False) and 'Quantity' in df.columns:
-            df = df.sort_values('Date' if 'Date' in df.columns else df.index)
-            df['Cumulative_Quantity'] = df['Quantity'].cumsum()
+        if FEATURE_GROUPS.get('TREND_FEATURES', False) and 'WorkType' in df.columns:
+            df = df.sort_values(['WorkType', 'Date'] if 'Date' in df.columns else ['WorkType'])
+            
+            # Process each trend column
+            for col in self.trend_columns:
+                if col not in df.columns:
+                    continue
+                    
+                for window in self.trend_windows:
+                    # Calculate trend slope
+                    if self.trend_calculations.get('slope', True):
+                        df[f'{col}_trend_slope_{window}'] = df.groupby('WorkType')[col].transform(
+                            lambda x: self._calculate_trend_slope(x, window)
+                        )
+                    
+                    # Calculate trend strength (R²)
+                    if self.trend_calculations.get('strength', True):
+                        df[f'{col}_trend_strength_{window}'] = df.groupby('WorkType')[col].transform(
+                            lambda x: self._calculate_trend_strength(x, window)
+                        )
+                    
+                    # Detrended values
+                    if self.trend_calculations.get('detrended', True):
+                        df[f'{col}_detrended_{window}'] = df.groupby('WorkType')[col].transform(
+                            lambda x: self._calculate_detrended_values(x, window)
+                        )
+                
+                # Trend change detection (if we have at least 2 windows)
+                if self.trend_calculations.get('change', True) and len(self.trend_windows) >= 2:
+                    for i in range(len(self.trend_windows) - 1):
+                        w1, w2 = self.trend_windows[i], self.trend_windows[i + 1]
+                        if f'{col}_trend_slope_{w1}' in df.columns and f'{col}_trend_slope_{w2}' in df.columns:
+                            df[f'{col}_trend_change_{w1}_{w2}'] = (
+                                df[f'{col}_trend_slope_{w2}'] - df[f'{col}_trend_slope_{w1}']
+                            )
+                
+                # Trend acceleration
+                if self.trend_calculations.get('acceleration', True) and self.trend_windows:
+                    min_window = min(self.trend_windows)
+                    if f'{col}_trend_slope_{min_window}' in df.columns:
+                        df[f'{col}_trend_acceleration'] = df.groupby('WorkType')[f'{col}_trend_slope_{min_window}'].transform(
+                            lambda x: x.diff()
+                        )
+            
+            # Keep existing Cumulative_Quantity for backward compatibility
+            if 'Quantity' in df.columns:
+                df['Cumulative_Quantity'] = df.groupby('WorkType')['Quantity'].cumsum()
+                
         return df
 
     def _add_pattern_features(self, df):
@@ -158,3 +227,89 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
             if 'Year' in df.columns and 'Quarter' in df.columns:
                 df['Year_Quarter'] = df['Year'] * df['Quarter']
         return df
+
+    def _calculate_trend_slope(self, series, window):
+        """Calculate trend slope using linear regression over window"""
+        result = pd.Series(index=series.index, dtype=float)
+        series_clean = series.ffill().bfill()  # CHANGED from fillna(method='ffill')
+        
+        for i in range(len(series_clean)):
+            if i < window - 1:
+                result.iloc[i] = 0.0
+            else:
+                y = series_clean.iloc[i-window+1:i+1].values
+                x = np.arange(window)
+                if len(y) == window and not np.all(np.isnan(y)):
+                    # Simple linear regression
+                    x_mean = x.mean()
+                    y_mean = y.mean()
+                    numerator = ((x - x_mean) * (y - y_mean)).sum()
+                    denominator = ((x - x_mean) ** 2).sum()
+                    slope = numerator / denominator if denominator != 0 else 0
+                    result.iloc[i] = slope
+                else:
+                    result.iloc[i] = 0.0
+        return result
+
+    def _calculate_trend_strength(self, series, window):
+        """Calculate R² of linear fit over window"""
+        result = pd.Series(index=series.index, dtype=float)
+        series_clean = series.ffill().bfill()
+        
+        for i in range(len(series_clean)):
+            if i < window - 1:
+                result.iloc[i] = 0.0
+            else:
+                y = series_clean.iloc[i-window+1:i+1].values
+                x = np.arange(window)
+                if len(y) == window and not np.all(np.isnan(y)):
+                    # Calculate R²
+                    x_mean = x.mean()
+                    y_mean = y.mean()
+                    ss_tot = ((y - y_mean) ** 2).sum()
+                    if ss_tot > 0:
+                        numerator = ((x - x_mean) * (y - y_mean)).sum()
+                        denominator = ((x - x_mean) ** 2).sum()
+                        if denominator > 0:
+                            slope = numerator / denominator
+                            intercept = y_mean - slope * x_mean
+                            y_pred = slope * x + intercept
+                            ss_res = ((y - y_pred) ** 2).sum()
+                            r_squared = 1 - (ss_res / ss_tot)
+                            result.iloc[i] = max(0, r_squared)  # Ensure non-negative
+                        else:
+                            result.iloc[i] = 0.0
+                    else:
+                        result.iloc[i] = 0.0
+                else:
+                    result.iloc[i] = 0.0
+        return result
+
+    def _calculate_detrended_values(self, series, window):
+        """Calculate detrended values by removing linear trend"""
+        result = pd.Series(index=series.index, dtype=float)
+        series_clean = series.ffill().bfill()  # CHANGED from fillna(method='ffill')
+        
+        for i in range(len(series_clean)):
+            if i < window - 1:
+                result.iloc[i] = series_clean.iloc[i]
+            else:
+                y = series_clean.iloc[i-window+1:i+1].values
+                x = np.arange(window)
+                if len(y) == window and not np.all(np.isnan(y)):
+                    # Fit linear trend
+                    x_mean = x.mean()
+                    y_mean = y.mean()
+                    numerator = ((x - x_mean) * (y - y_mean)).sum()
+                    denominator = ((x - x_mean) ** 2).sum()
+                    if denominator > 0:
+                        slope = numerator / denominator
+                        intercept = y_mean - slope * x_mean
+                        # Remove trend from current value
+                        trend_value = slope * (window - 1) + intercept
+                        result.iloc[i] = series_clean.iloc[i] - trend_value
+                    else:
+                        result.iloc[i] = 0.0
+                else:
+                    result.iloc[i] = series_clean.iloc[i]
+        return result

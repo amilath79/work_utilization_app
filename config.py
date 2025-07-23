@@ -77,14 +77,14 @@ CHUNK_SIZE = 10000  # Number of rows to process at once for large datasetss
 # LIGHTGBM OPTIMAL PARAMETERS - Tuned for workforce prediction accuracy
 DEFAULT_MODEL_PARAMS = {
     'n_estimators': 1000,          # Increased from current value
-    'learning_rate': 0.05,         # Lower learning rate for better accuracy
-    'num_leaves': 100,              # Standard value
+    'learning_rate': 0.03,         # Lower learning rate for better accuracy
+    'num_leaves': 31,              # Standard value
     'max_depth': -1,               # No limit
-    'min_child_samples': 2,       # Prevent overfitting
+    'min_child_samples': 30,       # Prevent overfitting
     'subsample': 0.8,              # Row sampling
     'colsample_bytree': 0.8,       # Column sampling
-    'reg_alpha': 0.01,              # L1 regularization
-    'reg_lambda': 0.01,             # L2 regularization
+    'reg_alpha': 0.1,              # L1 regularization
+    'reg_lambda': 0.1,             # L2 regularization
     'random_state': 42,
     'n_jobs': 1,                   # For Windows compatibility
     'verbose': -1,
@@ -101,6 +101,21 @@ DEFAULT_MODEL_PARAMS = {
 # ==========================================
 # OPTIMIZED FEATURE ENGINEERING CONFIGURATION
 # ==========================================
+
+MAX_FEATURES_PER_MODEL = 15  # Reduce from 40
+CORRELATION_THRESHOLD = 0.90
+
+TREND_WINDOWS = [7, 30, 90] 
+TREND_FEATURES_COLUMNS = ['Hours', 'Quantity'] 
+
+TREND_CALCULATIONS = {
+    'slope': True,          # Linear trend slope
+    'strength': True,       # R² of trend fit
+    'detrended': True,      # Detrended values
+    'change': True,         # Trend change detection
+    'acceleration': True    # Trend acceleration
+}
+
 
 # Target configuration
 TARGET_COLUMN = 'Hours'  # Primary target for prediction
