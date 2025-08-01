@@ -108,28 +108,28 @@ if st.session_state.enhanced_models is None:
         logger.error(f"❌ Failed to load enhanced models: {str(e)}")
         st.session_state.enhanced_models = {}
 
-def diagnose_training_data(df):
-    """
-    Diagnose potential issues with training data
-    """
-    print("=== TRAINING DATA DIAGNOSIS ===")
+# def diagnose_training_data(df):
+#     """
+#     Diagnose potential issues with training data
+#     """
+#     print("=== TRAINING DATA DIAGNOSIS ===")
     
-    for work_type in df['WorkType'].unique():
-        wt_data = df[df['WorkType'] == work_type]
+#     for work_type in df['WorkType'].unique():
+#         wt_data = df[df['WorkType'] == work_type]
         
-        print(f"\nWorkType {work_type}:")
-        print(f"  Records: {len(wt_data)}")
-        print(f"  Hours - Mean: {wt_data['Hours'].mean():.2f}")
-        print(f"  Hours - Median: {wt_data['Hours'].median():.2f}")
-        print(f"  Hours - Max: {wt_data['Hours'].max():.2f}")
-        print(f"  Hours - Min: {wt_data['Hours'].min():.2f}")
+#         print(f"\nWorkType {work_type}:")
+#         print(f"  Records: {len(wt_data)}")
+#         print(f"  Hours - Mean: {wt_data['Hours'].mean():.2f}")
+#         print(f"  Hours - Median: {wt_data['Hours'].median():.2f}")
+#         print(f"  Hours - Max: {wt_data['Hours'].max():.2f}")
+#         print(f"  Hours - Min: {wt_data['Hours'].min():.2f}")
         
-        # Check for data quality issues
-        zero_count = (wt_data['Hours'] == 0).sum()
-        low_count = (wt_data['Hours'] < 1).sum()
+#         # Check for data quality issues
+#         zero_count = (wt_data['Hours'] == 0).sum()
+#         low_count = (wt_data['Hours'] < 1).sum()
         
-        print(f"  Zero values: {zero_count} ({zero_count/len(wt_data)*100:.1f}%)")
-        print(f"  Values < 1: {low_count} ({low_count/len(wt_data)*100:.1f}%)")
+#         print(f"  Zero values: {zero_count} ({zero_count/len(wt_data)*100:.1f}%)")
+#         print(f"  Values < 1: {low_count} ({low_count/len(wt_data)*100:.1f}%)")
 
 def ensure_data_and_models():
     """Ensure enhanced data and models are loaded for punch codes 206 & 213"""
@@ -277,14 +277,6 @@ def main():
     if not ensure_data_and_models():
         return
     
-    st.write("### Data Quality Diagnosis")
-    if st.button("Run Data Diagnosis"):
-        with st.spinner("Analyzing training data..."):
-            if st.session_state.enhanced_df is not None:
-                diagnose_training_data(st.session_state.enhanced_df)
-            else:
-                diagnose_training_data(st.session_state.ts_data)
-            st.success("Check the console/logs for detailed diagnosis results")
     
     # Get available work types from enhanced models
     if st.session_state.enhanced_models:

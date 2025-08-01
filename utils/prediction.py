@@ -1,5 +1,6 @@
 """
 Prediction utilities for work utilization forecasting with multiple model types.
+ENHANCED VERSION with critical accuracy fixes based on multy (2).py analysis.
 """
 import pandas as pd
 import numpy as np
@@ -55,7 +56,6 @@ def get_required_features():
     if FEATURE_GROUPS['DATE_FEATURES']:
         categorical_features.extend(DATE_FEATURES['categorical'])
         numeric_features.extend(DATE_FEATURES['numeric'])
-        numeric_features.append('DayOfMonth')
     
     # Productivity features from config
     if FEATURE_GROUPS['PRODUCTIVITY_FEATURES']:
@@ -147,7 +147,6 @@ def calculate_hours_prediction(df, work_type, no_of_man_prediction, date=None):
         return no_of_man_prediction * 8.0
 
 
-
 def load_neural_models():
     """
     Load neural network models, scalers, and metrics
@@ -164,6 +163,7 @@ def load_neural_models():
         logger.error(f"Error loading neural network models: {str(e)}")
         logger.error(traceback.format_exc())
         return {}, {}, {}
+
 
 def predict_with_neural_network(df, nn_models, nn_scalers, work_type, date=None, sequence_length=7):
     """
@@ -227,7 +227,6 @@ def predict_with_neural_network(df, nn_models, nn_scalers, work_type, date=None,
         # Ensure sequence is in chronological order (oldest to newest)
         sequence = sequence[::-1]
         
-
         # Check if model expects this input size (optional validation)
         try:
             # This is a rough check - you might need to adjust based on your model architecture
@@ -248,41 +247,100 @@ def predict_with_neural_network(df, nn_models, nn_scalers, work_type, date=None,
         logger.error(f"Error predicting with neural network: {str(e)}")
         logger.error(traceback.format_exc())
         return None
-    
-# def create_prediction_features(df, work_type, next_date, latest_date):
-#     """
-#     Create prediction features using EnhancedFeatureTransformer
-#     """
-#     try:
-#         # Process historical data ONLY
-#         work_type_data = df[df['WorkType'] == work_type].copy()
+
+
+def create_prediction_row_enhanced(work_data, next_date, work_type):
+    """
+    Create prediction row with better feature estimation like multy (2).py
+    """
+    try:
+        # Get same day of week data for better estimation
+        same_dow_data = work_data[work_data['Date'].dt.dayofweek == next_date.weekday()]
         
-#         # Initialize and use the transformer
-#         feature_transformer = EnhancedFeatureTransformer()
+        if len(same_dow_data) >= 3:
+            # Use same day of week patterns (better estimation)
+            quantity = same_dow_data['Quantity'].median()
+            system_hours = same_dow_data['SystemHours'].median()
+        else:
+            # Fallback to recent data
+            recent_data = work_data.tail(7)
+            quantity = recent_data['Quantity'].median()
+            system_hours = recent_data['SystemHours'].median()
         
-#         # Fit and transform the data
-#         feature_transformer.fit(work_type_data)
-#         features_df = feature_transformer.transform(work_type_data)
+        # Handle SystemKPI if present
+        if 'SystemKPI' in work_data.columns:
+            if len(same_dow_data) >= 3:
+                system_kpi = same_dow_data['SystemKPI'].median()
+            else:
+                system_kpi = work_data['SystemKPI'].median()
+        else:
+            system_kpi = 1.0
         
-#         # Get latest row and update date features only
-#         latest_features = features_df.iloc[-1:].copy()
-#         latest_features['Date'] = next_date
-#         latest_features['DayOfWeek_feat'] = next_date.weekday()
-#         latest_features['Month_feat'] = next_date.month
-#         latest_features['IsWeekend_feat'] = 1 if next_date.weekday() == 5 else 0
-#         latest_features['DayOfMonth'] = next_date.day
-#         latest_features['Quarter'] = (next_date.month - 1) // 3 + 1
+        # Create prediction row
+        pred_row = pd.DataFrame([{
+            'Date': next_date,
+            'WorkType': work_type,
+            'Quantity': quantity,
+            'SystemHours': system_hours,
+            'SystemKPI': system_kpi,
+            'Hours': work_data['Hours'].iloc[-1]  # Placeholder for lag calculation
+        }])
         
-#         return latest_features
+        return pred_row
         
-#     except Exception as e:
-#         logger.error(f"Error creating prediction features: {str(e)}")
-#         return None
-    
+    except Exception as e:
+        logger.error(f"Error creating enhanced prediction row: {str(e)}")
+        # Fallback to simple approach
+        return pd.DataFrame([{
+            'Date': next_date,
+            'WorkType': work_type,
+            'Quantity': work_data['Quantity'].mean(),
+            'SystemHours': work_data['SystemHours'].mean(),
+            'SystemKPI': work_data['SystemKPI'].mean() if 'SystemKPI' in work_data.columns else 1.0,
+            'Hours': work_data['Hours'].iloc[-1]
+        }])
+
+
+def apply_prediction_bounds(hours_pred, work_data, next_date):
+    """
+    Apply intelligent bounds similar to multy (2).py approach
+    """
+    try:
+        # Get same day of week historical data for better bounds
+        same_dow_data = work_data[work_data['Date'].dt.dayofweek == next_date.weekday()]
+        
+        if len(same_dow_data) >= 8:
+            bounds_data = same_dow_data.tail(8)
+        else:
+            bounds_data = work_data.tail(30)
+        
+        # Calculate bounds using tighter quantiles
+        historical_min = bounds_data['Hours'].quantile(0.05)
+        historical_max = bounds_data['Hours'].quantile(0.95)
+        
+        # Apply bounds with some flexibility (similar to multy approach)
+        hours_pred = np.clip(hours_pred, historical_min * 0.6, historical_max * 1.4)
+        
+        # Ensure positive
+        hours_pred = max(0, hours_pred)
+        
+        # Additional sanity check - prevent extreme values
+        historical_mean = bounds_data['Hours'].mean()
+        if hours_pred > historical_mean * 3:
+            hours_pred = historical_mean * 1.5
+        
+        return hours_pred
+        
+    except Exception as e:
+        logger.error(f"Error applying prediction bounds: {str(e)}")
+        # Fallback to simple bounds
+        return max(0, hours_pred)
+        
         
 def predict_next_day(df, models, date=None, use_neural_network=False):
     """
-    Predict next day using COMPLETE PIPELINES with PROPER feature estimation
+    Predict next day using COMPLETE PIPELINES with PROPER temporal consistency
+    ENHANCED VERSION with critical fixes for accuracy
     """
     try:
         # Determine prediction date
@@ -314,39 +372,32 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
                     hours_predictions[work_type] = 0
                     continue
 
-                # Estimate features for prediction row
-                pred_row = pd.DataFrame([{
-                    'Date': next_date,
-                    'WorkType': work_type,
-                    'Quantity': work_data['Quantity'].mean(),
-                    'SystemHours': work_data['SystemHours'].mean(),
-                    'SystemKPI': work_data['SystemKPI'].mean() if 'SystemKPI' in work_data.columns else 1.0
-                }])
+                # ENHANCED: Better prediction row creation
+                pred_row = create_prediction_row_enhanced(work_data, next_date, work_type)
 
                 # Combine with historical data for lag/rolling calculation
                 combined_data = pd.concat([work_data, pred_row], ignore_index=True)
                 combined_data = combined_data.sort_values('Date')
 
-                # Apply feature engineering and selection
-                X_all = pipeline.named_steps['feature_engineering'].fit_transform(combined_data)
-                X_selected = pipeline.named_steps['feature_selection'].transform(X_all)
+                # ✅ CRITICAL FIX: Use complete pipeline properly
+                try:
+                    # Apply complete pipeline in one go (preferred method)
+                    prediction_input = combined_data.tail(1).drop(columns=['Hours'], errors='ignore')
+                    hours_pred_log = pipeline.predict(prediction_input)[0]
+                    
+                except Exception as pipeline_error:
+                    logger.debug(f"Direct pipeline prediction failed for {work_type}, using step-by-step: {str(pipeline_error)}")
+                    # Fallback to step-by-step approach
+                    # ✅ CRITICAL FIX: Use transform (not fit_transform) on already fitted pipeline
+                    X_all = pipeline.named_steps['feature_engineering'].transform(combined_data)
+                    X_selected = pipeline.named_steps['feature_selection'].transform(X_all)
+                    hours_pred_log = pipeline.named_steps['model'].predict(X_selected[-1:])[0]
 
-                print("Prediction features for", work_type, ":", X_all.iloc[-1])
+                # ✅ CRITICAL FIX: Apply inverse log transformation
+                hours_pred = np.expm1(hours_pred_log)
 
-                # Predict using the last row (the prediction row)
-                hours_pred = pipeline.named_steps['model'].predict(X_selected[-1:])[0]
-
-                # If you trained on log1p, invert here:
-                # hours_pred = np.expm1(hours_pred)
-
-                # Sanity checks (optional)
-                similar_days = work_data[pd.to_datetime(work_data['Date']).dt.dayofweek == next_date.dayofweek].tail(8)
-                if len(similar_days) < 3:
-                    similar_days = work_data.tail(30)
-                historical_min = similar_days['Hours'].quantile(0.1)
-                historical_max = similar_days['Hours'].quantile(0.9)
-                hours_pred = np.clip(hours_pred, historical_min * 0.5, historical_max * 1.5)
-                hours_pred = max(0, hours_pred)
+                # Apply intelligent bounds (enhanced version)
+                hours_pred = apply_prediction_bounds(hours_pred, work_data, next_date)
 
                 predictions[work_type] = hours_pred
                 hours_predictions[work_type] = hours_pred
@@ -358,19 +409,18 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
                 logger.error(f"Details: {traceback.format_exc()}")
                 predictions[work_type] = 0
                 hours_predictions[work_type] = 0
-        # If using neural networks, make additional predictions    
+                
         return next_date, predictions, hours_predictions
         
     except Exception as e:
         logger.error(f"Error in predict_next_day: {str(e)}")
         return None, {}, {}
-
-
-
     
+
 def predict_multiple_days(df, models, start_date, num_days, use_neural_network=False):
     """
-    Multi-day prediction using complete pipelines
+    Multi-day prediction using complete pipelines with RECURSIVE updates
+    ENHANCED VERSION maintaining temporal consistency like multy (2).py
     """
     try:
         all_predictions = {}
@@ -379,10 +429,12 @@ def predict_multiple_days(df, models, start_date, num_days, use_neural_network=F
         
         current_date = pd.to_datetime(start_date) if start_date else df['Date'].max()
         
+        logger.info(f"🚀 Starting multi-day prediction from {current_date} for {num_days} days")
+        
         for i in range(num_days):
             pred_date = current_date + timedelta(days=i+1)
             
-            # Use updated predict_next_day
+            # Use updated predict_next_day with current dataframe (includes previous predictions)
             _, day_preds, day_hours = predict_next_day(
                 current_df, models, date=pred_date
             )
@@ -390,72 +442,60 @@ def predict_multiple_days(df, models, start_date, num_days, use_neural_network=F
             all_predictions[pred_date] = day_preds
             all_hours[pred_date] = day_hours
             
-            # Add predictions back to dataframe for next iteration
+            # ✅ CRITICAL: Add predictions back to dataframe for next iteration (like multy (2).py)
             for work_type, hours_value in day_hours.items():
                 if hours_value > 0:  # Only add working days
-                    # Get last week's same day Quantity and SystemHours
+                    # Get features for the new row - use same approach as create_prediction_row_enhanced
+                    work_data = current_df[current_df['WorkType'] == work_type]
+                    
+                    # Get last week's same day for Quantity and SystemHours
                     last_week_date = pred_date - timedelta(days=7)
                     last_week_row = current_df[
                         (current_df['WorkType'] == work_type) &
                         (current_df['Date'] == last_week_date)
                     ]
+                    
                     if not last_week_row.empty:
                         quantity = last_week_row['Quantity'].values[0]
                         system_hours = last_week_row['SystemHours'].values[0]
+                        system_kpi = last_week_row['SystemKPI'].values[0] if 'SystemKPI' in last_week_row.columns else 1.0
                     else:
-                        # Fallback to recent mean if last week is missing
-                        recent = current_df[current_df['WorkType'] == work_type].tail(7)
-                        quantity = recent['Quantity'].mean()
-                        system_hours = recent['SystemHours'].mean()
+                        # Fallback to same day of week pattern
+                        same_dow_data = work_data[work_data['Date'].dt.dayofweek == pred_date.weekday()]
+                        if len(same_dow_data) >= 3:
+                            quantity = same_dow_data['Quantity'].median()
+                            system_hours = same_dow_data['SystemHours'].median()
+                            system_kpi = same_dow_data['SystemKPI'].median() if 'SystemKPI' in same_dow_data.columns else 1.0
+                        else:
+                            # Final fallback to recent mean
+                            recent = work_data.tail(7)
+                            quantity = recent['Quantity'].mean()
+                            system_hours = recent['SystemHours'].mean()
+                            system_kpi = recent['SystemKPI'].mean() if 'SystemKPI' in recent.columns else 1.0
 
+                    # Create new row with predicted Hours
                     new_row = pd.DataFrame([{
                         'Date': pred_date,
                         'WorkType': work_type,
-                        'Hours': hours_value,
+                        'Hours': hours_value,  # ✅ Use predicted Hours value
                         'Quantity': quantity,
-                        'SystemHours': system_hours
+                        'SystemHours': system_hours,
+                        'SystemKPI': system_kpi
                     }])
-                    print(new_row)
+                    
+                    # Add to current dataframe for next iteration
                     current_df = pd.concat([current_df, new_row], ignore_index=True)
+                    
+            logger.info(f"📅 Completed predictions for {pred_date.strftime('%Y-%m-%d')}")
         
+        logger.info(f"✅ Multi-day prediction completed for {num_days} days")
         return all_predictions, all_hours, {}
         
     except Exception as e:
         logger.error(f"Error in multi-day prediction: {str(e)}")
+        logger.error(traceback.format_exc())
         return {}, {}, {}
 
-
-# def _get_required_features(model):
-#     """Helper function to get feature names required by the model - config-driven"""
-#     try:
-#         # If it's a pipeline, try to get feature names from the model
-#         if hasattr(model, 'steps'):
-#             if hasattr(model.named_steps['model'], 'feature_names_in_'):
-#                 return list(model.named_steps['model'].feature_names_in_)
-            
-#             # Extract from preprocessor
-#             preprocessor = model.named_steps.get('preprocessor')
-#             if preprocessor and hasattr(preprocessor, 'transformers_'):
-#                 feature_names = []
-#                 for name, transformer, cols in preprocessor.transformers_:
-#                     feature_names.extend(cols)
-                
-#                 if feature_names:
-#                     return feature_names
-        
-#         # Fallback: Use same config-driven features as training
-#         numeric_features, categorical_features = get_required_features()
-#         all_features = categorical_features + numeric_features
-        
-#         active_groups = [group for group, enabled in FEATURE_GROUPS.items() if enabled]
-#         logger.info(f"Using config features from {active_groups}: {len(all_features)} total features")
-        
-#         return all_features
-
-#     except Exception as e:
-#         logger.error(f"Error getting required features: {str(e)}")
-#         # Simple fallback
-#         return ['DayOfWeek_feat', 'Month_feat', 'IsWeekend_feat', 'NoOfMan_lag_1', 'NoOfMan_lag_7', 'NoOfMan_rolling_mean_7']    
 
 def evaluate_predictions(y_true, y_pred):
     """
@@ -499,8 +539,6 @@ def evaluate_predictions(y_true, y_pred):
             'R²': float('nan'),
             'MAPE': float('nan')
         }
-    
-  
     
 
 def predict_hours_and_calculate_noof_man(df, models, work_type, date=None):
@@ -578,7 +616,7 @@ def calculate_noof_man_from_hours(hours_prediction, punch_code=None):
         # Calculate NoOfMan
         noof_man = hours_prediction / hours_per_worker
         
-        # Round to whole number (minimum 1 if hours > 0)f
+        # Round to whole number (minimum 1 if hours > 0)
         if noof_man > 0 and noof_man < 1:
             return 1
         else:

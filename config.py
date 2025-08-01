@@ -76,10 +76,10 @@ CHUNK_SIZE = 10000  # Number of rows to process at once for large datasetss
 
 # LIGHTGBM OPTIMAL PARAMETERS - Tuned for workforce prediction accuracy
 DEFAULT_MODEL_PARAMS = {
-    'n_estimators': 1000,          # Increased from current value
+    'n_estimators': 1500,          # Increased from current value
     'learning_rate': 0.03,         # Lower learning rate for better accuracy
     'num_leaves': 31,              # Standard value
-    'max_depth': -1,               # No limit
+    'max_depth': 10,               # No limit
     'min_child_samples': 30,       # Prevent overfitting
     'subsample': 0.8,              # Row sampling
     'colsample_bytree': 0.8,       # Column sampling
@@ -92,8 +92,12 @@ DEFAULT_MODEL_PARAMS = {
     'importance_type': 'gain',
     'min_gain_to_split': 0.01,     # Minimum gain to make a split
     'min_data_in_bin': 5,          # Minimum data in bin
-    'path_smooth': 1.0             # Smoothing for tree paths
+    'path_smooth': 1.0,            # Smoothing for tree paths
+
+    'min_samples_leaf': 5,         # Reduced to capture smaller patterns
+    'min_samples_split': 15,       # Reduced to allow more granular splits
 }
+
 
 
 # IMPACT: Expected 10-20% accuracy improvement, better handling of workforce patterns
@@ -102,7 +106,7 @@ DEFAULT_MODEL_PARAMS = {
 # OPTIMIZED FEATURE ENGINEERING CONFIGURATION
 # ==========================================
 
-MAX_FEATURES_PER_MODEL = 15  # Reduce from 40
+MAX_FEATURES_PER_MODEL = 25  # Reduce from 40
 CORRELATION_THRESHOLD = 0.90
 
 TREND_WINDOWS = [7, 30, 90] 
@@ -143,8 +147,8 @@ ESSENTIAL_WINDOWS = [7, 14, 28]  # 30
 
 # OPTIMIZED FEATURE COLUMNS - Hours is most predictive
 
-LAG_FEATURES_COLUMNS = ['Hours', 'Quantity', 'SystemHours']  # Added 'Hours' at the beginning
-ROLLING_FEATURES_COLUMNS = ['Hours', 'Quantity', 'SystemHours']  # Added 'Hours' at the beginning
+LAG_FEATURES_COLUMNS = ['Hours', 'Quantity']  # Added 'Hours' at the beginning
+ROLLING_FEATURES_COLUMNS = ['Hours', 'Quantity']  # Added 'Hours' at the beginning
 
 
 # ENHANCED CYCLICAL FEATURES - Better workforce pattern capture
@@ -164,8 +168,8 @@ PRODUCTIVITY_FEATURES = [
 
 # Date features to include
 DATE_FEATURES = {
-    'categorical': ['DayOfWeek_feat', 'Month_feat'],
-    'numeric': ['IsWeekend_feat']
+    'categorical': ['DayOfWeek', 'Month', 'WeekNo', 'Quarter', 'Year', 'Day'],
+    'numeric': ['IsWeekend', 'IsMonthEnd', 'IsMonthStart', 'IsHoliday']
 }
 
 # ==========================================
@@ -408,6 +412,51 @@ def print_config_summary():
 
 
 
+
+# ==========================================
+# PUNCH CODE 206 SPECIFIC CONFIGURATION
+# ==========================================
+
+# Punch code specific feature engineering rules
+PUNCH_CODE_SPECIFIC_CONFIG = {
+    '206': {
+        # Sunday handling
+        'isolate_sunday': True,
+        'min_sunday_hours': 60,  # Minimum hours for Sunday to be considered normal
+        'sunday_weight': 0.1,    # Reduced weight for Sunday data in training
+        'exclude_sunday_from_weekday_patterns': True,
+        
+        # Enhanced weekday features
+        'use_yearly_lags': True,
+        'yearly_lag_days': [365, 366],  # Account for leap years
+        'weekday_specific_lags': [7, 14],  # Last 2 weeks of same weekday
+        'weekday_specific_windows': [2, 4],  # Last 2 and 4 weeks for same weekday
+        
+        # Feature selection
+        'prioritize_weekday_features': True,
+        'max_sunday_features': 3,  # Limit Sunday-specific features
+        'force_include_yearly': True,  # Always include yearly patterns
+    }
+}
+
+# Enhanced lag configuration for punch code 206
+PUNCH_206_ENHANCED_LAGS = [1, 7, 14, 365, 366]  # Add yearly lags
+
+# Enhanced rolling windows for punch code 206
+PUNCH_206_ENHANCED_WINDOWS = [7, 14, 28, 52]  # Add quarterly patterns
+
+# Weekday mapping for feature engineering
+WEEKDAY_NAMES = {
+    0: 'Monday', 1: 'Tuesday', 2: 'Wednesday', 
+    3: 'Thursday', 4: 'Friday', 5: 'Saturday', 6: 'Sunday'
+}
+
+# Sunday isolation parameters
+SUNDAY_CONFIG = {
+    'isolation_threshold': 100,  # Hours below this on Sunday = isolated
+    'weekday_influence_filter': True,  # Filter Sunday from weekday pattern learning
+    'separate_sunday_validation': True,  # Validate Sunday predictions separately
+}
 
 # Auto-validate configuration on import
 if __name__ == "__main__":

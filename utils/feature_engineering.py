@@ -38,7 +38,8 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
         X = pd.DataFrame(X).copy().reset_index(drop=True)
         X = self._add_date_features(X)
         X = self._add_lag_features(X)
-        X = self._add_rolling_features(X)
+        X = self._add_enhanced_rolling_features(X)  # ENHANCED
+        X = self._add_peak_detection_features(X)    # NEW
         X = self._add_cyclical_features(X)
         X = self._add_system_features(X)
         X = self._add_trend_features(X)
@@ -63,7 +64,9 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
         features = []
         # Date features
         if FEATURE_GROUPS.get('DATE_FEATURES', False):
-            features.extend(['DayOfWeek', 'Month', 'WeekNo', 'IsWeekend', 'Quarter', 'Year', 'Day'])
+                # Date features - NOW USING CONFIG
+            features.extend(DATE_FEATURES.get('categorical', []))
+            features.extend(DATE_FEATURES.get('numeric', []))
         # Lag features
         if FEATURE_GROUPS.get('LAG_FEATURES', False):
             for col in self.lag_columns:
@@ -81,7 +84,7 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
                 features.extend([f'{feature}_sin', f'{feature}_cos'])
         # Productivity features
         if FEATURE_GROUPS.get('PRODUCTIVITY_FEATURES', False):
-            features.extend(['SystemHours', 'SystemKPI'])
+            features.extend(['SystemHours'])
             if hasattr(config, 'PRODUCTIVITY_FEATURES') and isinstance(PRODUCTIVITY_FEATURES, list):
                 features.extend(PRODUCTIVITY_FEATURES)
         # Trend features
@@ -114,16 +117,56 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
             features.extend(['Quantity_SystemHours', 'DayOfWeek_Month', 'Year_Quarter'])
         return features
 
+
+    def _add_peak_detection_features(self, X):
+        """Add features specifically for handling high-value spikes"""
+        if 'Hours' not in X.columns:
+            return X
+            
+        # Calculate rolling quantiles for peak detection
+        for window in [7, 14, 30]:
+            X[f'Hours_rolling_q75_{window}'] = X['Hours'].rolling(window, min_periods=1).quantile(0.75)
+            X[f'Hours_rolling_q90_{window}'] = X['Hours'].rolling(window, min_periods=1).quantile(0.90)
+            X[f'Hours_above_q75_{window}'] = (X['Hours'] > X[f'Hours_rolling_q75_{window}']).astype(int)
+            X[f'Hours_peak_ratio_{window}'] = X['Hours'] / (X[f'Hours_rolling_q75_{window}'] + 1e-6)
+        
+        # Volatility features for spike detection
+        for window in [7, 14]:
+            X[f'Hours_volatility_{window}'] = X['Hours'].rolling(window, min_periods=1).std() / (X['Hours'].rolling(window, min_periods=1).mean() + 1e-6)
+            X[f'Hours_acceleration_{window}'] = X['Hours'].diff().rolling(window, min_periods=1).std()
+        
+        return X
+
+    # AFTER - Config-driven date feature creation
     def _add_date_features(self, df):
         if FEATURE_GROUPS.get('DATE_FEATURES', False) and 'Date' in df.columns:
             df['Date'] = pd.to_datetime(df['Date'])
-            df['DayOfWeek'] = df['Date'].dt.dayofweek + 1  # 1=Monday, 7=Sunday
-            df['Month'] = df['Date'].dt.month
-            df['WeekNo'] = df['Date'].dt.isocalendar().week
-            df['IsWeekend'] = (df['Date'].dt.dayofweek >= 5).astype(int)
-            df['Quarter'] = df['Date'].dt.quarter
-            df['Year'] = df['Date'].dt.year
-            df['Day'] = df['Date'].dt.day
+            
+            # Get required features from config
+            categorical_features = DATE_FEATURES.get('categorical', [])
+            numeric_features = DATE_FEATURES.get('numeric', [])
+            all_date_features = categorical_features + numeric_features
+            
+            # Create features based on config
+            if 'DayOfWeek' in all_date_features:
+                df['DayOfWeek'] = df['Date'].dt.dayofweek + 1  # 1=Monday, 7=Sunday
+            if 'Month' in all_date_features:
+                df['Month'] = df['Date'].dt.month
+            if 'WeekNo' in all_date_features:
+                df['WeekNo'] = df['Date'].dt.isocalendar().week
+            if 'IsWeekend' in all_date_features:
+                df['IsWeekend'] = (df['Date'].dt.dayofweek >= 5).astype(int)
+            if 'Quarter' in all_date_features:
+                df['Quarter'] = df['Date'].dt.quarter
+            if 'Year' in all_date_features:
+                df['Year'] = df['Date'].dt.year
+            if 'Day' in all_date_features:
+                df['Day'] = df['Date'].dt.day
+            if 'IsMonthEnd' in all_date_features:
+                df['IsMonthEnd'] = df['Date'].dt.is_month_end.astype(int)
+            if 'IsMonthStart' in all_date_features:
+                df['IsMonthStart'] = df['Date'].dt.is_month_start.astype(int)
+                
         return df
 
     def _add_lag_features(self, df):
@@ -134,6 +177,31 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
                     for lag in self.lag_days:
                         df[f'{col}_lag_{lag}'] = df.groupby('WorkType')[col].shift(lag)
         return df
+
+    def _add_enhanced_rolling_features(self, X):
+        """Enhanced rolling features beyond just mean"""
+        if not FEATURE_GROUPS.get('ROLLING_FEATURES', False):
+            return X
+            
+        for col in self.rolling_columns:
+            if col not in X.columns:
+                continue
+                
+            for window in self.rolling_windows:
+                # Existing mean
+                X[f'{col}_rolling_mean_{window}'] = X[col].rolling(window, min_periods=1).mean()
+                
+                # NEW: Additional statistics for better pattern capture
+                X[f'{col}_rolling_std_{window}'] = X[col].rolling(window, min_periods=1).std()
+                X[f'{col}_rolling_max_{window}'] = X[col].rolling(window, min_periods=1).max()
+                X[f'{col}_rolling_min_{window}'] = X[col].rolling(window, min_periods=1).min()
+                X[f'{col}_rolling_skew_{window}'] = X[col].rolling(window, min_periods=1).skew()
+                
+                # Relative position features
+                X[f'{col}_vs_rolling_mean_{window}'] = X[col] / (X[f'{col}_rolling_mean_{window}'] + 1e-6)
+                X[f'{col}_vs_rolling_max_{window}'] = X[col] / (X[f'{col}_rolling_max_{window}'] + 1e-6)
+        
+        return X
 
     def _add_rolling_features(self, df):
         if FEATURE_GROUPS.get('ROLLING_FEATURES', False) and 'WorkType' in df.columns:
@@ -157,8 +225,6 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
         if FEATURE_GROUPS.get('PRODUCTIVITY_FEATURES', False):
             if 'SystemHours' not in df.columns:
                 df['SystemHours'] = 8.0
-            if 'SystemKPI' not in df.columns:
-                df['SystemKPI'] = 1.0
         return df
 
     def _add_trend_features(self, df):

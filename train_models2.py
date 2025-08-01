@@ -5,6 +5,7 @@ import pickle
 import os
 import logging
 import traceback
+import argparse  # Added for command-line argument parsing
 from lightgbm import LGBMRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
@@ -39,8 +40,7 @@ def load_training_data():
         query = """
         SELECT Date, PunchCode as WorkType, Hours, SystemHours, 
         CASE WHEN PunchCode IN (206, 213) THEN NoRows
-        ELSE Quantity END as Quantity, 
-        SystemKPI
+        ELSE Quantity END as Quantity
         FROM WorkUtilizationData 
         WHERE PunchCode IN ('202', '203', '206', '209', '210', '211', '213', '214', '215', '217') 
         AND Hours > 0 
@@ -68,26 +68,59 @@ def load_training_data():
         logger.error(traceback.format_exc())
         return None
 
-def detect_and_handle_outliers(df, target_col='Hours', n_std=4):
-    for work_type in df['WorkType'].unique():
+def detect_and_handle_outliers(df, target_col='Hours', work_type=None):
+    # Punch code 214 specific handling - preserve high values
+    if work_type == 214:
         wt_mask = df['WorkType'] == work_type
+        wt_data = df.loc[wt_mask, target_col]
+        
+        # Use IQR method instead of std for punch code 214
+        Q1 = wt_data.quantile(0.25)
+        Q3 = wt_data.quantile(0.75)
+        IQR = Q3 - Q1
+        
+        # More conservative bounds for high-variance punch code
+        lower_bound = Q1 - 2.0 * IQR  # Less aggressive than 1.5*IQR
+        upper_bound = Q3 + 3.0 * IQR  # More aggressive to preserve peaks
+        
+        # Only clip extreme outliers
+        df.loc[wt_mask & (df[target_col] < lower_bound), target_col] = lower_bound
+        df.loc[wt_mask & (df[target_col] > upper_bound), target_col] = upper_bound
+        
+        logger.info(f"Punch code 214: IQR outlier bounds [{lower_bound:.2f}, {upper_bound:.2f}]")
+    else:
+        # Standard handling for other punch codes
+        wt_mask = df['WorkType'] == work_type if work_type else True
         wt_data = df.loc[wt_mask, target_col]
         mean_val = wt_data.mean()
         std_val = wt_data.std()
-        lower_bound = mean_val - n_std * std_val
-        upper_bound = mean_val + n_std * std_val
+        lower_bound = mean_val - 4 * std_val
+        upper_bound = mean_val + 4 * std_val
         df.loc[wt_mask & (df[target_col] < lower_bound), target_col] = lower_bound
         df.loc[wt_mask & (df[target_col] > upper_bound), target_col] = upper_bound
+    
     return df
+
+def apply_target_transformation(df, work_type):
+    """Apply optimal transformation based on punch code characteristics"""
+    if work_type == 214:
+        # Box-Cox-like transformation for high variance data
+        df['transformed_Hours'] = np.sign(df['Hours']) * np.log1p(np.abs(df['Hours']))
+        logger.info(f"Applied sign-log transformation for punch code {work_type}")
+    else:
+        # Standard log transformation for other punch codes
+        df['transformed_Hours'] = np.log1p(df['Hours'])
+        logger.info(f"Applied log1p transformation for punch code {work_type}")
+    
+    return df['transformed_Hours'].values
 
 def train_enhanced_model(df, work_type):
     try:
         logger.info(f"Training enhanced LightGBM model for WorkType {work_type} using complete pipeline")
-        df = detect_and_handle_outliers(df, 'Hours', n_std=4)
-        df['log_Hours'] = np.log1p(df['Hours'])
-        y = df['log_Hours'].values
+        df = detect_and_handle_outliers(df, 'Hours', work_type) 
+        y = apply_target_transformation(df, work_type)
 
-        basic_features = ['Date', 'WorkType', 'Quantity', 'SystemHours', 'SystemKPI']
+        basic_features = ['Date', 'WorkType', 'Quantity', 'SystemHours']
         available_basic = [f for f in basic_features if f in df.columns]
         X_basic = df[available_basic].copy()
 
@@ -330,30 +363,58 @@ def save_enhanced_models(models, metadata, features, df):
         return False
 
 def main():
+    # Add argument parsing for specific model training
+    parser = argparse.ArgumentParser(description='Train workforce prediction models')
+    parser.add_argument('--punch-code', type=str, help='Train specific punch code (e.g., 206)')
+    parser.add_argument('--all', action='store_true', help='Train all punch codes (default behavior)')
+    args = parser.parse_args()
+    
     try:
         df = load_training_data()
         if df is None:
             logger.error("❌ Failed to load training data. Exiting.")
             return
 
+        # Determine which work types to process
+        if args.punch_code:
+            if args.punch_code not in ENHANCED_WORK_TYPES:
+                logger.error(f"❌ Punch code {args.punch_code} not in enhanced work types: {ENHANCED_WORK_TYPES}")
+                return
+            if args.punch_code not in df['WorkType'].unique():
+                logger.error(f"❌ No data available for punch code {args.punch_code}")
+                logger.info(f"Available work types in data: {list(df['WorkType'].unique())}")
+                return
+            work_types_to_process = [args.punch_code]
+            logger.info(f"🎯 Training single model for punch code: {args.punch_code}")
+        else:
+            work_types_to_process = df['WorkType'].unique()
+            logger.info(f"🎯 Training all available models: {list(work_types_to_process)}")
+
         logger.info("📊 Data distribution:")
-        for work_type in df['WorkType'].unique():
-            wt_data = df[df['WorkType'] == work_type]
-            logger.info(f"  WorkType {work_type}: {len(wt_data)} records")
-            logger.info(f"    Date range: {wt_data['Date'].min()} to {wt_data['Date'].max()}")
-            logger.info(f"    Hours avg: {wt_data['Hours'].mean():.2f}")
+        for work_type in work_types_to_process:
+            if work_type in df['WorkType'].unique():
+                wt_data = df[df['WorkType'] == work_type]
+                logger.info(f"  WorkType {work_type}: {len(wt_data)} records")
+                logger.info(f"    Date range: {wt_data['Date'].min()} to {wt_data['Date'].max()}")
+                logger.info(f"    Hours avg: {wt_data['Hours'].mean():.2f}")
 
         models = {}
         metadata = {}
         features = {}
 
-        for work_type in df['WorkType'].unique():
+        for work_type in work_types_to_process:
+            if work_type not in df['WorkType'].unique():
+                logger.warning(f"⚠️ No data available for punch code {work_type}")
+                continue
+                
             logger.info(f"\n🎯 Processing WorkType {work_type}")
             work_data = df[df['WorkType'] == work_type].copy()
             work_data = work_data.sort_values('Date')
+            
             if len(work_data) < 50:
                 logger.warning(f"Skipping {work_type}: Insufficient data ({len(work_data)} records)")
                 continue
+                
             model, model_metadata, selected_features = train_enhanced_model(work_data, work_type)
             if model is not None:
                 models[work_type] = model
