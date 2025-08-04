@@ -46,7 +46,7 @@ def load_training_data():
         AND Hours > 0 
         AND SystemHours > 0 
         AND NoRows > 0
-        AND Date < '2025-05-06'
+        AND Date < '2025-07-25'
         ORDER BY Date
         """
         df = extract_sql_data(
@@ -365,7 +365,7 @@ def save_enhanced_models(models, metadata, features, df):
 def main():
     # Add argument parsing for specific model training
     parser = argparse.ArgumentParser(description='Train workforce prediction models')
-    parser.add_argument('--punch-code', type=str, help='Train specific punch code (e.g., 206)')
+    parser.add_argument('--punch-code', '-p', type=str, help='Train specific punch code (e.g., 211)')
     parser.add_argument('--all', action='store_true', help='Train all punch codes (default behavior)')
     args = parser.parse_args()
     

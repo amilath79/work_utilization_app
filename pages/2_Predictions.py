@@ -17,11 +17,11 @@ import plotly.graph_objects as go
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.feature_engineering import EnhancedFeatureTransformer
-from utils.prediction import predict_multiple_days, predict_next_day
+from utils.prediction import predict_multiple_days
 from utils.data_loader import load_enhanced_models
 from utils.sql_data_connector import  save_predictions_to_db
-from utils.holiday_utils import is_non_working_day, is_working_day_for_punch_code
-from config import MODELS_DIR, DATA_DIR, SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION, ENHANCED_WORK_TYPES
+from utils.holiday_utils import is_non_working_day
+from config import MODELS_DIR, ENHANCED_WORK_TYPES
 
 # Configure logging
 logging.basicConfig(

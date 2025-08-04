@@ -25,10 +25,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.feature_engineering import EnhancedFeatureTransformer
 from utils.prediction import predict_multiple_days, evaluate_predictions
-from utils.data_loader import load_combined_models, load_data
+from utils.data_loader import load_combined_models, load_enhanced_models
 from utils.sql_data_connector import extract_sql_data
 from utils.holiday_utils import is_non_working_day, is_working_day_for_punch_code
-from config import MODELS_DIR, DATA_DIR, SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION, LAG_DAYS, ROLLING_WINDOWS
+from config import MODELS_DIR, DATA_DIR, SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION, ESSENTIAL_LAGS, ESSENTIAL_WINDOWS
 
 # Configure page
 st.set_page_config(
@@ -241,15 +241,36 @@ def ensure_data_and_models():
     # Check if we have models
     if st.session_state.models is None:
         with st.spinner("Loading models..."):
-            models, feature_importances, metrics = load_combined_models()
+            # Try enhanced models first
+            enhanced_models, enhanced_metadata, enhanced_features = load_enhanced_models()
             
-            if models:
-                st.session_state.models = models
-                st.session_state.feature_importances = feature_importances
-                st.session_state.metrics = metrics
-            else:
-                st.error("No trained models available. Please train models first.")
-                return False
+            if enhanced_models:
+                st.session_state.models = enhanced_models
+                st.session_state.feature_importances = {}  # Enhanced models store importance differently
+                st.session_state.metrics = {}  # Will be populated from metadata
+                
+                # Extract metrics from enhanced metadata
+                for work_type, metadata in enhanced_metadata.items():
+                    st.session_state.metrics[work_type] = {
+                        'MAE': metadata.get('test_mae', 0),
+                        'RMSE': metadata.get('test_rmse', 0),
+                        'R²': metadata.get('test_r2', 0),
+                        'MAPE': metadata.get('test_mape', 0)
+                    }
+                
+                st.info("✅ Using Enhanced Pipeline Models for backtesting")
+            # else:
+            #     # Fall back to combined models
+            #     models, feature_importances, metrics = load_combined_models()
+                
+            #     if models:
+            #         st.session_state.models = models
+            #         st.session_state.feature_importances = feature_importances
+            #         st.session_state.metrics = metrics
+            #         st.info("✅ Using Standard RandomForest Models for backtesting")
+            #     else:
+            #         st.error("No trained models available. Please run train_models2.py first.")
+            #         return False
     
     return True
 
@@ -295,12 +316,18 @@ def run_comprehensive_backtesting(ts_data, models, backtest_days, work_types, mo
         ]
         
         # Generate predictions for the backtest period
-        backtest_predictions, hours_predictions, holiday_info = predict_multiple_days(
-            df=backtest_data,
-            models=filtered_models,
-            num_days=backtest_days,
-            use_neural_network=use_neural_backtest
-        )
+        try:
+            backtest_predictions, hours_predictions, holiday_info = predict_multiple_days(
+                df=backtest_data,
+                models=filtered_models,
+                start_date=backtest_start,
+                num_days=backtest_days,
+                use_neural_network=use_neural_backtest
+            )
+        except Exception as pred_error:
+            st.error(f"Error generating predictions: {str(pred_error)}")
+            logger.error(f"Prediction error in backtesting: {str(pred_error)}")
+            return None
         
         # Create comprehensive results dataframe
         results_records = []
