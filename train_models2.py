@@ -46,7 +46,6 @@ def load_training_data():
         AND Hours > 0 
         AND SystemHours > 0 
         AND NoRows > 0
-        AND Date < '2025-07-25'
         ORDER BY Date
         """
         df = extract_sql_data(
