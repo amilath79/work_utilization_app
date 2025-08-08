@@ -567,11 +567,11 @@ def load_demand_with_kpi_data(next_working_day, server=SQL_SERVER, database=SQL_
                     WHEN routeno IN ('SORT1', 'SORTP1') THEN '209'
                     WHEN routeno IN ('BOOZT', 'ÅHLENS', 'AMZN', 'ENS1', 'ENS2', 'EMV', 'EXPRES', 'KLUBB', 
                                      'ÖP', 'ÖPFAPO', 'ÖPLOCK', 'ÖPSPEC', 'ÖPUTRI', 'PRINTW', 'RLEV') THEN '211'
-                    WHEN routeno IN ('LÄROME', 'SORDER', 'FSMAK', 'ORKLA', 'REAAKB', 'REAUGG') THEN '214'
+                    WHEN routeno IN ('LÄROME', 'SORDER', 'ORKLA', 'REAAKB', 'REAUGG') THEN '214'
                     WHEN routeno IN ('ADLIB', 'BIB', 'BOKUS', 'DIVNÄT', 'BUYERS') THEN '215'
                     WHEN divcode IN ('LIB', 'NYP', 'STU') THEN '213'
                     WHEN routeno NOT IN ('LÄROME', 'SORDER', 'FSMAK') THEN '211'
-                    ELSE 'undef_pick'
+                    ELSE '000'
                 END AS Punchcode
         ) pc
         -- Join KPIData to fetch KPIValue for matching Punchcode + Date

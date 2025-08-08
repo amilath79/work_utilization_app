@@ -141,7 +141,9 @@ FEATURE_GROUPS = {
 }
 
 # OPTIMIZED LAG CONFIGURATION - Focused on most predictive periods
-ESSENTIAL_LAGS = [1, 7, 14, 21, 30]
+ESSENTIAL_LAGS = [1, 7, 14, 21, 30, 365, 366]
+
+
 # OPTIMIZED ROLLING WINDOWS - Balanced short/medium term patterns  
 ESSENTIAL_WINDOWS = [7, 14, 28]  # 30
 

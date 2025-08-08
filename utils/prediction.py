@@ -249,58 +249,150 @@ def predict_with_neural_network(df, nn_models, nn_scalers, work_type, date=None,
         return None
 
 
+# def create_prediction_row_enhanced(work_data, next_date, work_type):
+#     """
+#     Create prediction row with better feature estimation like multy (2).py
+#     """
+#     try:
+#         # Get same day of week data for better estimation
+#         same_dow_data = work_data[work_data['Date'].dt.dayofweek == next_date.weekday()]
+        
+#         if len(same_dow_data) >= 3:
+#             # Use same day of week patterns (better estimation)
+#             quantity = same_dow_data['Quantity'].median()
+#             system_hours = same_dow_data['SystemHours'].median()
+#         else:
+#             # Fallback to recent data
+#             recent_data = work_data.tail(7)
+#             quantity = recent_data['Quantity'].median()
+#             system_hours = recent_data['SystemHours'].median()
+        
+#         # Handle SystemKPI if present
+#         if 'SystemKPI' in work_data.columns:
+#             if len(same_dow_data) >= 3:
+#                 system_kpi = same_dow_data['SystemKPI'].median()
+#             else:
+#                 system_kpi = work_data['SystemKPI'].median()
+#         else:
+#             system_kpi = 1.0
+        
+#         # Create prediction row
+#         pred_row = pd.DataFrame([{
+#             'Date': next_date,
+#             'WorkType': work_type,
+#             'Quantity': quantity,
+#             'SystemHours': system_hours,
+#             'SystemKPI': system_kpi,
+#             'Hours': work_data['Hours'].iloc[-1]  # Placeholder for lag calculation
+#         }])
+        
+#         return pred_row
+        
+#     except Exception as e:
+#         logger.error(f"Error creating enhanced prediction row: {str(e)}")
+#         # Fallback to simple approach
+#         return pd.DataFrame([{
+#             'Date': next_date,
+#             'WorkType': work_type,
+#             'Quantity': work_data['Quantity'].mean(),
+#             'SystemHours': work_data['SystemHours'].mean(),
+#             'SystemKPI': work_data['SystemKPI'].mean() if 'SystemKPI' in work_data.columns else 1.0,
+#             'Hours': work_data['Hours'].iloc[-1]
+#         }])
+
 def create_prediction_row_enhanced(work_data, next_date, work_type):
-    """
-    Create prediction row with better feature estimation like multy (2).py
-    """
-    try:
-        # Get same day of week data for better estimation
-        same_dow_data = work_data[work_data['Date'].dt.dayofweek == next_date.weekday()]
+    """Enhanced prediction using manual forecaster hierarchy"""
+    
+    # STRATEGY 1: Exact same day last year (HIGHEST PRIORITY)
+    last_year_date = next_date.replace(year=next_date.year - 1)
+    exact_same_day = work_data[work_data['Date'] == last_year_date]
+    
+    if not exact_same_day.empty:
+        # Use exact same day last year
+        base_quantity = exact_same_day['Quantity'].iloc[0]
+        base_hours = exact_same_day['Hours'].iloc[0] if 'Hours' in exact_same_day.columns else 0
+        system_hours = exact_same_day['SystemHours'].iloc[0] if 'SystemHours' in exact_same_day.columns else 8.0
         
-        if len(same_dow_data) >= 3:
-            # Use same day of week patterns (better estimation)
-            quantity = same_dow_data['Quantity'].median()
-            system_hours = same_dow_data['SystemHours'].median()
+        logger.info(f"Using exact same day last year: {last_year_date} for {work_type}")
+        
+    else:
+        # STRATEGY 2: Same week same day last year
+        week_start = last_year_date - timedelta(days=3)
+        week_end = last_year_date + timedelta(days=3)
+        
+        same_week_last_year = work_data[
+            (work_data['Date'] >= week_start) & 
+            (work_data['Date'] <= week_end) &
+            (work_data['Date'].dt.dayofweek == next_date.weekday())
+        ]
+        
+        if not same_week_last_year.empty:
+            base_quantity = same_week_last_year['Quantity'].median()
+            base_hours = same_week_last_year['Hours'].median()
+            system_hours = same_week_last_year['SystemHours'].median()
+            
+            logger.info(f"Using same week last year for {work_type}")
         else:
-            # Fallback to recent data
-            recent_data = work_data.tail(7)
-            quantity = recent_data['Quantity'].median()
-            system_hours = recent_data['SystemHours'].median()
-        
-        # Handle SystemKPI if present
-        if 'SystemKPI' in work_data.columns:
+            # STRATEGY 3: Fallback to current approach
+            same_dow_data = work_data[work_data['Date'].dt.dayofweek == next_date.weekday()]
+            
             if len(same_dow_data) >= 3:
-                system_kpi = same_dow_data['SystemKPI'].median()
+                base_quantity = same_dow_data['Quantity'].median()
+                base_hours = same_dow_data['Hours'].median()
+                system_hours = same_dow_data['SystemHours'].median()
             else:
-                system_kpi = work_data['SystemKPI'].median()
+                recent_data = work_data.tail(7)
+                base_quantity = recent_data['Quantity'].median()
+                base_hours = recent_data['Hours'].median()
+                system_hours = recent_data['SystemHours'].median()
+    
+    # Apply year-over-year growth adjustment
+    growth_rate = calculate_yoy_growth_rate(work_data, work_type, next_date)
+    adjusted_quantity = base_quantity * (1 + growth_rate)
+    
+    return pd.DataFrame([{
+        'Date': next_date,
+        'WorkType': work_type,
+        'Quantity': adjusted_quantity,
+        'SystemHours': system_hours,
+        'Hours': base_hours * (1 + growth_rate),  # Apply growth to hours too
+        'BaseYear': last_year_date.year,
+        'GrowthRate': growth_rate
+    }])
+
+def calculate_yoy_growth_rate(work_data, work_type, target_date):
+    """Calculate year-over-year growth rate"""
+    try:
+        # Get same period last year
+        last_year_start = target_date.replace(year=target_date.year - 1) - timedelta(days=30)
+        last_year_end = target_date.replace(year=target_date.year - 1) + timedelta(days=30)
+        
+        # Get same period this year
+        this_year_start = target_date - timedelta(days=30)
+        this_year_end = target_date + timedelta(days=30)
+        
+        last_year_avg = work_data[
+            (work_data['Date'] >= last_year_start) & 
+            (work_data['Date'] <= last_year_end)
+        ]['Hours'].mean()
+        
+        this_year_avg = work_data[
+            (work_data['Date'] >= this_year_start) & 
+            (work_data['Date'] <= this_year_end)
+        ]['Hours'].mean()
+        
+        if last_year_avg > 0 and not pd.isna(this_year_avg) and not pd.isna(last_year_avg):
+            growth_rate = (this_year_avg - last_year_avg) / last_year_avg
+            # Cap growth rate between -50% and +50%
+            return max(-0.5, min(0.5, growth_rate))
         else:
-            system_kpi = 1.0
-        
-        # Create prediction row
-        pred_row = pd.DataFrame([{
-            'Date': next_date,
-            'WorkType': work_type,
-            'Quantity': quantity,
-            'SystemHours': system_hours,
-            'SystemKPI': system_kpi,
-            'Hours': work_data['Hours'].iloc[-1]  # Placeholder for lag calculation
-        }])
-        
-        return pred_row
-        
+            return 0.0
+            
     except Exception as e:
-        logger.error(f"Error creating enhanced prediction row: {str(e)}")
-        # Fallback to simple approach
-        return pd.DataFrame([{
-            'Date': next_date,
-            'WorkType': work_type,
-            'Quantity': work_data['Quantity'].mean(),
-            'SystemHours': work_data['SystemHours'].mean(),
-            'SystemKPI': work_data['SystemKPI'].mean() if 'SystemKPI' in work_data.columns else 1.0,
-            'Hours': work_data['Hours'].iloc[-1]
-        }])
-
-
+        logger.warning(f"Could not calculate growth rate: {e}")
+        return 0.0
+    
+    
 def apply_prediction_bounds(hours_pred, work_data, next_date):
     """
     Apply intelligent bounds similar to multy (2).py approach
@@ -399,8 +491,9 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
                 # Apply intelligent bounds (enhanced version)
                 hours_pred = apply_prediction_bounds(hours_pred, work_data, next_date)
 
-                predictions[work_type] = hours_pred
-                hours_predictions[work_type] = hours_pred
+                workers_pred = max(0, round(hours_pred / 8.0)) if hours_pred > 0 else 0
+                predictions[work_type] = workers_pred  # Number of workers
+                hours_predictions[work_type] = hours_pred  # Hours
 
                 logger.info(f"✅ {work_type}: {hours_pred:.1f} hours (Historical avg: {work_data['Hours'].mean():.1f})")
 
@@ -478,6 +571,7 @@ def predict_multiple_days(df, models, start_date, num_days, use_neural_network=F
                         'Date': pred_date,
                         'WorkType': work_type,
                         'Hours': hours_value,  # ✅ Use predicted Hours value
+                        'NoOfMan': max(0, round(hours_value / 8.0)) if hours_value > 0 else 0,  # Add NoOfMan calculation
                         'Quantity': quantity,
                         'SystemHours': system_hours,
                         'SystemKPI': system_kpi

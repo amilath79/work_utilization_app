@@ -28,6 +28,7 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
         self.trend_columns = TREND_FEATURES_COLUMNS if hasattr(config, 'TREND_FEATURES_COLUMNS') else ['Hours']
         self.trend_calculations = TREND_CALCULATIONS if hasattr(config, 'TREND_CALCULATIONS') else {}
         self.fitted_features_ = None
+        self.yearly_lags = [365, 366] if FEATURE_GROUPS.get('LAG_FEATURES', False) else []
 
     def fit(self, X, y=None):
         X = pd.DataFrame(X).copy()
@@ -38,6 +39,7 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
         X = pd.DataFrame(X).copy().reset_index(drop=True)
         X = self._add_date_features(X)
         X = self._add_lag_features(X)
+        X = self._add_yearly_comparison_features(X)
         X = self._add_enhanced_rolling_features(X)  # ENHANCED
         X = self._add_peak_detection_features(X)    # NEW
         X = self._add_cyclical_features(X)
@@ -72,6 +74,17 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
             for col in self.lag_columns:
                 for lag in self.lag_days:
                     features.append(f'{col}_lag_{lag}')
+                for yearly_lag in [365, 366]:
+                    features.append(f'{col}_yearly_lag_{yearly_lag}')
+                    features.append(f'{col}_vs_last_year_{yearly_lag}')
+                    features.append(f'{col}_yearly_diff_{yearly_lag}')    
+
+                features.extend([
+                    f'{col}_same_day_last_year',
+                    f'{col}_vs_last_year_ratio', 
+                    f'{col}_same_week_last_year',
+                    f'{col}_yoy_growth'
+                ])
         # Rolling features
         if FEATURE_GROUPS.get('ROLLING_FEATURES', False):
             for col in self.rolling_columns:
@@ -172,10 +185,26 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
     def _add_lag_features(self, df):
         if FEATURE_GROUPS.get('LAG_FEATURES', False) and 'WorkType' in df.columns:
             df = df.sort_values(['WorkType', 'Date'] if 'Date' in df.columns else ['WorkType'])
+            
             for col in self.lag_columns:
                 if col in df.columns:
+                    # Existing short-term lags
                     for lag in self.lag_days:
                         df[f'{col}_lag_{lag}'] = df.groupby('WorkType')[col].shift(lag)
+                    
+                    # NEW: Add yearly lags
+                    for yearly_lag in [365, 366]:
+                        df[f'{col}_yearly_lag_{yearly_lag}'] = df.groupby('WorkType')[col].shift(yearly_lag)
+                        
+                        # Yearly comparison ratios
+                        df[f'{col}_vs_last_year_{yearly_lag}'] = (
+                            df[col] / (df[f'{col}_yearly_lag_{yearly_lag}'] + 1e-6)
+                        )
+                        
+                        # Yearly difference
+                        df[f'{col}_yearly_diff_{yearly_lag}'] = (
+                            df[col] - df[f'{col}_yearly_lag_{yearly_lag}']
+                        )
         return df
 
     def _add_enhanced_rolling_features(self, X):
@@ -379,3 +408,128 @@ class EnhancedFeatureTransformer(BaseEstimator, TransformerMixin):
                 else:
                     result.iloc[i] = series_clean.iloc[i]
         return result
+    
+    # AFTER - Add to EnhancedFeatureTransformer
+    def _add_yearly_comparison_features(self, X):
+        """Add features comparing to same day of week in same week position last year"""
+        if not FEATURE_GROUPS.get('LAG_FEATURES', False):
+            return X
+            
+        if 'WorkType' not in X.columns or 'Date' not in X.columns:
+            return X
+        
+        # Ensure data is sorted by WorkType and Date
+        X = X.sort_values(['WorkType', 'Date'])
+        X = X.reset_index(drop=True)
+        
+        # Process yearly comparison columns
+        yearly_comparison_columns = ['Hours', 'Quantity']
+        
+        for col in yearly_comparison_columns:
+            if col not in X.columns:
+                continue
+                
+            try:
+                # Create smart yearly comparison features
+                X = self._add_smart_yearly_features(X, col)
+                
+            except Exception as e:
+                logger.warning(f"Error adding yearly comparison for {col}: {e}")
+                # Set default values if error occurs
+                X[f'{col}_same_day_week_last_year'] = 0
+                X[f'{col}_vs_last_year_ratio'] = 1.0
+                X[f'{col}_seasonal_strength'] = 0.0
+                X[f'{col}_yoy_trend'] = 0.0
+        
+        return X
+
+    def _add_smart_yearly_features(self, X, col):
+        """Add intelligent yearly comparison features with same day/week logic"""
+        
+        # Initialize new feature columns
+        X[f'{col}_same_day_week_last_year'] = 0.0
+        X[f'{col}_vs_last_year_ratio'] = 1.0
+        X[f'{col}_seasonal_strength'] = 0.0
+        X[f'{col}_yoy_trend'] = 0.0
+        
+        for work_type in X['WorkType'].unique():
+            wt_mask = X['WorkType'] == work_type
+            wt_data = X[wt_mask].copy()
+            
+            if len(wt_data) < 365:  # Need at least 1 year of data
+                continue
+                
+            # Process each date in this work type
+            for idx, row in wt_data.iterrows():
+                current_date = pd.to_datetime(row['Date'])
+                
+                # Find same day of week, same week position last year
+                last_year_value = self._find_comparable_last_year_value(
+                    wt_data, current_date, col
+                )
+                
+                if last_year_value is not None:
+                    current_value = row[col]
+                    
+                    # Same day/week last year value
+                    X.at[idx, f'{col}_same_day_week_last_year'] = last_year_value
+                    
+                    # Ratio comparison (handles division by zero)
+                    if last_year_value > 0:
+                        X.at[idx, f'{col}_vs_last_year_ratio'] = current_value / last_year_value
+                    
+                    # Seasonal strength (how much it deviates from yearly average)
+                    yearly_avg = wt_data[col].mean()
+                    if yearly_avg > 0:
+                        seasonal_factor = last_year_value / yearly_avg
+                        X.at[idx, f'{col}_seasonal_strength'] = seasonal_factor
+                    
+                    # Year-over-year trend
+                    X.at[idx, f'{col}_yoy_trend'] = current_value - last_year_value
+        
+        return X
+
+    def _find_comparable_last_year_value(self, wt_data, current_date, col):
+        """Find the most comparable date from last year"""
+        
+        # Target: Same day of week, same week position in year
+        current_dow = current_date.dayofweek  # 0=Monday, 6=Sunday
+        current_week_of_year = current_date.isocalendar()[1]
+        
+        # Look for last year's data
+        last_year = current_date.year - 1
+        
+        # Strategy 1: Exact same week of year, same day of week
+        target_candidates = []
+        
+        for _, row in wt_data.iterrows():
+            row_date = pd.to_datetime(row['Date'])
+            
+            if row_date.year == last_year:
+                row_dow = row_date.dayofweek
+                row_week = row_date.isocalendar()[1]
+                
+                # Perfect match: same week, same day of week
+                if row_dow == current_dow and row_week == current_week_of_year:
+                    return row[col]
+                
+                # Good match: same day of week, within ±1 week
+                if row_dow == current_dow and abs(row_week - current_week_of_year) <= 1:
+                    target_candidates.append((abs(row_week - current_week_of_year), row[col]))
+        
+        # Return best candidate if available
+        if target_candidates:
+            target_candidates.sort(key=lambda x: x[0])  # Sort by week distance
+            return target_candidates[0][1]
+        
+        # Fallback: Simple 365-day shift
+        try:
+            fallback_date = current_date - pd.Timedelta(days=365)
+            fallback_rows = wt_data[pd.to_datetime(wt_data['Date']).dt.date == fallback_date.date()]
+            if not fallback_rows.empty:
+                return fallback_rows[col].iloc[0]
+        except:
+            pass
+        
+        return None
+

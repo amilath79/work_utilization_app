@@ -9,8 +9,8 @@ st.title("🔍 Actual vs Predicted Performance")
 st.markdown("Compare actual utilization data with model predictions to evaluate performance.")
 
 # Sidebar filters
-start_date = st.sidebar.date_input("Start Date", pd.to_datetime("2025-05-07"))
-end_date = st.sidebar.date_input("End Date", pd.to_datetime("2025-06-15"))
+start_date = st.sidebar.date_input("Start Date", pd.to_datetime("2025-07-01"))
+end_date = st.sidebar.date_input("End Date", pd.to_datetime("2025-08-15"))
 
 # Load data
 df = load_utilization_vs_prediction(start_date, end_date)
@@ -41,7 +41,7 @@ st.subheader("📈 Predicted vs Actual (Hours)")
 selected_punchcodes = st.multiselect(
     "Select PunchCodes to view",
     options=df["PunchCode"].unique(),
-    default=df["PunchCode"].unique()[:3],
+    default=df["PunchCode"].unique()[:10]  # Default to first 10 PunchCodes,
 )
 
 filtered_df = df[df["PunchCode"].isin(selected_punchcodes)]
