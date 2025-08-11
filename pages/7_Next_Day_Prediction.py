@@ -348,7 +348,7 @@ def send_email(comparison_df, current_date, next_date, workers_total_original, w
     try:
         # Email configuration
         sender_email = "noreply_wfp@forlagssystem.se"
-        receiver_email = "amila.g@forlagssystem.se", "mattias.udd@forlagssystem.se" #david.skoglund@forlagssystem.se,
+        receiver_email = "amila.g@forlagssystem.se, mattias.udd@forlagssystem.se" #david.skoglund@forlagssystem.se,
         smtp_server = "forlagssystem-se.mail.protection.outlook.com"
         
         # Create message
