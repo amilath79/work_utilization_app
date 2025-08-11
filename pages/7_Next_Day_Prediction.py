@@ -17,7 +17,7 @@ import pyodbc
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-
+import math
 # Add parent directory to path to import from utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -203,10 +203,10 @@ def calculate_improved_prediction(prediction_df, book_quantity_df, target_date):
                         hours = 0
                     else:
                         workers = quantity / kpi_value / 8
-                        workers = max(0, workers)
+                        workers = math.ceil(workers)
                         hours = workers * 8  # Calculate hours from workers
                     
-                    improved_predictions_workers[punch_code] = max(0, workers)
+                    improved_predictions_workers[punch_code] = math.ceil(workers)
                     improved_predictions_hours[punch_code] = round(hours, 1)
                     logger.info(f"Demand-based prediction for {punch_code}: Q={quantity}, KPI={kpi_value}, Workers={workers:.2f}, Hours={hours:.1f}")
                 else:
@@ -223,10 +223,10 @@ def calculate_improved_prediction(prediction_df, book_quantity_df, target_date):
                 if not punch_predictions.empty:
                     # Use existing prediction with 95% accuracy factor
                     original_workers = punch_predictions['NoOfMan'].iloc[0]
-                    improved_workers = max(0, original_workers * 0.95)  # Apply accuracy improvement
+                    improved_workers = math.ceil(original_workers * 0.95)  # Apply accuracy improvement
                     improved_hours = improved_workers * 8  # Calculate hours from workers
                     
-                    improved_predictions_workers[punch_code] = max(0, improved_workers)
+                    improved_predictions_workers[punch_code] = math.ceil(improved_workers)
                     improved_predictions_hours[punch_code] = round(improved_hours, 1)
                 else:
                     improved_predictions_workers[punch_code] = 0
@@ -307,7 +307,7 @@ def create_dual_metric_comparison_data(target_predictions, improved_predictions_
         original_workers = row['NoOfMan']
         original_hours = row['Hours'] if 'Hours' in row else original_workers * 8
         
-        improved_workers = max(0,improved_predictions_workers.get(punch_code, 0))
+        improved_workers = math.ceil(improved_predictions_workers.get(punch_code, 0))
         improved_hours = improved_predictions_hours.get(punch_code, 0)
         
         # Calculate differences for workers
@@ -1040,50 +1040,8 @@ def main():
                             use_container_width=True,
                             column_config=kpi_column_config
                         )
+                       
                         
-                        # Add explanation
-                        st.info("""
-                        **Quantity Logic:**
-                        - **Punch Codes 206, 213:** Shows `nrows` (number of rows/orders)
-                        - **Other Punch Codes:** Shows `quantity` (actual quantity)
-                        
-                        **KPI:** Key Performance Indicator value for each punch code
-                        
-                        **Calculation:** Workers = Quantity ÷ KPI ÷ 8 (8-hour workday)
-                        """)
-                        
-                        # Create a summary table showing quantity types
-                        st.write("### Quantity Type Reference")
-                        type_reference = quantity_kpi_df[['PunchCode', 'Quantity_Type']].copy()
-                        type_reference_transposed = type_reference.set_index('PunchCode').transpose()
-                        
-                        # Display as a simple table without Arrow serialization
-                        st.table(type_reference_transposed)
-                        
-                        # Optional: Show detailed breakdown
-                        with st.expander("📊 View Detailed Breakdown", expanded=False):
-                            st.write("### Detailed Data")
-                            # Convert to string columns to avoid mixed type issues
-                            detail_df = quantity_kpi_df.copy()
-                            detail_df['Quantity'] = detail_df['Quantity'].astype(str)
-                            detail_df['KPI'] = detail_df['KPI'].astype(str)
-                            detail_df['Raw_nrows'] = detail_df['Raw_nrows'].astype(str)
-                            detail_df['Raw_quantity'] = detail_df['Raw_quantity'].astype(str)
-                            
-                            st.dataframe(
-                                detail_df,
-                                use_container_width=True,
-                                column_config={
-                                    'PunchCode': st.column_config.TextColumn("Punch Code"),
-                                    'Quantity': st.column_config.TextColumn("Display Quantity"),
-                                    'Quantity_Type': st.column_config.TextColumn("Type", help="Whether showing nrows or quantity"),
-                                    'KPI': st.column_config.TextColumn("KPI Value"),
-                                    'Raw_nrows': st.column_config.TextColumn("Raw nrows"),
-                                    'Raw_quantity': st.column_config.TextColumn("Raw quantity")
-                                }
-                            )
-                    else:
-                        st.warning(f"No quantity/KPI data found for {next_date.strftime('%Y-%m-%d')}")
                 else:
                     st.warning("Could not load quantity/KPI data")
         else:
