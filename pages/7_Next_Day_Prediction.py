@@ -306,15 +306,11 @@ def create_dual_metric_comparison_data(target_predictions, improved_predictions_
         
         # Calculate differences for workers
         workers_diff = improved_workers - original_workers
-        workers_diff_pct = (workers_diff / original_workers * 100) if original_workers != 0 else (100 if improved_workers > 0 else 0)
-        workers_efficiency_gain = -workers_diff  # Invert for efficiency display
-        workers_efficiency_pct = -workers_diff_pct
         
         # Calculate differences for hours
         hours_diff = improved_hours - original_hours
-        hours_diff_pct = (hours_diff / original_hours * 100) if original_hours != 0 else (100 if improved_hours > 0 else 0)
-        hours_efficiency_gain = -hours_diff
-        hours_efficiency_pct = -hours_diff_pct
+
+
         
         comparison_data.append({
             'PunchCode': punch_code,
@@ -344,7 +340,7 @@ def create_dual_metric_comparison_data(target_predictions, improved_predictions_
     
     return comparison_data
 
-def send_email(comparison_df, current_date, next_date, workers_total_original, workers_total_improved, workers_total_efficiency, workers_efficiency_pct, hours_total_original, hours_total_improved, hours_total_efficiency, hours_efficiency_pct):
+def send_email(comparison_df, current_date, next_date, workers_total_original, workers_total_improved,  hours_total_original, hours_total_improved):
     """
     Send prediction improvements via email with transposed format and quantity/KPI data
     Enhanced with both Workers and Hours metrics
@@ -530,14 +526,7 @@ def send_email(comparison_df, current_date, next_date, workers_total_original, w
                     <div class="metric-value">{workers_total_improved:.2f}</div>
                     <div class="metric-label">Total Improved Workers</div>
                 </div>
-                <div class="metric">
-                    <div class="metric-value">{workers_total_efficiency:.2f}</div>
-                    <div class="metric-label">Workers Reduction</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">{workers_efficiency_pct:.2f}%</div>
-                    <div class="metric-label">Workers Efficiency Improvement</div>
-                </div>
+                
                 
                 <h4>Hours</h4>
                 <div class="metric">
@@ -547,14 +536,6 @@ def send_email(comparison_df, current_date, next_date, workers_total_original, w
                 <div class="metric">
                     <div class="metric-value">{hours_total_improved:.0f}</div>
                     <div class="metric-label">Total Improved Hours</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">{hours_total_efficiency:.0f}</div>
-                    <div class="metric-label">Hours Reduction</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">{hours_efficiency_pct:.2f}%</div>
-                    <div class="metric-label">Hours Efficiency Improvement</div>
                 </div>
                 
             </div>
