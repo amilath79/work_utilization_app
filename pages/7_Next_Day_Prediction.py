@@ -340,7 +340,7 @@ def create_dual_metric_comparison_data(target_predictions, improved_predictions_
     
     return comparison_data
 
-def send_email(comparison_df, current_date, next_date, workers_total_original, workers_total_improved,  hours_total_original, hours_total_improved):
+def send_email(comparison_df, current_date, next_date, workers_total_original, workers_total_improved, hours_total_original, hours_total_improved):
     """
     Send prediction improvements via email with transposed format and quantity/KPI data
     Enhanced with both Workers and Hours metrics
@@ -467,14 +467,21 @@ def send_email(comparison_df, current_date, next_date, workers_total_original, w
             
             for punch_code in workers_transposed.columns:
                 value = workers_transposed.loc[metric, punch_code]
-            
+                
+                # Format value based on metric type
+                formatted_value = f"{value:.2f}"
+                
+                # Apply styling based on value and metric
+                css_class = ""
+                if metric in ['Workers Difference'] and value < 0:
+                    css_class = 'class="negative"'
+                elif metric in ['Workers Difference'] and value > 0:
+                    css_class = 'class="positive"'
                 
                 if punch_code == 'TOTAL':
                     html += f'<td class="total-col" {css_class}>{formatted_value}</td>'
                 else:
                     html += f'<td {css_class}>{formatted_value}</td>'
-            
-            html += "</tr>"
         
         html += "</table>"
         
@@ -504,7 +511,21 @@ def send_email(comparison_df, current_date, next_date, workers_total_original, w
             
             for punch_code in hours_transposed.columns:
                 value = hours_transposed.loc[metric, punch_code]
-
+                
+                # Format value based on metric type
+                formatted_value = f"{value:.1f}"
+                
+                # Apply styling based on value and metric
+                css_class = ""
+                if metric in ['Hours Difference'] and value < 0:
+                    css_class = 'class="negative"'
+                elif metric in ['Hours Difference'] and value > 0:
+                    css_class = 'class="positive"'
+                
+                if punch_code == 'TOTAL':
+                    html += f'<td class="total-col" {css_class}>{formatted_value}</td>'
+                else:
+                    html += f'<td {css_class}>{formatted_value}</td>'
             
             html += "</tr>"
         
