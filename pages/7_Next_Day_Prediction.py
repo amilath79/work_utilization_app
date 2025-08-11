@@ -274,13 +274,7 @@ def create_comparison_dataframe(prediction_df, improved_predictions_hours, impro
                         'Original Hours': 0,
                         'Improved Hours': improved_predictions_hours.get(punch_code, 0),
                         'Workers Difference': improved_predictions_workers.get(punch_code, 0),
-                        'Hours Difference': improved_predictions_hours.get(punch_code, 0),
-                        'Workers Difference %': 0,
-                        'Hours Difference %': 0,
-                        'Workers Efficiency Gain': -improved_predictions_workers.get(punch_code, 0),
-                        'Hours Efficiency Gain': -improved_predictions_hours.get(punch_code, 0),
-                        'Workers Efficiency %': 0,
-                        'Hours Efficiency %': 0
+                        'Hours Difference': improved_predictions_hours.get(punch_code, 0)
                     })
                 
                 if not comparison_data:
@@ -329,13 +323,7 @@ def create_dual_metric_comparison_data(target_predictions, improved_predictions_
             'Original Hours': original_hours,
             'Improved Hours': improved_hours,
             'Workers Difference': workers_diff,
-            'Hours Difference': hours_diff,
-            'Workers Difference %': workers_diff_pct,
-            'Hours Difference %': hours_diff_pct,
-            'Workers Efficiency Gain': workers_efficiency_gain,
-            'Hours Efficiency Gain': hours_efficiency_gain,
-            'Workers Efficiency %': workers_efficiency_pct,
-            'Hours Efficiency %': hours_efficiency_pct
+            'Hours Difference': hours_diff
         })
     
     # Add entries for punch codes that are only in improved predictions
@@ -351,13 +339,7 @@ def create_dual_metric_comparison_data(target_predictions, improved_predictions_
                 'Original Hours': 0,
                 'Improved Hours': improved_hours,
                 'Workers Difference': improved_workers,
-                'Hours Difference': improved_hours,
-                'Workers Difference %': 100 if improved_workers > 0 else 0,
-                'Hours Difference %': 100 if improved_hours > 0 else 0,
-                'Workers Efficiency Gain': -improved_workers,
-                'Hours Efficiency Gain': -improved_hours,
-                'Workers Efficiency %': -100 if improved_workers > 0 else 0,
-                'Hours Efficiency %': -100 if improved_hours > 0 else 0
+                'Hours Difference': improved_hours
             })
     
     return comparison_data
@@ -468,8 +450,7 @@ def send_email(comparison_df, current_date, next_date, workers_total_original, w
         
         # Get workers data for email
         workers_df = comparison_df[['PunchCode', 'Original Workers', 'Improved Workers', 
-                                   'Workers Difference', 'Workers Difference %', 
-                                   'Workers Efficiency Gain', 'Workers Efficiency %']].copy()
+                                   'Workers Difference']].copy()
         
         # Add column headers for each punch code
         for punch_code in workers_df['PunchCode']:
@@ -481,7 +462,7 @@ def send_email(comparison_df, current_date, next_date, workers_total_original, w
         html += "</tr>"
         
         # Add rows for each metric
-        metrics = ['Original Workers', 'Improved Workers', 'Workers Difference', 'Workers Difference %', 'Workers Efficiency Gain', 'Workers Efficiency %']
+        metrics = ['Original Workers', 'Improved Workers', 'Workers Difference']
         
         workers_transposed = workers_df.set_index('PunchCode').transpose()
         
@@ -490,19 +471,7 @@ def send_email(comparison_df, current_date, next_date, workers_total_original, w
             
             for punch_code in workers_transposed.columns:
                 value = workers_transposed.loc[metric, punch_code]
-                
-                # Format value based on metric type
-                if metric in ['Workers Difference %', 'Workers Efficiency %']:
-                    formatted_value = f"{value:.2f}%"
-                else:
-                    formatted_value = f"{value:.2f}"
-                
-                # Apply styling based on value and metric
-                css_class = ""
-                if metric in ['Workers Difference', 'Workers Difference %'] and value < 0:
-                    css_class = 'class="negative"'
-                elif metric in ['Workers Efficiency Gain', 'Workers Efficiency %'] and value > 0:
-                    css_class = 'class="positive"'
+            
                 
                 if punch_code == 'TOTAL':
                     html += f'<td class="total-col" {css_class}>{formatted_value}</td>'
@@ -518,8 +487,7 @@ def send_email(comparison_df, current_date, next_date, workers_total_original, w
         
         # Get hours data for email
         hours_df = comparison_df[['PunchCode', 'Original Hours', 'Improved Hours', 
-                                 'Hours Difference', 'Hours Difference %', 
-                                 'Hours Efficiency Gain', 'Hours Efficiency %']].copy()
+                                 'Hours Difference']].copy()
         
         # Add column headers for each punch code
         for punch_code in hours_df['PunchCode']:
@@ -531,7 +499,7 @@ def send_email(comparison_df, current_date, next_date, workers_total_original, w
         html += "</tr>"
         
         # Add rows for each metric
-        hours_metrics = ['Original Hours', 'Improved Hours', 'Hours Difference', 'Hours Difference %', 'Hours Efficiency Gain', 'Hours Efficiency %']
+        hours_metrics = ['Original Hours', 'Improved Hours', 'Hours Difference']
         
         hours_transposed = hours_df.set_index('PunchCode').transpose()
         
@@ -540,24 +508,7 @@ def send_email(comparison_df, current_date, next_date, workers_total_original, w
             
             for punch_code in hours_transposed.columns:
                 value = hours_transposed.loc[metric, punch_code]
-                
-                # Format value based on metric type
-                if metric in ['Hours Difference %', 'Hours Efficiency %']:
-                    formatted_value = f"{value:.2f}%"
-                else:
-                    formatted_value = f"{value:.1f}"
-                
-                # Apply styling based on value and metric
-                css_class = ""
-                if metric in ['Hours Difference', 'Hours Difference %'] and value < 0:
-                    css_class = 'class="negative"'
-                elif metric in ['Hours Efficiency Gain', 'Hours Efficiency %'] and value > 0:
-                    css_class = 'class="positive"'
-                
-                if punch_code == 'TOTAL':
-                    html += f'<td class="total-col" {css_class}>{formatted_value}</td>'
-                else:
-                    html += f'<td {css_class}>{formatted_value}</td>'
+
             
             html += "</tr>"
         
@@ -606,10 +557,6 @@ def send_email(comparison_df, current_date, next_date, workers_total_original, w
                     <div class="metric-label">Hours Efficiency Improvement</div>
                 </div>
                 
-                <div class="metric">
-                    <div class="metric-value">95.2%</div>
-                    <div class="metric-label">Accuracy Improvement</div>
-                </div>
             </div>
             
             <h3>Key Insights</h3>
@@ -769,10 +716,7 @@ def main():
                 'PunchCode': 'TOTAL',
                 'Original Workers': comparison_df['Original Workers'].sum(),
                 'Improved Workers': comparison_df['Improved Workers'].sum(),
-                'Workers Difference': comparison_df['Workers Difference'].sum(),
-                'Workers Difference %': 0,
-                'Workers Efficiency Gain': comparison_df['Workers Efficiency Gain'].sum(),
-                'Workers Efficiency %': 0
+                'Workers Difference': comparison_df['Workers Difference'].sum()
             }
             
             # Calculate totals for hours
@@ -780,21 +724,10 @@ def main():
                 'PunchCode': 'TOTAL',
                 'Original Hours': comparison_df['Original Hours'].sum(),
                 'Improved Hours': comparison_df['Improved Hours'].sum(),
-                'Hours Difference': comparison_df['Hours Difference'].sum(),
-                'Hours Difference %': 0,
-                'Hours Efficiency Gain': comparison_df['Hours Efficiency Gain'].sum(),
-                'Hours Efficiency %': 0
+                'Hours Difference': comparison_df['Hours Difference'].sum()
             }
             
-            # Calculate overall percentage changes for the total rows
-            if workers_total_row['Original Workers'] > 0:
-                workers_total_row['Workers Difference %'] = (workers_total_row['Workers Difference'] / workers_total_row['Original Workers']) * 100
-                workers_total_row['Workers Efficiency %'] = (workers_total_row['Workers Efficiency Gain'] / workers_total_row['Original Workers']) * 100
-            
-            if hours_total_row['Original Hours'] > 0:
-                hours_total_row['Hours Difference %'] = (hours_total_row['Hours Difference'] / hours_total_row['Original Hours']) * 100
-                hours_total_row['Hours Efficiency %'] = (hours_total_row['Hours Efficiency Gain'] / hours_total_row['Original Hours']) * 100
-            
+           
             # Create tabs for different views
             tab1, tab2 = st.tabs(["Prediction Comparison", "Quantity & KPI Analysis"])
             
@@ -809,8 +742,7 @@ def main():
                     
                     # Create workers-specific dataframe
                     workers_df = comparison_df[['PunchCode', 'Original Workers', 'Improved Workers', 
-                                               'Workers Difference', 'Workers Difference %', 
-                                               'Workers Efficiency Gain', 'Workers Efficiency %']].copy()
+                                               'Workers Difference']].copy()
                     
                     # Add totals row to the workers dataframe
                     workers_df = pd.concat([workers_df, pd.DataFrame([workers_total_row])], ignore_index=True)
@@ -830,8 +762,7 @@ def main():
                     
                     # Create hours-specific dataframe
                     hours_df = comparison_df[['PunchCode', 'Original Hours', 'Improved Hours', 
-                                             'Hours Difference', 'Hours Difference %', 
-                                             'Hours Efficiency Gain', 'Hours Efficiency %']].copy()
+                                             'Hours Difference']].copy()
                     
                     # Add totals row to the hours dataframe
                     hours_df = pd.concat([hours_df, pd.DataFrame([hours_total_row])], ignore_index=True)
@@ -849,11 +780,9 @@ def main():
                 # Calculate dual efficiency metrics
                 workers_total_original = workers_total_row['Original Workers']
                 workers_total_improved = workers_total_row['Improved Workers']
-                workers_total_efficiency = workers_total_row['Workers Efficiency Gain']
 
                 hours_total_original = hours_total_row['Original Hours']
                 hours_total_improved = hours_total_row['Improved Hours']
-                hours_total_efficiency = hours_total_row['Hours Efficiency Gain']
 
                 # Display dual efficiency metrics
                 st.subheader("Workforce Efficiency Summary")
@@ -877,22 +806,6 @@ def main():
                         delta_color="inverse"
                     )
 
-                with workers_cols[2]:
-                    workers_efficiency_pct = (workers_total_efficiency / workers_total_original * 100) if workers_total_original > 0 else 0
-                    st.metric(
-                        "Workers Reduction", 
-                        f"{workers_total_efficiency:.1f}", 
-                        f"{workers_efficiency_pct:.1f}%",
-                        help="Total reduction in required workforce"
-                    )
-
-                with workers_cols[3]:
-                    st.metric(
-                        "Workers Accuracy Improvement", 
-                        "95.2%", 
-                        "+7.7%",
-                        help="Improvement in prediction accuracy"
-                    )
 
                 # Hours metrics
                 st.write("#### 🕐 Hours Summary")
@@ -913,22 +826,7 @@ def main():
                         delta_color="inverse"
                     )
 
-                with hours_cols[2]:
-                    hours_efficiency_pct = (hours_total_efficiency / hours_total_original * 100) if hours_total_original > 0 else 0
-                    st.metric(
-                        "Hours Reduction", 
-                        f"{hours_total_efficiency:.0f}", 
-                        f"{hours_efficiency_pct:.1f}%",
-                        help="Total reduction in required hours"
-                    )
 
-                with hours_cols[3]:
-                    st.metric(
-                        "Hours Accuracy Improvement", 
-                        "95.2%", 
-                        "+7.7%",
-                        help="Improvement in prediction accuracy"
-                    )
                 
                 # Email button
                 if st.button("Email Prediction Change", type="primary"):
@@ -939,12 +837,8 @@ def main():
                             next_date,
                             workers_total_original,
                             workers_total_improved,
-                            workers_total_efficiency,
-                            workers_efficiency_pct,
                             hours_total_original,
-                            hours_total_improved,
-                            hours_total_efficiency,
-                            hours_efficiency_pct
+                            hours_total_improved
                         )
                         
                         if success:
