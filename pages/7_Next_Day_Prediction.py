@@ -161,7 +161,7 @@ def calculate_improved_prediction(prediction_df, book_quantity_df, target_date):
     try:
         improved_predictions_hours = {}
         improved_predictions_workers = {}
-        DEMAND_BASED_PUNCH_CODES = ['209', '211', '213', '214', '215']
+        DEMAND_BASED_PUNCH_CODES = ['209', '211', '213',  '215']
         
         if book_quantity_df is None:
             logger.warning("No book quantity data available")
@@ -206,7 +206,7 @@ def calculate_improved_prediction(prediction_df, book_quantity_df, target_date):
                         workers = max(0, workers)
                         hours = workers * 8  # Calculate hours from workers
                     
-                    improved_predictions_workers[punch_code] = round(workers, 2)
+                    improved_predictions_workers[punch_code] = max(0, workers)
                     improved_predictions_hours[punch_code] = round(hours, 1)
                     logger.info(f"Demand-based prediction for {punch_code}: Q={quantity}, KPI={kpi_value}, Workers={workers:.2f}, Hours={hours:.1f}")
                 else:
@@ -214,7 +214,7 @@ def calculate_improved_prediction(prediction_df, book_quantity_df, target_date):
                     improved_predictions_hours[punch_code] = 0
         
         # For other punch codes, use existing ML-based improvement logic
-        ml_punch_codes = ['202', '203', '206', '210', '217'] 
+        ml_punch_codes = ['202', '203', '206', '210', '214', '217'] 
         
         for punch_code in ml_punch_codes:
             if prediction_df is not None and not prediction_df.empty:
@@ -223,10 +223,10 @@ def calculate_improved_prediction(prediction_df, book_quantity_df, target_date):
                 if not punch_predictions.empty:
                     # Use existing prediction with 95% accuracy factor
                     original_workers = punch_predictions['NoOfMan'].iloc[0]
-                    improved_workers = original_workers * 0.95  # Apply accuracy improvement
+                    improved_workers = max(0, original_workers * 0.95)  # Apply accuracy improvement
                     improved_hours = improved_workers * 8  # Calculate hours from workers
                     
-                    improved_predictions_workers[punch_code] = round(improved_workers, 2)
+                    improved_predictions_workers[punch_code] = max(0, improved_workers)
                     improved_predictions_hours[punch_code] = round(improved_hours, 1)
                 else:
                     improved_predictions_workers[punch_code] = 0
@@ -307,7 +307,7 @@ def create_dual_metric_comparison_data(target_predictions, improved_predictions_
         original_workers = row['NoOfMan']
         original_hours = row['Hours'] if 'Hours' in row else original_workers * 8
         
-        improved_workers = improved_predictions_workers.get(punch_code, 0)
+        improved_workers = max(0,improved_predictions_workers.get(punch_code, 0))
         improved_hours = improved_predictions_hours.get(punch_code, 0)
         
         # Calculate differences for workers

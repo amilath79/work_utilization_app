@@ -45,8 +45,6 @@ def load_training_data():
         WHERE PunchCode IN ('202', '203', '206', '209', '210', '211', '213', '214', '215', '217') 
         AND Hours > 0 
         AND SystemHours > 0 
-        AND NoRows > 0
-        AND Date <= '2025-07-30'
         ORDER BY Date
         """
         df = extract_sql_data(
@@ -361,6 +359,59 @@ def save_enhanced_models(models, metadata, features, df):
         logger.error(f"❌ Error saving enhanced models: {str(e)}")
         logger.error(traceback.format_exc())
         return False
+    
+# AFTER save_enhanced_models function
+def create_model_summary(metadata):
+    """Create a comprehensive model summary after training"""
+    try:
+        summary_path = os.path.join(MODELS_DIR, 'model_summary.csv')
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Prepare summary data
+        summary_data = []
+        for work_type, meta in metadata.items():
+            summary_data.append({
+                'Timestamp': timestamp,
+                'Work_Type': work_type,
+                'MAE': meta['test_mae'],
+                'R2': meta['test_r2'], 
+                'MAPE': meta['test_mape'],
+                'CV_MAE': meta['cv_mae'],
+                'CV_R2': meta['cv_r2'],
+                'Training_Records': meta['training_records'],
+                'Test_Records': meta['test_records'],
+                'Features_Count': meta['num_features']
+            })
+        
+        # Create DataFrame
+        new_summary = pd.DataFrame(summary_data)
+        
+        # Load existing summary if it exists, otherwise create new
+        if os.path.exists(summary_path):
+            existing_summary = pd.read_csv(summary_path)
+            # Combine with new results
+            combined_summary = pd.concat([existing_summary, new_summary], ignore_index=True)
+        else:
+            combined_summary = new_summary
+        
+        # Save updated summary
+        combined_summary.to_csv(summary_path, index=False)
+        
+        # Log summary for immediate view
+        logger.info("\n" + "="*60)
+        logger.info("📊 MODEL PERFORMANCE SUMMARY")
+        logger.info("="*60)
+        for _, row in new_summary.iterrows():
+            logger.info(f"Work Type {row['Work_Type']}:")
+            logger.info(f"  MAE: {row['MAE']:.3f} | R²: {row['R2']:.3f} | MAPE: {row['MAPE']:.2f}%")
+            logger.info(f"  Records: {row['Training_Records']} train, {row['Test_Records']} test")
+        logger.info("="*60)
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error creating model summary: {str(e)}")
+        return False
 
 def main():
     # Add argument parsing for specific model training
@@ -427,6 +478,7 @@ def main():
         if models:
             success = save_enhanced_models(models, metadata, features, df)
             if success:
+                create_model_summary(metadata)
                 logger.info("\n🎉 ENHANCED MODEL TRAINING COMPLETED SUCCESSFULLY")
                 logger.info("=" * 60)
                 logger.info(f"✅ Trained models: {list(models.keys())}")

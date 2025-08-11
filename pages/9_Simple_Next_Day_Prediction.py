@@ -70,7 +70,7 @@ def calculate_improved_prediction(prediction_df, target_date):
             target_demand_data = demand_kpi_df[demand_kpi_df['PlanDate'].dt.date == target_date]
             
             # Demand-based punch codes
-            demand_codes = ['209', '211', '213', '214', '215']
+            demand_codes = ['209', '211', '213', '215']
             for punch_code in demand_codes:
                 punch_data = target_demand_data[target_demand_data['Punchcode'] == punch_code]
                 
@@ -83,30 +83,30 @@ def calculate_improved_prediction(prediction_df, target_date):
                     kpi_value = punch_data['KPIValue'].iloc[0]
                     
                     if quantity > 0 and kpi_value > 0:
-                        workers = quantity / kpi_value / 8
+                        workers = max(quantity / kpi_value / 8, 0)
                         hours = workers * 8
                     else:
                         workers = 0
                         hours = 0
                     
-                    improved_workers[punch_code] = round(workers, 2)
+                    improved_workers[punch_code] = round(workers, 1)
                     improved_hours[punch_code] = round(hours, 1)
                 else:
                     improved_workers[punch_code] = 0
                     improved_hours[punch_code] = 0
         
         # ML-based punch codes (use 95% of original prediction)
-        ml_codes = ['202', '203', '206', '210', '217']
+        ml_codes = ['202', '203', '206', '210', '214',  '217']
         for punch_code in ml_codes:
             if prediction_df is not None and not prediction_df.empty:
                 punch_predictions = prediction_df[prediction_df['PunchCode'] == punch_code]
                 
                 if not punch_predictions.empty:
                     original_workers = punch_predictions['NoOfMan'].iloc[0]
-                    workers = original_workers * 0.95
+                    workers = max(original_workers * 0.95, 0)
                     hours = workers * 8
                     
-                    improved_workers[punch_code] = round(workers, 2)
+                    improved_workers[punch_code] = round(workers, 1)
                     improved_hours[punch_code] = round(hours, 1)
                 else:
                     improved_workers[punch_code] = 0
