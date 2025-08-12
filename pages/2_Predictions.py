@@ -22,7 +22,7 @@ from utils.data_loader import load_enhanced_models
 from utils.sql_data_connector import  save_predictions_to_db
 from utils.holiday_utils import is_non_working_day
 from config import MODELS_DIR, ENHANCED_WORK_TYPES
-
+from utils.display_utils import get_display_name
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -280,17 +280,13 @@ def main():
     
     # Get available work types from enhanced models
     if st.session_state.enhanced_models:
-        available_work_types = [wt for wt in ENHANCED_WORK_TYPES if wt in st.session_state.enhanced_models] # 
-        st.info(f"Enhanced models available for punch codes: {', '.join(available_work_types)}")
+        available_work_types = st.session_state.enhanced_models 
     else:
         available_work_types = []
-        st.warning("⚠️ No enhanced models loaded. Please run train_models2.py first.")
+        st.warning("⚠️ No models loaded.")
         return
     
-    # Prediction options
-    st.subheader("Prediction Options")
-    st.info("Using Enhanced Pipeline models from train_models2.py")
-    
+
     # Date range selector
     col1, col2 = st.columns(2)
     
@@ -445,27 +441,14 @@ def main():
         
         results_df = pd.DataFrame(results_records)
         
-        # Display results
-        model_type_text = "Enhanced Pipeline"
+        # # Display results
+        # model_type_text = "Enhanced Pipeline"
         
         # Reconstruct date range for display
         first_date = min(predictions.keys())
         last_date = max(predictions.keys())
 
-        st.subheader(f"Predictions from {first_date.strftime('%B %d, %Y')} to {last_date.strftime('%B %d, %Y')} using {model_type_text}")
-        
-        # Show results table
-        st.dataframe(results_df, use_container_width=True)
-        
-        # Holiday information
-        with st.expander("📊 View Holiday Information", expanded=False):
-            # If there are non-working days in the prediction period, show a warning
-            non_working_dates = results_df[results_df['Is Non-Working Day'] == "Yes"]['Date'].unique()
-            if len(non_working_dates) > 0:
-                st.warning("⚠️ Non-working days detected during the prediction period:")
-                for non_working_date in non_working_dates:
-                    reason = results_df[results_df['Date'] == non_working_date]['Reason'].iloc[0]
-                    st.info(f"• {non_working_date.strftime('%A, %B %d, %Y')}: {reason} (No work carried out)")
+        # st.subheader(f"Predictions from {first_date.strftime('%B %d, %Y')} to {last_date.strftime('%B %d, %Y')} using {model_type_text}")
         
         # Add pivot table for resource planning
         st.subheader("Resource Planning View")

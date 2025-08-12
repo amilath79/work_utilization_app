@@ -41,6 +41,18 @@ MODEL_CONFIGS = {
 }
 
 
+PUNCH_CODE_NAMES = {'202': 'Goods receive G',
+    '203': 'Goods receive D', 
+    '206': 'Replenishment',
+    '209': 'Sortation',
+    '210': 'Sortation pick',
+    '211': 'Misc pick',
+    '213': 'Old Astro',
+    '214': 'Large orders',
+    '215': 'Pick3PL_Astro',
+    '217': 'Return handling'
+}
+
 # Ensure directories exist
 for directory in [MODELS_DIR, DATA_DIR, LOGS_DIR]:
     os.makedirs(directory, exist_ok=True)
@@ -438,6 +450,14 @@ PUNCH_CODE_SPECIFIC_CONFIG = {
         'prioritize_weekday_features': True,
         'max_sunday_features': 3,  # Limit Sunday-specific features
         'force_include_yearly': True,  # Always include yearly patterns
+    },
+
+    '217': {
+        'exclude_yearly_lags': True,        # Remove problematic yearly features
+        'max_lag_days': 30,                 # Use only short-term lags
+        'use_identity_transform': True,      # No log transformation
+        'aggressive_outlier_removal': True,  # Use IQR method
+        'min_data_coverage': 0.9            # Require high feature coverage
     }
 }
 

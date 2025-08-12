@@ -68,7 +68,7 @@ def load_training_data():
 
 def detect_and_handle_outliers(df, target_col='Hours', work_type=None):
     # Punch code 214 specific handling - preserve high values
-    if work_type == 214:
+    if work_type in [214, 217]:
         wt_mask = df['WorkType'] == work_type
         wt_data = df.loc[wt_mask, target_col]
         
@@ -85,7 +85,7 @@ def detect_and_handle_outliers(df, target_col='Hours', work_type=None):
         df.loc[wt_mask & (df[target_col] < lower_bound), target_col] = lower_bound
         df.loc[wt_mask & (df[target_col] > upper_bound), target_col] = upper_bound
         
-        logger.info(f"Punch code 214: IQR outlier bounds [{lower_bound:.2f}, {upper_bound:.2f}]")
+        logger.info(f"Punch code {work_type}: IQR outlier bounds [{lower_bound:.2f}, {upper_bound:.2f}]")
     else:
         # Standard handling for other punch codes
         wt_mask = df['WorkType'] == work_type if work_type else True
@@ -101,7 +101,7 @@ def detect_and_handle_outliers(df, target_col='Hours', work_type=None):
 
 def apply_target_transformation(df, work_type):
     """Apply optimal transformation based on punch code characteristics"""
-    if work_type == 214:
+    if work_type in [214, 217]:
         # Box-Cox-like transformation for high variance data
         df['transformed_Hours'] = np.sign(df['Hours']) * np.log1p(np.abs(df['Hours']))
         logger.info(f"Applied sign-log transformation for punch code {work_type}")
