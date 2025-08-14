@@ -33,10 +33,7 @@ os.makedirs("logs", exist_ok=True)
 
 def print_banner():
     """Print training banner"""
-    print("=" * 70)
     print("🚀 ENHANCED TIME-SERIES WORKFORCE PREDICTION TRAINING")
-    print("   Based on proven methodology: R² > 0.99, MAE < 1.0")
-    print("=" * 70)
 
 def train_specific_punch_code(punch_code: str, data_source: str = None) -> bool:
     """Train a specific punch code using time-series methodology"""
@@ -97,13 +94,8 @@ Examples:
     # Handle list command
     if args.list:
         print("📋 AVAILABLE PUNCH CODES FOR TIME-SERIES TRAINING:")
-        print("   ✅ ALL ENHANCED PUNCH CODES NOW SUPPORTED:")
         for i, code in enumerate(ENHANCED_WORK_TYPES, 1):
             print(f"   {i:2d}. {code}")
-        print("\n🚀 USAGE EXAMPLES:")
-        print("   python train_models3.py --punch-code 217")
-        print("   python train_models3.py --punch-code 206") 
-        print("   python train_models3.py --punch-code 202")
         return
     
     # Validate arguments
@@ -137,25 +129,10 @@ Examples:
     end_time = datetime.now()
     duration = (end_time - start_time).total_seconds()
     
-    # Print results
-    print("\n" + "=" * 70)
     if success:
-        logger.info(f"🎉 TRAINING COMPLETED SUCCESSFULLY!")
-        logger.info(f"⏱️  Training duration: {duration:.1f} seconds")
-        logger.info(f"📁 Model saved to: {MODELS_DIR}")
-        logger.info(f"🔄 Model ready for use in prediction interface")
-        print("=" * 70)
-        
-        print("\n🚀 NEXT STEPS:")
-        print("1. Test the new model in your prediction interface")
-        print("2. Compare performance with previous 217 model")
-        print("3. If satisfied, we can implement other punch codes")
-        
+        logger.info(f"🎉 TRAINING SUCCESS - {duration:.1f} seconds - saved to: {MODELS_DIR}")
     else:
-        logger.error(f"❌ TRAINING FAILED for punch code {args.punch_code}")
-        logger.info(f"⏱️  Duration before failure: {duration:.1f} seconds")
-        logger.info("💡 Check the logs above for specific error details")
-        print("=" * 70)
+        logger.error(f"❌ TRAINING FAILED!")
 
 if __name__ == "__main__":
     main()

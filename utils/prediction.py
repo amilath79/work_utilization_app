@@ -464,26 +464,54 @@ def predict_next_day(df, models, date=None, use_neural_network=False):
                     hours_predictions[work_type] = 0
                     continue
 
-                # ENHANCED: Better prediction row creation
                 pred_row = create_prediction_row_enhanced(work_data, next_date, work_type)
 
-                # Combine with historical data for lag/rolling calculation
+                # Combine with historical data
                 combined_data = pd.concat([work_data, pred_row], ignore_index=True)
                 combined_data = combined_data.sort_values('Date')
 
-                # ✅ CRITICAL FIX: Use complete pipeline properly
-                try:
-                    # Apply complete pipeline in one go (preferred method)
-                    prediction_input = combined_data.tail(1).drop(columns=['Hours'], errors='ignore')
-                    hours_pred_log = pipeline.predict(prediction_input)[0]
+                # CRITICAL: Apply the SAME feature engineering used during training
+                from utils.time_series_trainer import TimeSeriesWorkforceTrainer
+                trainer = TimeSeriesWorkforceTrainer(work_type)
+                combined_featured = trainer.create_advanced_features(combined_data)
+
+                # Get model and feature columns
+                model_data = models[work_type]
+                model = model_data['model']
+                feature_columns = model_data['feature_columns']
+
+                # Extract the final prediction row with all features
+                prediction_row = combined_featured.tail(1).copy()
+
+                # Apply the SAME feature selection logic used during training
+                exclude_cols = [
+                    'Hours', 'Date', 'WorkType', 'Quantity', 'SystemHours', 'Unnamed: 0'
+                ]
+
+                # Get feature columns the same way as training
+                all_columns = prediction_row.columns.tolist()
+                available_feature_columns = [col for col in all_columns if col not in exclude_cols]
+
+                # Now match with model's expected features
+                matching_features = [col for col in feature_columns if col in available_feature_columns]
+
+                logger.debug(f"Prediction features created: {len(available_feature_columns)}")
+                logger.debug(f"Model expects: {len(feature_columns)}")
+                logger.debug(f"Matching features: {len(matching_features)}")
+
+                if len(matching_features) != len(feature_columns):
+                    logger.warning(f"Feature mismatch for {work_type}: Expected {len(feature_columns)}, got {len(matching_features)}")
+                    logger.debug(f"Missing features: {set(feature_columns) - set(matching_features)}")
                     
-                except Exception as pipeline_error:
-                    logger.debug(f"Direct pipeline prediction failed for {work_type}, using step-by-step: {str(pipeline_error)}")
-                    # Fallback to step-by-step approach
-                    # ✅ CRITICAL FIX: Use transform (not fit_transform) on already fitted pipeline
-                    X_all = pipeline.named_steps['feature_engineering'].transform(combined_data)
-                    X_selected = pipeline.named_steps['feature_selection'].transform(X_all)
-                    hours_pred_log = pipeline.named_steps['model'].predict(X_selected[-1:])[0]
+                    # Fill missing features with zeros
+                    for missing_feature in set(feature_columns) - set(matching_features):
+                        prediction_row.loc[prediction_row.index[0], missing_feature] = 0.0
+                    
+                    # Now select in the exact order the model expects
+                    X_pred = prediction_row[feature_columns]
+                else:
+                    X_pred = prediction_row[matching_features]
+                hours_pred_log = model.predict(X_pred)[0]
 
                 # ✅ CRITICAL FIX: Apply inverse log transformation
                 hours_pred = np.expm1(hours_pred_log)

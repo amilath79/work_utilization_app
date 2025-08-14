@@ -20,95 +20,6 @@ import sys
 logger = logging.getLogger(__name__)
 
 
-class IdentityTransformer(BaseEstimator, TransformerMixin):
-    """Pass-through transformer for pipeline compatibility with aggressive data cleaning"""
-    
-    def __init__(self):
-        self.feature_columns_ = None
-    
-    def fit(self, X, y=None):
-        # Store the feature columns that should be used (numeric only)
-        if hasattr(X, 'columns'):
-            # AGGRESSIVE filtering - remove ALL non-numeric columns
-            exclude_cols = [
-                'Date', 'WorkType', 'Hours', 'target_Hours', 'Unnamed: 0',
-                # Add any other problematic columns
-                'PunchCode'
-            ]
-            
-            if hasattr(X, 'select_dtypes'):
-                # Get ONLY numeric columns
-                numeric_cols = X.select_dtypes(include=[np.number]).columns.tolist()
-                # Remove excluded columns
-                self.feature_columns_ = [col for col in numeric_cols if col not in exclude_cols]
-                
-                # Log what we're keeping
-                logger.info(f"IdentityTransformer fitted with {len(self.feature_columns_)} numeric features")
-                logger.debug(f"Keeping columns: {self.feature_columns_[:10]}...")  # Show first 10
-                
-            else:
-                # Fallback: try to filter by column names
-                all_cols = X.columns.tolist() if hasattr(X, 'columns') else []
-                self.feature_columns_ = [col for col in all_cols if col not in exclude_cols]
-        else:
-            # If X is not a DataFrame, assume it's already properly formatted
-            self.feature_columns_ = None
-        
-        return self
-    
-    def transform(self, X):
-        if self.feature_columns_ is not None and hasattr(X, 'columns'):
-            try:
-                # Get available numeric columns only
-                available_cols = [col for col in self.feature_columns_ if col in X.columns]
-                
-                if available_cols:
-                    # Select only numeric columns
-                    result = X[available_cols].copy()
-                    
-                    # FORCE conversion to numeric for ALL columns
-                    for col in result.columns:
-                        if result[col].dtype == 'object':
-                            result[col] = pd.to_numeric(result[col], errors='coerce')
-                        elif result[col].dtype.name.startswith('datetime'):
-                            # Convert datetime to numeric (days since epoch)
-                            result[col] = pd.to_numeric(result[col].astype('int64') // 10**9, errors='coerce')
-                    
-                    # Fill any NaN values created by conversion
-                    result = result.fillna(0)
-                    
-                    # Final safety check - ensure ALL columns are numeric
-                    non_numeric_cols = []
-                    for col in result.columns:
-                        if not pd.api.types.is_numeric_dtype(result[col]):
-                            non_numeric_cols.append(col)
-                    
-                    if non_numeric_cols:
-                        logger.warning(f"Dropping non-numeric columns: {non_numeric_cols}")
-                        result = result.drop(columns=non_numeric_cols)
-                    
-                    logger.debug(f"IdentityTransformer output shape: {result.shape}")
-                    return result
-                else:
-                    # No valid columns - return empty DataFrame
-                    logger.warning("No valid numeric columns found, returning empty DataFrame")
-                    return pd.DataFrame(index=X.index)
-                    
-            except Exception as e:
-                logger.error(f"Error in IdentityTransformer.transform: {e}")
-                # Emergency fallback - try to return something numeric
-                if hasattr(X, 'select_dtypes'):
-                    numeric_only = X.select_dtypes(include=[np.number])
-                    return numeric_only.fillna(0)
-                else:
-                    return X
-        else:
-            # Return as-is if no column information available
-            return X
-    
-    def fit_transform(self, X, y=None):
-        return self.fit(X, y).transform(X)
-
 class TimeSeriesWorkforceTrainer:
     """
     Enterprise-grade time-series trainer for workforce prediction
@@ -198,95 +109,122 @@ class TimeSeriesWorkforceTrainer:
                 return df[df['Date'].dt.weekday < 5].copy()
     
     def create_advanced_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Create advanced time-series features based on proven methodology"""
-        
-        logger.info(f"Starting feature engineering with {len(df)} records")
-        
+        """Enhanced feature engineering matching Colab approach"""
         df_featured = df.copy()
+      
+        # 1. RESOURCE KPI (Critical improvement from Colab)
+        epsilon = 1e-9
+        df_featured['ResourceKPI'] = df_featured['Quantity'] / (df_featured['Hours'] + epsilon)
+        df_featured['ResourceKPI'] = df_featured['ResourceKPI'].replace([float('inf'), float('-inf')], 0)
         
-        # Add temporal components needed for feature engineering
-        df_featured['Weekday'] = df_featured['Date'].dt.weekday
-        df_featured['Month'] = df_featured['Date'].dt.month
+        # 2. UTILIZATION RATIO (New feature from Colab)
+        df_featured['UtilizationRatio'] = df_featured['SystemHours'] / (df_featured['Hours'] + epsilon)
+        df_featured['UtilizationRatio'] = df_featured['UtilizationRatio'].replace([float('inf'), float('-inf')], 0)
         
-        logger.info(f"Added temporal components")
-        
-        # 1. LAGGED FEATURES
-        logger.info(f"Creating lag features...")
-        for col in ['Hours', 'SystemHours', 'Quantity']:
-            if col in df_featured.columns:
-                for lag in self.config['lags']:
-                    df_featured[f'{col}_lag_{lag}'] = df_featured[col].shift(lag)
-        
-        # 2. ROLLING FEATURES  
-        logger.info(f"Creating rolling features...")
-        for col in ['Hours', 'SystemHours', 'Quantity']:
-            if col in df_featured.columns:
-                for window in self.config['rolling_windows']:
-                    df_featured[f'{col}_rolling_mean_{window}'] = df_featured[col].rolling(window=window).mean()
-                    df_featured[f'{col}_rolling_std_{window}'] = df_featured[col].rolling(window=window).std()
-        
-        # 3. TEMPORAL FEATURES
-        logger.info(f"Creating temporal features...")
-        df_featured['day_of_month'] = df_featured['Date'].dt.day
+        # 3. DATE FEATURES (Keep existing)
         df_featured['year'] = df_featured['Date'].dt.year
-        df_featured['week_no'] = df_featured['Date'].dt.isocalendar().week.astype(int)
+        df_featured['month'] = df_featured['Date'].dt.month
+        df_featured['week_no'] = df_featured['Date'].dt.isocalendar().week
+        df_featured['day_of_week'] = df_featured['Date'].dt.dayofweek
         df_featured['quarter'] = df_featured['Date'].dt.quarter
-        df_featured['is_month_end'] = df_featured['Date'].dt.is_month_end.astype(int)
-        df_featured['is_month_start'] = df_featured['Date'].dt.is_month_start.astype(int)
-        df_featured['day_of_year'] = df_featured['Date'].dt.dayofyear
-        df_featured['day_of_quarter'] = df_featured['Date'].apply(
-            lambda x: (x - x.to_period('Q').start_time).days + 1
-        )
+        df_featured['is_monthend'] = df_featured['Date'].dt.is_month_end.astype(int)
+        df_featured['is_monthstart'] = df_featured['Date'].dt.is_month_start.astype(int)
         
-        # 4. CYCLICAL FEATURES (CRITICAL FOR ACCURACY)
-        if self.config.get('use_cyclical_features', True):
-            logger.info(f"Creating cyclical features...")
-            df_featured['day_of_week_sin'] = np.sin(2 * np.pi * df_featured['Weekday'] / 7)
-            df_featured['day_of_week_cos'] = np.cos(2 * np.pi * df_featured['Weekday'] / 7)
-            df_featured['month_sin'] = np.sin(2 * np.pi * df_featured['Month'] / 12)
-            df_featured['month_cos'] = np.cos(2 * np.pi * df_featured['Month'] / 12)
-            df_featured['day_of_year_sin'] = np.sin(2 * np.pi * df_featured['day_of_year'] / 365.25)
-            df_featured['day_of_year_cos'] = np.cos(2 * np.pi * df_featured['day_of_year'] / 365.25)
-            df_featured['day_of_month_sin'] = np.sin(2 * np.pi * df_featured['day_of_month'] / 31)
-            df_featured['day_of_month_cos'] = np.cos(2 * np.pi * df_featured['day_of_month'] / 31)
-            df_featured['week_no_sin'] = np.sin(2 * np.pi * df_featured['week_no'] / 52)
-            df_featured['week_no_cos'] = np.cos(2 * np.pi * df_featured['week_no'] / 52)
+        # 4. ENHANCED LAG FEATURES (More comprehensive)
+        lag_columns = ['Quantity', 'SystemHours', 'Hours']
+        lags = [1, 7, 14, 21, 30]  # Match Colab lags
         
-        # 5. INTERACTION FEATURES
-        if self.config.get('use_interaction_features', True):
-            logger.info(f"Creating interaction features...")
-            numerical_features = ['SystemHours', 'Quantity'] + [f'Hours_lag_{lag}' for lag in self.config['lags']]
-            temporal_features = ['Weekday', 'Month']
-            
-            for num_feat in numerical_features:
-                if num_feat in df_featured.columns:
-                    for temp_feat in temporal_features:
-                        df_featured[f'{num_feat}_x_{temp_feat}'] = (
-                            df_featured[num_feat] * df_featured[temp_feat]
-                        )
+        for col in lag_columns:
+            for lag in lags:
+                df_featured[f'{col}_Lag{lag}'] = df_featured[col].shift(lag)
         
-        # 6. DIFFERENCE FEATURES
-        logger.info(f"Creating difference features...")
-        for lag in self.config['lags']:
-            lag_col = f'Hours_lag_{lag}'
-            if lag_col in df_featured.columns:
-                df_featured[f'Hours_diff_lag_{lag}'] = df_featured['Hours'] - df_featured[lag_col]
+        # 5. COMPREHENSIVE ROLLING WINDOWS (Match Colab exactly)
+        windows = [7, 14]
         
-        # 7. YEAR-OVER-YEAR SAME WEEKDAY FEATURE (CRITICAL FOR SEASONAL PATTERNS)
-        if self.config.get('use_year_over_year', True):
-            logger.info(f"Creating year-over-year features...")
-            df_featured = self._add_year_over_year_feature(df_featured)
+        for col in lag_columns:
+            for window in windows:
+                df_featured[f'{col}_Window{window}_Mean'] = df_featured[col].rolling(window=window, min_periods=1).mean()
+                df_featured[f'{col}_Window{window}_Std'] = df_featured[col].rolling(window=window, min_periods=1).std()
+                df_featured[f'{col}_Window{window}_Max'] = df_featured[col].rolling(window=window, min_periods=1).max()
+                df_featured[f'{col}_Window{window}_Min'] = df_featured[col].rolling(window=window, min_periods=1).min()
+                df_featured[f'{col}_Window{window}_Median'] = df_featured[col].rolling(window=window, min_periods=1).median()
+                df_featured[f'{col}_Window{window}_Sum'] = df_featured[col].rolling(window=window, min_periods=1).sum()
+                df_featured[f'{col}_Window{window}_EWMA'] = df_featured[col].ewm(span=window, min_periods=1).mean()
+                
+                # CV (Coefficient of Variation)
+                mean_vals = df_featured[col].rolling(window=window, min_periods=1).mean()
+                std_vals = df_featured[col].rolling(window=window, min_periods=1).std()
+                df_featured[f'{col}_Window{window}_CV'] = std_vals / (mean_vals + epsilon)
+                
+                # IQR (Interquartile Range)
+                q75 = df_featured[col].rolling(window=window, min_periods=1).quantile(0.75)
+                q25 = df_featured[col].rolling(window=window, min_periods=1).quantile(0.25)
+                df_featured[f'{col}_Window{window}_IQR'] = q75 - q25
         
-        logger.info(f"Feature engineering completed: {len(df_featured.columns)} total features")
+        # 6. LAST YEAR SAME WEEK FEATURES (Critical from Colab)
+        df_featured = self._create_last_year_features(df_featured)
         
-        # DEBUG: Check for completely empty columns
-        nan_counts = df_featured.isnull().sum()
-        completely_missing = nan_counts[nan_counts == len(df_featured)]
-        if len(completely_missing) > 0:
-            logger.warning(f"Found {len(completely_missing)} completely empty features")
-            
+        # 7. INTERACTION FEATURES (Enhanced from Colab)
+        df_featured['ResourceKPI_Quantity_Lag7'] = df_featured['ResourceKPI'] * df_featured['Quantity_Lag7']
+        df_featured['ResourceKPI_Quantity_Lag14'] = df_featured['ResourceKPI'] * df_featured['Quantity_Lag14']
+        df_featured['ResourceKPI_Quantity_LastYear'] = df_featured['ResourceKPI'] * df_featured['Quantity_LastYear']
+        
+        # 8. FILL NAN VALUES (Critical for stability)
+        df_featured = df_featured.ffill().bfill()
+        
+        logger.info(f"Feature engineering complete. Final shape: {df_featured.shape}")
         return df_featured
     
+
+    def _create_last_year_features(self, df):
+        """Create last year same week same day features (from Colab)"""
+        df = df.copy()
+        
+        # Ensure Date is in index for proper date operations
+        if 'Date' in df.columns:
+            df = df.set_index('Date')
+        
+        df = df.sort_index()
+        
+        # Initialize the new columns
+        df['Quantity_LastYear'] = np.nan
+        df['Hours_LastYear'] = np.nan
+        df['SystemHours_LastYear'] = np.nan
+
+        for current_date in df.index:
+            try:
+                # Find the same week and same day of week from last year
+                last_year_date = current_date - pd.DateOffset(years=1)
+                
+                # Create a window of ±3 days around the target date
+                start_window = last_year_date - pd.DateOffset(days=3)
+                end_window = last_year_date + pd.DateOffset(days=3)
+                
+                # Filter data within the window
+                window_data = df[(df.index >= start_window) & (df.index <= end_window)]
+                
+                if not window_data.empty:
+                    # Find the date with the same day of week, or closest match
+                    current_dow = current_date.dayofweek
+                    window_data_with_dow = window_data.copy()
+                    window_data_with_dow['dow_diff'] = abs(window_data_with_dow.index.dayofweek - current_dow)
+                    
+                    # Sort by day of week difference and then by date difference
+                    window_data_with_dow['date_diff'] = abs((window_data_with_dow.index - last_year_date).days)
+                    best_match = window_data_with_dow.sort_values(['dow_diff', 'date_diff']).iloc[0]
+                    
+                    # Assign the values
+                    df.loc[current_date, 'Quantity_LastYear'] = best_match['Quantity']
+                    df.loc[current_date, 'Hours_LastYear'] = best_match['Hours']
+                    df.loc[current_date, 'SystemHours_LastYear'] = best_match['SystemHours']
+            
+            except Exception as e:
+                # Skip if any error occurs for this date
+                continue
+        
+        # Reset index to get Date back as column
+        df = df.reset_index()
+        return df
     def _add_year_over_year_feature(self, df: pd.DataFrame) -> pd.DataFrame:
         """Add same weekday, same week last year feature"""
         
@@ -332,32 +270,84 @@ class TimeSeriesWorkforceTrainer:
         
         return df
     
-    def prepare_time_series_data(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
-        """Prepare data for time-series forecasting (next-day prediction)"""
+    # def prepare_time_series_data(self, df_featured: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+    #     """Prepare time-series data with Colab-enhanced features but keep next-day prediction"""
+        
+    #     # Remove NaN rows
+    #     df_clean = df_featured.dropna().copy()  # Ensure we have a proper copy
+        
+    #     # CREATE NEXT-DAY TARGET (Keep your existing approach)
+    #     df_clean['target_Hours'] = df_clean['Hours'].shift(-1)
+    #     df_clean = df_clean.dropna(subset=['target_Hours'])
+        
+    #     # Colab-style feature selection but adapted for next-day prediction
+    #     exclude_cols = [
+    #         'Hours',           # Exclude current Hours (we're predicting next day)
+    #         'WorkType', 
+    #         'Date', 
+    #         'target_Hours',    # Exclude the target we created
+    #         'Quantity',        # Exclude base columns used to create features
+    #         'SystemHours',     # Exclude base columns used to create features
+    #         'Unnamed: 0'
+    #     ]
+        
+    #     # Get all columns and exclude target and metadata columns
+    #     all_columns = df_clean.columns.tolist()
+    #     feature_columns = [col for col in all_columns if col not in exclude_cols]
+        
+    #     X = df_clean[feature_columns]
+    #     y = df_clean['target_Hours']  # Use shifted target for next-day prediction
+        
+    #     # Fill any remaining NaN values (from Colab improvement)
+    #     X = X.fillna(0)
+        
+    #     # Reset index
+    #     X = X.reset_index(drop=True)
+    #     y = y.reset_index(drop=True)
+        
+    #     logger.info(f"Using all {len(X.columns)} features (enhanced with Colab improvements)")
+    #     logger.info(f"Prepared time-series data: {len(X)} samples, {len(X.columns)} features")
+    #     logger.info(f"Prediction mode: Next-day Hours prediction using current day features")
+        
+    #     return X, y
+
+
+    def prepare_time_series_data(self, df_featured: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+        """Prepare time-series data - TEST: Same-day prediction like Colab"""
         
         # Remove NaN rows
-        df_clean = df.dropna().copy()  # Ensure we have a proper copy
+        df_clean = df_featured.dropna().copy()
         
-        # CREATE NEXT-DAY TARGET (KEY DIFFERENCE!)
-        df_clean['target_Hours'] = df_clean['Hours'].shift(-1)
-        df_clean = df_clean.dropna(subset=['target_Hours'])
+        # TEMPORARY: Use same-day prediction like Colab (no shift)
+        # df_clean['target_Hours'] = df_clean['Hours'].shift(-1)
+        # df_clean = df_clean.dropna(subset=['target_Hours'])
         
-        # Prepare features (exclude target and non-predictive columns)
-        exclude_cols = ['Hours', 'WorkType', 'Date', 'target_Hours']
-        if 'Unnamed: 0' in df_clean.columns:
-            exclude_cols.append('Unnamed: 0')
-            
-        X = df_clean.drop(exclude_cols, axis=1)
-        y = df_clean['target_Hours']
+        # Colab-style feature selection
+        exclude_cols = [
+            'Hours',           # This is our target
+            'WorkType', 
+            'Date', 
+            'Quantity',        # Exclude base columns 
+            'SystemHours',     # Exclude base columns
+            'Unnamed: 0'
+        ]
         
-        # IMPORTANT: Don't apply feature selection for now - use all features like your script
-        logger.info(f"Using all {len(X.columns)} features (no feature selection)")
+        all_columns = df_clean.columns.tolist()
+        feature_columns = [col for col in all_columns if col not in exclude_cols]
+        
+        X = df_clean[feature_columns]
+        y = df_clean['Hours']  # Same-day prediction like Colab
+        
+        # Fill any remaining NaN values
+        X = X.fillna(0)
         
         # Reset index
         X = X.reset_index(drop=True)
         y = y.reset_index(drop=True)
         
-        logger.info(f"Prepared time-series data: {len(X)} samples, {len(X.columns)} features")
+        logger.info(f"TEST MODE: Same-day prediction (like Colab)")
+        logger.info(f"Prepared data: {len(X)} samples, {len(X.columns)} features")
+        
         return X, y
     
     def train_model(self, X: pd.DataFrame, y: pd.Series) -> Dict:
@@ -413,18 +403,18 @@ class TimeSeriesWorkforceTrainer:
     def save_model(self, models_dir: str) -> bool:
         """Save trained model and metadata in existing compatible format"""
         try:            
-            # Create pipeline that matches EXACT existing interface expectations
-            # The existing code expects: feature_engineering, feature_selection, model
-            pipeline = Pipeline([
-                ('feature_engineering', IdentityTransformer()),  # Pass-through
-                ('feature_selection', IdentityTransformer()),    # Pass-through  
-                ('model', self.model)
-            ])
-            
-            # Save model as pipeline
+            model_data = {
+                'model': self.model,
+                'feature_columns': self.feature_columns,
+                'punch_code': self.punch_code,
+                'validation_results': self.validation_results,
+                'model_type': 'TimeSeriesLGBM_Direct'
+            }
+
+            # Save model data
             model_path = os.path.join(models_dir, f'enhanced_model_{self.punch_code}.pkl')
             with open(model_path, 'wb') as f:
-                pickle.dump(pipeline, f)
+                pickle.dump(model_data, f)
             
             # Save metadata in compatible format
             metadata = {
@@ -518,6 +508,7 @@ def train_punch_code_with_new_pipeline(punch_code: str, data_source: str = None)
             WHERE PunchCode = '{punch_code}'
             AND Hours > 0 
             AND SystemHours > 0 
+            AND Date < '2025-08-01'  
             ORDER BY Date
             """
             df = extract_sql_data(
@@ -585,7 +576,7 @@ def train_punch_code_with_new_pipeline(punch_code: str, data_source: str = None)
         
         if success:
             logger.info(f"🎉 Punch code {punch_code} time-series training completed successfully!")
-            logger.info(f"📊 Final Performance: R² = {validation_results['cv_r2_mean']:.4f}, MAE = {validation_results['cv_mae_mean']:.4f}")
+            logger.info(f"📊 Final Performance: R² = {validation_results['cv_r2_mean']:.4f}, MAE = {validation_results['cv_mae_mean']:.4f}, RMSE = {validation_results['cv_rmse_mean']:.4f}")
             return True
         else:
             logger.error(f"❌ Failed to save punch code {punch_code} model")
@@ -596,3 +587,4 @@ def train_punch_code_with_new_pipeline(punch_code: str, data_source: str = None)
         import traceback
         logger.error(traceback.format_exc())
         return False
+    

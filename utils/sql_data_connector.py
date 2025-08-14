@@ -10,6 +10,9 @@ import logging
 import traceback
 from datetime import datetime
 from config import DATA_DIR, CACHE_TTL, CHUNK_SIZE, SQL_SERVER, SQL_TRUSTED_CONNECTION, SQL_DATABASE_LIVE, SQL_DATABASE, SQL_USERNAME, SQL_PASSWORD
+import warnings
+
+warnings.filterwarnings('ignore', message='.*SQLAlchemy.*')
 
 # Configure logger
 logger = logging.getLogger(__name__)

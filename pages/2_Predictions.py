@@ -108,42 +108,67 @@ if st.session_state.enhanced_models is None:
         logger.error(f"❌ Failed to load enhanced models: {str(e)}")
         st.session_state.enhanced_models = {}
 
-# def diagnose_training_data(df):
-#     """
-#     Diagnose potential issues with training data
-#     """
-#     print("=== TRAINING DATA DIAGNOSIS ===")
-    
-#     for work_type in df['WorkType'].unique():
-#         wt_data = df[df['WorkType'] == work_type]
-        
-#         print(f"\nWorkType {work_type}:")
-#         print(f"  Records: {len(wt_data)}")
-#         print(f"  Hours - Mean: {wt_data['Hours'].mean():.2f}")
-#         print(f"  Hours - Median: {wt_data['Hours'].median():.2f}")
-#         print(f"  Hours - Max: {wt_data['Hours'].max():.2f}")
-#         print(f"  Hours - Min: {wt_data['Hours'].min():.2f}")
-        
-#         # Check for data quality issues
-#         zero_count = (wt_data['Hours'] == 0).sum()
-#         low_count = (wt_data['Hours'] < 1).sum()
-        
-#         print(f"  Zero values: {zero_count} ({zero_count/len(wt_data)*100:.1f}%)")
-#         print(f"  Values < 1: {low_count} ({low_count/len(wt_data)*100:.1f}%)")
-
 def ensure_data_and_models():
-    """Ensure enhanced data and models are loaded for punch codes 206 & 213"""
+    """Ensure enhanced data and models are loaded"""
     
-    # Check enhanced data
-    if st.session_state.enhanced_df is None:
-        st.error("❌ Enhanced data not loaded. Please run train_models2.py first.")
-        return False
-    
-    # Check enhanced models
+    # Load enhanced models if not already loaded
     if not st.session_state.enhanced_models:
-        st.error("❌ Enhanced models not loaded. Please run train_models2.py first.")
-        return False
+        try:
+            models, metadata, features = load_enhanced_models()
+            
+            if models:
+                st.session_state.enhanced_models = models
+                st.session_state.enhanced_metadata = metadata
+                st.session_state.enhanced_features = features
+                logger.info(f"✅ Loaded enhanced models: {list(models.keys())}")
+            else:
+                st.error("❌ No enhanced models found. Please run train_models3.py first.")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Failed to load enhanced models: {str(e)}")
+            st.error(f"❌ Failed to load enhanced models: {str(e)}")
+            return False
     
+    # Load enhanced data if not already loaded  
+    if st.session_state.enhanced_df is None:
+        try:
+            from utils.sql_data_connector import extract_sql_data
+            from config import SQL_SERVER, SQL_DATABASE, SQL_TRUSTED_CONNECTION
+            
+            with st.spinner("Loading enhanced data..."):
+                query = """
+                SELECT Date, PunchCode as WorkType, Hours, NoOfMan, SystemHours, NoRows as Quantity
+                FROM WorkUtilizationData 
+                WHERE PunchCode IN ('202', '203', '206', '209', '210', '211', '213', '214', '215', '217') 
+                AND Hours > 0 
+                AND NoOfMan > 0 
+                AND SystemHours > 0 
+                AND NoRows > 0
+                ORDER BY Date
+                """
+                
+                df = extract_sql_data(
+                    server=SQL_SERVER,
+                    database=SQL_DATABASE,
+                    query=query,
+                    trusted_connection=SQL_TRUSTED_CONNECTION
+                )
+                
+                if df is not None and not df.empty:
+                    df['Date'] = pd.to_datetime(df['Date'])
+                    df['WorkType'] = df['WorkType'].astype(str)
+                    st.session_state.enhanced_df = df
+                    logger.info(f"✅ Loaded enhanced data: {len(df)} records")
+                else:
+                    st.error("❌ No data found in database")
+                    return False
+                    
+        except Exception as e:
+            logger.error(f"❌ Failed to load enhanced data: {str(e)}")
+            st.error(f"❌ Failed to load enhanced data: {str(e)}")
+            return False
+
     return True
 
 def get_current_user():
@@ -293,23 +318,21 @@ def main():
     with col1:
         # Use enhanced_df for date calculation
         if st.session_state.enhanced_df is not None:
-            # Export for debugging (optional - can be removed)
-            try:
-                st.session_state.enhanced_df.to_excel('enhanced_df.xlsx')
-            except Exception as e:
-                logger.warning(f"Could not export enhanced_df: {str(e)}")
+            # Training data ends before 2025-08-01, so start predictions from there
+            training_end_date = datetime.strptime('2025-07-31', '%Y-%m-%d').date()
+            latest_date  = st.session_state.enhanced_df['Date'].max().date()
             
-            latest_date = st.session_state.enhanced_df['Date'].max().date()
+            # Use whichever is later: training cutoff or actual data end
+            next_date = max(training_end_date, training_end_date  + timedelta(days=1))
         else:
-            # Fallback if enhanced_df not available
-            latest_date = datetime.now().date()
+            next_date = datetime.strptime('2025-08-01', '%Y-%m-%d').date()
         
-        next_date = latest_date + timedelta(days=1)
+
         
         pred_start_date = st.date_input(
             "Start Date",
             value=next_date,
-            min_value=latest_date,
+            min_value=next_date,
             disabled=True,
             help="Select the start date for the prediction period"
         )
@@ -335,39 +358,6 @@ def main():
         help="Select the work types for which you want to make predictions"
     )
 
-
-    # if st.button("Test Pipeline Prediction"):
-    #     next_date, preds, hours = predict_next_day(
-    #         st.session_state.enhanced_df,
-    #         st.session_state.enhanced_models
-    #     )
-    #     st.write(f"Predictions for {next_date}:")
-    #     for wt, hrs in hours.items():
-    #         st.write(f"  {wt}: {hrs:.1f} hours")
-
-
-    # # Debug feature mismatch
-    # if st.button("Debug Feature Names"):
-    #     # Pick one model to test
-    #     work_type = '206'  # Or any work type
-    #     pipeline = st.session_state.enhanced_models[work_type]
-        
-    #     # Check what features the RandomForest expects
-    #     lgb_model = pipeline.named_steps['model']
-    #     st.write("**Model expects these features:**")
-    #     st.write(lgb_model.feature_names_in_[:10]) # First 10 features
-        
-    #     # Create sample data and check what transformer produces
-    #     sample_data = st.session_state.enhanced_df[
-    #         st.session_state.enhanced_df['WorkType'] == work_type
-    #     ].tail(50)
-        
-    #     # Transform and check features
-    #     transformer = pipeline.named_steps['feature_engineering']
-    #     transformed = transformer.transform(sample_data)
-    #     st.write("\n**Transformer creates these features:**")
-    #     st.write(transformed.columns.tolist()[:10])  # First 10 features
-
     # Button to trigger prediction
     if st.button("Generate Predictions", type="primary"):
         if not selected_work_types:
@@ -387,6 +377,11 @@ def main():
                 try:
                     # Use enhanced_df for pipeline models
                     prediction_data = st.session_state.enhanced_df
+
+                    if st.session_state.enhanced_df is None:
+                        st.error("❌ No data available for predictions")
+                        return
+
                     
                     # Unpack all three return values from predict_multiple_days
                     predictions, hours_predictions, holiday_info = predict_multiple_days(

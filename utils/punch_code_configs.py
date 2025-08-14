@@ -70,13 +70,18 @@ class PunchCodeConfig:
             'colsample_bytree': 0.8
         },
         'default': {
-            'learning_rate': 0.01,
-            'min_child_samples': 25,
-            'n_estimators': 1000,
+            'n_estimators': 2000,
+            'colsample_bytree': 0.8,
+            'learning_rate': 0.03,
+            'max_depth': -1,
+            'min_child_samples': 20,
             'num_leaves': 31,
+            'reg_alpha': 0.1,
+            'reg_lambda': 0.0,
+            'subsample': 0.8,
+            'verbose': -1,
             'random_state': 42,
-            'n_jobs': -1,
-            'verbose': -1
+            'n_jobs': -1
         }
     }
     

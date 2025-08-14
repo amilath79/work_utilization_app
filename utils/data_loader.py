@@ -338,16 +338,11 @@ def load_enhanced_models():
             
             if os.path.exists(model_file):
                 with open(model_file, 'rb') as f:
-                    pipeline = pickle.load(f)
-                    models[punch_code] = pipeline
-                    logger.info(f"✅ Loaded complete pipeline for punch code {punch_code}")
-                    
-                    # Log pipeline steps for verification
-                    if hasattr(pipeline, 'steps'):
-                        steps = [step[0] for step in pipeline.steps]
-                        logger.info(f"   Pipeline steps: {steps}")
+                    model_data = pickle.load(f)
+                    models[punch_code] = model_data
+                    logger.info(f"✅ Loaded direct model for punch code {punch_code}")
             else:
-                logger.warning(f"Enhanced pipeline file not found: {model_file}")
+                logger.warning(f"model not found: {model_file}")
         
         # Load enhanced metadata
         metadata_files = glob.glob(os.path.join(MODELS_DIR, 'enhanced_models_metadata_*.json'))
